@@ -1,0 +1,9 @@
+# pull (fetch + merge) from master and FORCE overwrite
+# WARNING - all local changes will be lost
+
+# do local commit first
+sh mk/commit
+
+# fetch changes and overwrite if there is a conflict
+git fetch origin master
+git merge -s recursive -X theirs origin/master

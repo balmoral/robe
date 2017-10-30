@@ -1,0 +1,81 @@
+# Robe Sockets
+
+With credit and thanks to @jgaskins for [PowerStrip](`https://github.com/clearwater-rb/power_strip`) from which we have borrowed massively.
+
+### Roda
+
+```ruby
+# config.ru
+require 'robe/server/sockets'
+
+Robe::Server::Sockets.start
+
+class MyApp < Roda
+  r.on('sockets') { r.run Robe::Server::Sockets }
+end
+```
+
+### Sending updates to clients:
+
+```ruby
+Robe::Server::Sockets[channel_name].send(event_name, key: value)
+```
+
+## Client-Side Usage
+
+```ruby
+require 'opal'
+require 'robe/client/socket'
+
+# This URL should point to where you have Sockets mounted on the server
+client = Robe::Client::Socket.new(url: 'ws://localhost:9292/sockets')
+
+client.on(:connect) do
+  # some action which sets socket connection state in app
+end
+
+client.on(:disconnect) do
+  # some action which sets socket connection state in app
+end
+
+channel = client.subscribe(:chat)
+
+channel.on :message do |message|
+  # Tell the app you've received this message.
+  # The payload is in message.data.
+  puts "channel => #{channel.name} : event => #{message.event} : data => #{message.data}"
+end
+```
+
+## Sending Messages Client->Server
+
+Set up a message handler on the server:
+
+```ruby
+require 'robe/server/sockets'
+
+# Handle :message events in the "sockets" channel.
+# @param message [Robe::Server::Sockets::Message] the message we received
+# @param connection [Faye::WebSocket] the client connection this is from
+Robe::Server::Sockets.on(:message, channel: 'sockets') do |message, _connection|
+  Robe::Server::Task.perform_async(message)
+end
+```
+
+Notice we don't do work directly on the message. We instead pass it off to a background worker. This is so that we can handle as many incoming messages as possible. To be able to send messages back to that channel, we can simply use the Server->Client message command specified above. Note the `perform` method here:
+
+```ruby
+require 'sidekiq'
+require 'robe/server/sockets'
+
+class Robe::Server::Task
+  include Sidekiq::Worker
+
+  # @param message [Robe::Server::Sockets::Message]
+  def perform(message)
+    # Simplest case, we send the message back out to everyone on the same channel
+    Robe::Server::Sockets[message.channel].send :message, message.data
+  end
+end
+```
+
