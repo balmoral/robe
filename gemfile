@@ -1,14 +1,16 @@
 source 'https://rubygems.org'
 
 gem 'opal',           :git => 'https://github.com/opal/opal' # 0.11.0.dev
+
 gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # for >= 0.11
 
-# gem 'opal-browser',   :git => 'https://github.com/opal/opal-browser' # for >= 0.11
-gem 'opal-browser',     :path => '/Users/col/dev/workspace/clones/opal-browser'
+gem 'opal-browser',   :git => 'https://github.com/opal/opal-browser' # for >= 0.11
+# gem 'opal-browser', :path => '/Users/col/dev/workspace/clones/opal-browser'
 
-gem 'cx-core',        :path => '/Users/col/dev/workspace/cx/gems/cx-core'
-gem 'cx-util',        :path => '/Users/col/dev/workspace/cx/gems/cx-util'
+gem 'cx-core', :git => 'https://github.com/balmoral/cx-core'
+# gem 'cx-core', :path => '/Users/col/dev/workspace/cx/gems/cx-core'
 
-# gem 'roda',        :path => '/Users/col/dev/workspace/clones/roda'
+gem 'cx-util', :git => 'https://github.com/balmoral/cx-util'
+# gem 'cx-util', :path => '/Users/col/dev/workspace/cx/gems/cx-util'
 
 gemspec
