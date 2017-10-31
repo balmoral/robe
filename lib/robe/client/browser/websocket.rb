@@ -16,7 +16,7 @@ module Robe; module Client; module Browser
     # TODO: handlers should be by role & channel
 
     def initialize(url)
-      # trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
+      trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
       @native = `new WebSocket(url)`
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       add_handlers
