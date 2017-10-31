@@ -21,7 +21,7 @@ module Robe
 
     def load
       puts "#{__FILE__}[#{__LINE__}] : #{self.name}###{__method__} : SERVER=#{SERVER}"
-      Faye::WebSocket.load_adapter(SERVER)
+      Faye::WebSocket.load_adapter(SERVER) if SERVER == 'thin'
     end
 
   end

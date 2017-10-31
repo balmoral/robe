@@ -73,6 +73,15 @@ module Robe; module DB
       find
     end
 
+    def self.normalize_attrs(hash_from_db)
+      {}.tap do |result|
+        hash_from_db.each do |attr, value|
+          attr = attr.to_sym
+          result[attr] = value if attrs.include?(attr)
+        end
+      end
+    end
+
     # If the class is cache'd returns an array of models.
     # If the class is not cache'd returns a promise whose value is an array of models.
     def self.find(**filter)
@@ -87,7 +96,7 @@ module Robe; module DB
           raw == [raw] unless raw.is_a?(Array)
           raw.compact.map { |hash|
             hash[:__from_db__] = true
-            new(**hash.symbolize_keys) # keyword arg keys must be symbols
+            new(normalize_attrs(hash)) # keyword arg keys must be symbols
           }
         end
       end
@@ -105,7 +114,7 @@ module Robe; module DB
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
           if Hash === raw
             raw[:__from_db__] = true
-            new(**raw.symbolize_keys) # keyword arg keys must be symbols
+            new(normalize_attrs(raw)) # keyword arg keys must be symbols
           elsif raw.nil?
             trace __FILE__,  __LINE__, self, __method, " : resolved model = NIL"
             nil

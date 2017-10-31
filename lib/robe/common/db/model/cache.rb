@@ -83,7 +83,10 @@ module Robe; module DB; class Model
           model_class.cache = self # from now on we want the class to go through self
         end
       end
-      Robe::Promise.when(*promises) { self }
+      Robe::Promise.when(*promises) {
+        trace __FILE__, __LINE__, self, __method__, " : ALL CACHE CLASSES LOADED"
+        self
+      }
     end
 
     def stop

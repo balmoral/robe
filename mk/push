@@ -1,5 +1,5 @@
 sh mk/build
-git remote add origin https://github.com/balmoral/robe.git
-git push -u origin master
+# git remote add origin https://github.com/balmoral/robe.git
+# git push -u origin master
 git push
 # gem push robe-0.1.0.gem

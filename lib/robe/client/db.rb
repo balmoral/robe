@@ -19,13 +19,16 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__, "(target=#{target}, method=#{method}, args=#{args})"
         promise = server.perform_task(:dbop, target: target, method: method, args: args)
         promise.then do |response|
-          # trace __FILE__, __LINE__, self, __method__, " : response[:success]=#{response[:success]} response[:error]=#{response[:error]} response[:data]=#{response[:data].class}"
+          trace __FILE__, __LINE__, self, __method__, " : target=#{target} method=#{method} args==#{args} : response[:success]=#{response[:success]} response[:error]=#{response[:error]} response[:data]=#{response[:data].class}"
           response = response.symbolize_keys
           if response[:success]
             Robe::Promise.value(response[:data])
           else
             Robe::Promise.error(response[:error])
           end
+        end.fail do |error|
+          trace __FILE__, __LINE__, self, __method__, " : target=#{target} method=#{method} args==#{args} : error : #{error}"
+          Robe::Promise.error(error)
         end
       end
 

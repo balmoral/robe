@@ -23,21 +23,22 @@ module Robe
         end
 
         # nil will use default
-        def mongo_host
-          @mongo_host
+        def mongo_hosts
+          @mongo_hosts
         end
 
+        # should include port
+        # e.g. '127.0.0.1:27017'
+        # e.g. 'xy123456-a0.mongolab.com:49664'
         def mongo_host=(h)
-          @mongo_host = h
+          @mongo_hosts = [h]
         end
 
-        # nil will use default
-        def mongo_port
-          @mongo_port
-        end
-
-        def mongo_port=(p)
-          @mongo_port = p
+        # multiple hosts for replica sets...
+        # should include ports
+        # e.g. ['xy123456-a0.mongolab.com:49664', 'xy654321-a0.mongolab.com:49664']
+        def mongo_hosts=(h)
+          @mongo_hosts = h.to_a
         end
 
         def mongo_database
@@ -47,6 +48,22 @@ module Robe
 
         def mongo_database=(s)
           @mongo_database = s
+        end
+
+        def mongo_user
+          @mongo_user
+        end
+
+        def mongo_user=(user)
+          @mongo_user = user
+        end
+
+        def mongo_password
+          @mongo_password
+        end
+
+        def mongo_password=(password)
+          @mongo_password = password
         end
 
         def client_app_path

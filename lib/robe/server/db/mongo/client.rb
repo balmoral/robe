@@ -3,20 +3,22 @@ module Robe; module DB
     class Client
       include Robe::DB::Mongo::Util
 
-      DEFAULT_HOST = '127.0.0.1'
-      DEFAULT_PORT = '27017'
+      LOCAL_HOST = '127.0.0.1:27017'
 
-      attr_reader :host, :port, :native, :database
+      attr_reader :uri, :native
 
-      def initialize(host: nil, port: nil, database: nil, logger_level: nil)
-        host ||= DEFAULT_HOST
-        port ||= DEFAULT_PORT
+      # hosts is array of strings with 'address:port'
+      # - %w(127.0.0.1:27017)
+      # - or multiple hosts for replica sets...
+      # - e.g. %w(xy123456-a0.mongolab.com:49664 xy654321-a0.mongolab.com:49664)
+      def initialize(hosts:, database:, user:, password:, logger_level: nil)
         self.logger_level = logger_level if logger_level
-        @host, @port = host, port
-        # additional addresses for replica set(s)
-        @native = ::Mongo::Client.new("mongodb://#{host}:#{port}")
-        use(database) if database
-        at_exit { close }
+        trace __FILE__, __LINE__, self, __method__, " @uri=#{@uri}"
+        @native = ::Mongo::Client.new(hosts, database: database, user: user, password: password)
+        at_exit do
+          trace __FILE__, __LINE__, self, __method__, ' : disconnecting mongo client'
+          close
+        end
       end
 
       # Returns a hash of various stats.
@@ -24,35 +26,28 @@ module Robe; module DB
         native.command('dbstats' => 1).documents.first
       end
 
-      def use(database_name)
-        database_name = database_name.to_s
-        native_db = native.use(database_name) # is actually a Mongo::Client
-        @database = Robe::DB::Mongo::Database.new(self, native_db)
+      def database
+        @database ||= Robe::DB::Mongo::Database.new(self, native.database)
       end
 
       def close
         native? do
           native.close
-          @database = nil
           @native = nil
         end
       end
       alias_method :disconnect, :close
       
       def database_names
-        native? do
-          native.database_names.map(&:to_s)
-        end
+        native.database_names.map(&:to_s)
       end
 
       # will return info for all databases if no names given
       def database_info(*names)
         names = names.map(&:to_s)
-        native? do
-          info = native.list_databases
-          info = info.select { |e| names.include?(e[:name]) } unless names.empty?
-          names.size == 1 ? info.first : info
-        end
+        info = native.list_databases
+        info = info.select { |e| names.include?(e[:name]) } unless names.empty?
+        names.size == 1 ? info.first : info
       end
 
       def native?(&block)

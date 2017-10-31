@@ -12,8 +12,8 @@ module Robe; module Redux
       unless store.is_a?(Robe::Redux::Store) || store.is_a?(Robe::Redux::Atom)
         raise ArgumentError, "#{self.class.name}##{__method__} store must be Redux store (called from #{where})"
       end
-      unless bound_block || state_method
-        raise ArgumentError, "#{self.class.name}##{__method__} expects a bound block or state method (called from #{where})"
+      unless bound_block
+        raise ArgumentError, "#{self.class.name}##{__method__} expects a bound block (called from #{where})"
       end
       @store, @bound_block = store, bound_block
       @state_method, @state_method_args = state_method, state_method_args
@@ -36,11 +36,15 @@ module Robe; module Redux
     def changed?(prior)
       if @state_method
         # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} @state_method=#{@state_method} prior=#{prior} current=#{current}"
-        prior = prior ? prior.send(@state_method, *@state_method_args) : nil
-        current = if store.is_a?(Robe::Redux::Atom)
-          store.send(@state_method, *@state_method_args)
+        if @state_method.is_a?(Proc)
+          @state_method.call(prior)
         else
-          store.state ? store.state.send(@state_method, *@state_method_args) : nil
+          prior = prior ? prior.send(@state_method, *@state_method_args) : nil
+          current = if store.is_a?(Robe::Redux::Atom)
+            store.send(@state_method, *@state_method_args)
+          else
+            store.state ? store.state.send(@state_method, *@state_method_args) : nil
+          end
         end
         # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} @state_method=#{@state_method} prior=#{prior} current=#{current}"
         prior != current
@@ -50,15 +54,7 @@ module Robe; module Redux
     end
 
     def resolve(prior)
-      if bound_block
-        bound_block.call(prior)
-      elsif @state_method
-        if store.is_a?(Robe::Redux::Atom)
-          store.send(@state_method, *@state_method_args)
-        else
-          store.state ? store.state.send(@state_method, *@state_method_args) : nil
-        end
-      end
+      bound_block.call(prior)
     end
 
     def initial
