@@ -13,7 +13,7 @@ module Robe
       # expects roda request
       def route(r)
         r.on 'socket' do
-          # trace __FILE__, __LINE__, self, __method__, " : r.on 'socket' r=#{r.inspect}"
+          trace __FILE__, __LINE__, self, __method__, " : r.on 'socket' r=#{r.inspect}"
           r.run manager
         end
       end
