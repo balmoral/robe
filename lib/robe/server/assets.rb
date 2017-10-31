@@ -229,6 +229,7 @@ module Robe
 
       def init_source_maps
         if Opal::Config.source_map_enabled = config.source_maps? && development?
+          trace __FILE__, __LINE__, self, __method__, ' > > > > > SOURCE MAPS ENABLED < < < < <'
           ::Opal::Sprockets::SourceMapHeaderPatch.inject!(source_map_prefix)
           opal_source_map_server = Opal::SourceMapServer.new(sprockets, source_map_prefix)
           builder = Rack::Builder.new do
