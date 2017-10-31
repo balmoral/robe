@@ -5,14 +5,6 @@ module Robe
 
       class << self
 
-        def secure_sockets
-          !!@secure_sockets
-        end
-
-        def secure_sockets=(bool)
-          @secure_sockets = bool
-        end
-
         def source_maps?
           !!@source_maps
         end
