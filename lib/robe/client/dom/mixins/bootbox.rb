@@ -1,3 +1,4 @@
+require 'opal'
 # see http://bootboxjs.com/documentation.html
 
 # NB: you need to bring your own `bootbox.js` or `bootbox.min.js` and bootstrap files
