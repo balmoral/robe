@@ -1,3 +1,4 @@
+require 'opal'
 require 'robe/common/trace'
 require 'robe/client/router'
 require 'robe/client/component'
