@@ -13,11 +13,12 @@ module Robe; module Client; module Browser
       @instance ||= new(url)
     end
 
-    # TODO: handlers should be by role & channel
+    # TODO: timeout
 
     def initialize(url)
       trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
       @native = `new WebSocket(url)`
+      trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       add_handlers
       on(:open) do
@@ -30,8 +31,12 @@ module Robe; module Client; module Browser
       end
       on(:error) do |error|
         trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
-        # @connected = false
+        @connected = false
       end
+    end
+
+    def timeout
+
     end
 
     # Expects any object that can JSON can be generated from.
@@ -90,9 +95,9 @@ module Robe; module Client; module Browser
               ruby_event = event;
             }
             #{
-              # trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} ruby_event=#{`ruby_event`}"
+              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} ruby_event=#{`ruby_event`}"
               @handlers[event_name].each do |handler|
-                handler.call `ruby_event`
+                handler.call(`ruby_event`)
               end
             }
           };
