@@ -130,7 +130,7 @@ module Robe
       private
 
       def init_socket
-        # trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
+        trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
         @websocket = Robe::Client::Browser::WebSocket.instance(url)
         # @websocket.auto_reconnect!
         on_open do |event|
