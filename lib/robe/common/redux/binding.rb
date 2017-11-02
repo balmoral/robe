@@ -54,7 +54,7 @@ module Robe; module Redux
     end
 
     def resolve(prior)
-      bound_block.call(prior)
+      @bound_block && @bound_block.call(prior)
     end
 
     def initial
@@ -65,9 +65,10 @@ module Robe; module Redux
       if @subscription_id
         store.unsubscribe(@subscription_id)
         @subscription_id = nil
-        @bound_block = ->{
-          Robe.logger.warn "binding #{where} store=#{store.class} @subscription_id=#{@subscription_id} object_id=#{object_id} has been unbound. Likely cause is nested bindings."
-        }
+        @bound_block = nil
+        # ->{
+        #   Robe.logger.warn "binding #{where} store=#{store.class} @subscription_id=#{@subscription_id} object_id=#{object_id} has been unbound. Likely cause is nested bindings."
+        # }
       end
     end
 
