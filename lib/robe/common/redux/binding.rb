@@ -60,11 +60,11 @@ module Robe; module Redux
     # when a binding is unbound ()i.e. it was in a branch of a tree which has been replaced)
     # its bound_block will be nil. However...
     def resolve(prior)
-      @bound_block && @bound_block.call(prior)
+      bound? && @bound_block.call(prior)
     end
 
     def initial
-      resolve(store)
+      @bound_block.call(store)
     end
 
     def unbind

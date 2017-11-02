@@ -197,16 +197,16 @@ module Robe; module Client
     # the resolved binding will become an attribute of the element
     def resolve_attribute_binding(element, attr, binding)
       element_bindings(element, init: true) << binding
-      binding.bind do
-        update_element_attribute(binding, element, attr)
+      binding.bind do |prior_state|
+        update_element_attribute(binding, prior_state, element, attr)
       end
       binding.initial
     end
 
-    def update_element_attribute(binding, element, attr)
+    def update_element_attribute(binding, prior_state, element, attr)
       # trace __FILE__, __LINE__, self, __method__, " :action=#{action} store=#{binding.store.class.name} state=#{binding.store.state} element=#{element}"
       window.animation_frame do
-        value = binding.resolve
+        value = binding.resolve(prior_state)
         # trace __FILE__, __LINE__, self, __method__, " :value=#{value} "
         set_attribute(element, attr, value)
       end
@@ -257,18 +257,14 @@ module Robe; module Client
       element_bindings(element, init: true) << binding
       current_content = sanitize_content(binding.initial, element)
       binding.bind do |prior_state|
-        if binding.bound?
-          # remember for next time!
-          new_content = binding.resolve(prior_state)
-          # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
-          new_content = sanitize_content(new_content, element)
-          # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
-          old_content = current_content
-          replace_bound_content(element, new_content, old_content)
-          current_content = new_content
-        else
-          current_content = nil
-        end
+        # remember for next time!
+        new_content = binding.resolve(prior_state)
+        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
+        new_content = sanitize_content(new_content, element)
+        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
+        old_content = current_content
+        replace_bound_content(element, new_content, old_content)
+        current_content = new_content
       end
       current_content
     end
@@ -378,9 +374,7 @@ module Robe; module Client
         descend(element) do |descendant|
           # trace __FILE__, __LINE__, self, __method__, " : element=#{element} descendant=#{descendant}"
           unbind_element_bindings(descendant)
-          true
         end
-        unbind_element_bindings(element)
       end
     end
 
@@ -399,11 +393,9 @@ module Robe; module Client
 
     # calling given block for node and all its descendants
     def descend(node, level: 0, &block)
+      block.call(node)
       node.children.each do |child|
-        # block.call child
-        # break unless descend(child, level: level + 1, &block)
         descend(child, level: level + 1, &block)
-        block.call child
       end
     end
 
