@@ -389,7 +389,7 @@ module Robe; module Client
       bindings = element_bindings(element)
       # trace __FILE__, __LINE__, self, __method__, " : element=#{element} bindings=#{bindings}"
       if bindings
-        bindings.dup.each do |binding| # dup because we delete as we go ?
+        bindings.each do |binding|
           # trace __FILE__, __LINE__, self, __method__, " : element=#{element} binding=#{binding || 'NIL'}"
           binding.unbind
         end
@@ -400,8 +400,10 @@ module Robe; module Client
     # calling given block for node and all its descendants
     def descend(node, level: 0, &block)
       node.children.each do |child|
+        # block.call child
+        # break unless descend(child, level: level + 1, &block)
+        descend(child, level: level + 1, &block)
         block.call child
-        break unless descend(child, level: level + 1, &block)
       end
     end
 
