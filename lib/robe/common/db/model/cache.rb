@@ -70,9 +70,9 @@ module Robe; module DB; class Model
     def load(&callback)
       promises = []
       scope.each do |model_class, filter|
-        unless model_class.cache.nil?
-          fail "#{model_class} is already using a cache of type #{model_class.cache.class}"
-        end
+        # unless model_class.cache.nil?
+        #   fail "#{model_class} is already using a cache of type #{model_class.cache.class}"
+        # end
         @prior_caches[model_class] = model_class.cache
         model_class.cache = nil # we want the class to go to db
         filter = {} if filter.nil? || filter == :all
