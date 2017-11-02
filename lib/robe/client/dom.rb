@@ -257,14 +257,18 @@ module Robe; module Client
       element_bindings(element, init: true) << binding
       current_content = sanitize_content(binding.initial, element)
       binding.bind do |prior_state|
-        # remember for next time!
-        new_content = binding.resolve(prior_state)
-        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
-        new_content = sanitize_content(new_content, element)
-        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
-        old_content = current_content
-        replace_bound_content(element, new_content, old_content)
-        current_content = new_content
+        if binding.bound?
+          # remember for next time!
+          new_content = binding.resolve(prior_state)
+          # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
+          new_content = sanitize_content(new_content, element)
+          # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
+          old_content = current_content
+          replace_bound_content(element, new_content, old_content)
+          current_content = new_content
+        else
+          current_content = nil
+        end
       end
       current_content
     end

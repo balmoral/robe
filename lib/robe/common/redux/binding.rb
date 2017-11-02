@@ -33,6 +33,10 @@ module Robe; module Redux
       end
     end
 
+    def bound?
+      !!@subscription_id
+    end
+
     def changed?(prior)
       if @state_method
         # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} @state_method=#{@state_method} prior=#{prior} current=#{current}"
@@ -53,6 +57,8 @@ module Robe; module Redux
       end
     end
 
+    # when a binding is unbound ()i.e. it was in a branch of a tree which has been replaced)
+    # its bound_block will be nil. However...
     def resolve(prior)
       @bound_block && @bound_block.call(prior)
     end
@@ -65,10 +71,9 @@ module Robe; module Redux
       if @subscription_id
         store.unsubscribe(@subscription_id)
         @subscription_id = nil
-        @bound_block = nil
-        # ->{
-        #   Robe.logger.warn "binding #{where} store=#{store.class} @subscription_id=#{@subscription_id} object_id=#{object_id} has been unbound. Likely cause is nested bindings."
-        # }
+        @bound_block = ->{
+          Robe.logger.warn "binding #{where} store=#{store.class} @subscription_id=#{@subscription_id} object_id=#{object_id} has been unbound. Likely cause is nested bindings."
+        }
       end
     end
 
