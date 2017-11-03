@@ -65,7 +65,7 @@ class String
   # characters removed.
   # EG 'John Smith' becomes 'JS'
   def caps_only
-    gsub /[[a-z],\d,\s,[:punct:]]/, ''
+    gsub(/[[a-z],\d,\s,[:punct:]]/, '')
   end
 
   # Returns camel case string from a snake case.

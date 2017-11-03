@@ -162,7 +162,7 @@ module Robe; module DB
       end
 
       # call super with remaining args
-      super **args
+      super(**args)
 
       # now assign any local_attr
       local_attrs.each do |key, value|

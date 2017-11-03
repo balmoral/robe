@@ -7,7 +7,7 @@ module Robe; module Redux
     # delegate read methods which do not affect state :
     #   if the corresponding Array method would return a new Array
     #   then so will the method here
-    read_state *%w(
+    read_state(*%w(
       [] < <= > >=
       any? assoc
       compare_by_identity compare_by_identity?
@@ -20,20 +20,20 @@ module Robe; module Redux
       length member? merge
       rassoc size value? values values_at
       to_a to_s to_h to_hash
-    ).map(&:to_sym)
+    ).map(&:to_sym))
 
     # reduce methods / actions which change state
     # but require a duplicate of the state to be made in
     # generated reducer before calling the mutate method
     # on the new state
-    reduce_dup *%w(
+    reduce_dup(*%w(
       []=
       clear compact delete delete_if
       invert keep_if
       merge!
       rehash reject replace select
       update
-    ).map(&:to_sym)
+    ).map(&:to_sym))
 
     def initialize(initial = {}, &block)
       super(initial, &block)

@@ -15,9 +15,11 @@ module Robe; module DB;
 
         name_space = model_class.name.split('::')[0..-2].join('::')
 
-        super **args.merge(
-          model_class: model_class,
-          foreign_class_name: "#{name_space}::#{args[:collection].to_s.singularize.camel_case}"
+        super(
+          **args.merge(
+            model_class: model_class,
+            foreign_class_name: "#{name_space}::#{args[:collection].to_s.singularize.camel_case}"
+          )
         )
 
         # trace __FILE__, __LINE__, self, __method__, " : assoc: model_class=#{model_class} type=#{type} collection=#{collection} local_key=#{local_key} local_attr=#{local_attr}"
