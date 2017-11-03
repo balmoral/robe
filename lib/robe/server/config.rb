@@ -1,9 +1,21 @@
+require 'securerandom'
 
 module Robe
   module Server
     class Config
 
       class << self
+
+        def app_secret
+          @app_secret ||= (
+            ENV['APP_SECRET'] ||
+            SecureRandom.hex(64)
+          )
+        end
+
+        def app_secret=(string)
+          @app_secret = string
+        end
 
         def source_maps?
           !!@source_maps

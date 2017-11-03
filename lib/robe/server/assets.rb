@@ -29,7 +29,7 @@ module Robe
       end
 
       def route(r)
-        # puts "#{__FILE__}[#{__LINE__}] #{self.class.name}##{__method__} : r=>#{r.inspect}"
+        puts "#{__FILE__}[#{__LINE__}] #{self.class.name}##{__method__} : r=>#{r.inspect}"
         r.get 'favicon.ico' do
            ''
         end
@@ -55,7 +55,8 @@ module Robe
             end
           end
         end
-        r.root do # load for any path other than assets requests above
+        # r.root do # load for any path other than assets requests above
+        r.get do
           # trace __FILE__, __LINE__, self, __method__, ' : r.root=> index_html'
           index_html
         end

@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'roda', '>= 3.0'
   spec.add_dependency 'logger'
   spec.add_dependency 'mongo', '>= 2.4'
+  spec.add_dependency 'rack_csrf'
   spec.add_dependency 'faye-websocket', '~> 0.10.4' # for sockets
   spec.add_dependency 'redis'                       # for sockets
   spec.add_dependency 'concurrent-ruby', '~> 1.0.5' # for tasks

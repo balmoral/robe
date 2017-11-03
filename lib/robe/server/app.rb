@@ -46,16 +46,23 @@ module Robe; module Server
       tasks.register(name, lambda)
     end
 
+    # for r.session[:...]
+    use  Rack::Session::Cookie, secret: config.app_secret
+
     # :head - treat HEAD requests like GET requests with an empty response body
     plugin :head
 
     # :json - Allows match blocks to return arrays and hashes, using a json representation as the response body.
     plugin :json, classes: [Array, Hash, Robe::Model]
 
+    # cross site request forgery protection
+    plugin :csrf
+
+
     # we expect only asset or socket requests
     route do |r|
+      sockets.route(r) # sockets first
       assets.route(r)
-      sockets.route(r)
     end
 
     # FYI called for every router request
