@@ -68,30 +68,16 @@ module Robe
             when 'database'
               mongo_db
             else
-              c = mongo_db.collections[target]
-              unless c
-                return {
-                  success: false,
-                  response: "'#{target}' is not a mongo database collection"
-                }
+              collection = mongo_db.collection(target)
+              unless collection
+                raise DBError, "'#{target}' is not a mongo database collection"
               end
-              trace __FILE__, __LINE__, self, __method__, " : mongo_db.collections[#{target}] => #{c}"
-              c
-          end
-          if method.to_sym == :insert_one
-            trace __FILE__, __LINE__, self, __method__, " : args[0]['_id'] = #{args[0]['_id']} args[0][:_id] = #{args[0][:_id]}"
+              collection
           end
           begin
-            {
-              success: true,
-              data: target.send(method, *args)
-            }
+            target.send(method, *args)
           rescue Mongo::Error => e
-            trace __FILE__, __LINE__, self, __method__, " : #{e}"
-            {
-              success: false,
-              error: e.to_s
-            }
+            raise DBError, "'Mongo::Error => #{e}"
           end
         end
 
@@ -101,16 +87,7 @@ module Robe
         # `method` should be a method appropriate to target
         # `args` should be an array in json format
         def op(target, method, *args)
-          result = sync_op(target, method, *args)
-          if result[:success]
-            Robe::Promise.value(result[:data])
-          else
-            Robe::Promise.error(result[:error])
-          end
-        end
-
-        def self.op(target, method, *args)
-          instance.op(target, method, *args)
+          sync_op(target, method, *args).as_promise
         end
 
       end

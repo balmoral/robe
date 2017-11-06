@@ -22,6 +22,7 @@ module Robe
   def logger
     @logger ||= Robe::Logger.instance
   end
+
 end
 
 

@@ -464,16 +464,18 @@ class Object
     end
   end
 
-  alias_method :to_promise_value, :to_promise
-  
+  alias_method :as_promise, :to_promise
+
   def to_promise_error
     Robe::Promise.error(self)
   end
 
+  alias_method :as_promise_error, :to_promise_error
 end
 
 module Enumerable
   def to_promise_when
     Robe::Promise.when(*self.map(&:to_promise))
   end
+  alias_method :as_promise_when, :to_promise_when
 end

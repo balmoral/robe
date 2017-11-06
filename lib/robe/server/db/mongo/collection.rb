@@ -108,7 +108,6 @@ module Robe; module DB
       end
 
       def drop
-        database.collections.delete[name]
         native.drop
       end
 

@@ -144,6 +144,10 @@ module Robe; module DB; class Model
       self
     end
 
+    def clear(model_class)
+      @models[model_class] = []
+    end
+
     private
 
     def init_vars

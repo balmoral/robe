@@ -29,14 +29,19 @@ module Robe; module DB
         @collections
       end
 
-      # Returns a Collection with given name, or nil
-      def [](collection_name)
-        collections[collection_name.to_s]
+      def collection(name, create: false)
+        collection = collections[name.to_s]
+        if collection.nil? && create
+          collection = create_collection(name)
+        end
+        collection
       end
 
-      alias_method :collection, :[]
+      # Returns a Collection with given name, or nil
+      def [](collection_name)
+        collection(collection_name)
+      end
 
-      # private api
       def reset_collections
         @collections = nil
       end
@@ -47,20 +52,32 @@ module Robe; module DB
       end
 
       # Create a collection and return it.
-      def create_collection(name, **opts)
-        c = native.collection(name).create(name, opts)
-        collections[name] = Robe::DB::Mongo::Collection.new(c)
+      def create_collection(name)
+        collection= native.collection(name)
+        collection.create
+        collections[name] = Robe::DB::Mongo::Collection.new(self, collection)
       end
 
+      def create_collections(*names)
+        names.each do |name|
+          create_collection(name)
+        end
+      end
+      
       def drop_collection(collection_name)
         # collection will remove itself from our collections
-        self[collection_name].drop
+        collection = self[collection_name]
+        collection.drop if collection
+      end
+
+      def drop_collections(*collection_names)
+        collection_names.each do |name|
+          drop_collection(name)
+        end
       end
 
       def drop_all_collections
-        collection_names.dup.each do |n|
-          drop_collection(n)
-        end
+        drop_collections(*collection_names)
       end
 
       def collection_stats(*collection_names)

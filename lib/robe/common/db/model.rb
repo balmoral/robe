@@ -22,6 +22,7 @@ end end
 
 require 'robe/common/db/model/associations'
 require 'robe/common/db/model/cache'
+require 'robe/common/db/model/csv_io'
 
 # TODO: make more isomorphic?
 if RUBY_PLATFORM == 'opal'
@@ -32,6 +33,7 @@ end
 
 module Robe; module DB
   class Model
+    extend Robe::DB::Model::CSV_IO_Methods
     include Robe::DB::Model::Associations
     include Robe::Util
 
@@ -77,15 +79,23 @@ module Robe; module DB
       {}.tap do |result|
         hash_from_db.each do |attr, value|
           attr = attr.to_sym
-          result[attr] = value if attrs.include?(attr)
+          result[attr] = value if attr == :__from_db__ || attrs.include?(attr)
         end
       end
     end
 
+    # WARNING: destructive : destroys all data in db collection
+    # and clears cache of any cached class instances.
+    def self.drop
+      cache.clear(self) if cache
+      db.drop(collection_name)
+    end
+    
     # If the class is cache'd returns an array of models.
     # If the class is not cache'd returns a promise whose value is an array of models.
     def self.find(**filter)
       __method = __method__
+      filter[:_id] = filter[:id] if filter[:id]
       if cache
         # trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) : checking cache"
         cache.find(self, filter)
@@ -96,7 +106,7 @@ module Robe; module DB
           raw == [raw] unless raw.is_a?(Array)
           raw.compact.map { |hash|
             hash[:__from_db__] = true
-            new(normalize_attrs(hash)) # keyword arg keys must be symbols
+            new(**normalize_attrs(hash)) # keyword arg keys must be symbols
           }
         end
       end
@@ -114,7 +124,7 @@ module Robe; module DB
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
           if Hash === raw
             raw[:__from_db__] = true
-            new(normalize_attrs(raw)) # keyword arg keys must be symbols
+            new(**normalize_attrs(raw)) # keyword arg keys must be symbols
           elsif raw.nil?
             trace __FILE__,  __LINE__, self, __method, " : resolved model = NIL"
             nil
@@ -141,7 +151,8 @@ module Robe; module DB
 
     # TODO: handle association intelligently.
     def initialize(**args)
-
+      args[:_id] = args[:id] if args[:id]
+      
       if RUBY_PLATFORM == 'opal'
         args = args.symbolize_keys
       end
@@ -186,7 +197,7 @@ module Robe; module DB
       # trace __FILE__, __LINE__, self, __method__, "(#{attr}, #{caller.class})"
       unless caller.is_a?(self.class) || caller.class.name.include?('Robe::DB')
         # trace __FILE__, __LINE__, self, __method__, " : failed"
-        fail "#{self.class.name}##{__method__}(#{attr}) is only for internal Robe::DB use, not #{caller.class}"
+        fail "#{self.class.name}##{__method__}(#{attr}) is only for internal Robe::DB use, try ##{attr}= instead"
       end
       # trace __FILE__, __LINE__, self, __method__, " :  calling super(attr)"
       r = super(attr)
@@ -250,7 +261,7 @@ module Robe; module DB
         promises = []
         self.class.has_one_associations.each do |assoc|
           if assoc.owner
-            if (one = send(assoc.local_attr))
+            send(assoc.local_attr).to_promise.then do |one|
               promises << one.delete
             end
           end
@@ -262,16 +273,23 @@ module Robe; module DB
         promises = []
         self.class.has_many_associations.each do |assoc|
           if assoc.owner
-            if (many = send(assoc.local_attr))
+            assoc_promises = []
+            send(assoc.local_attr).to_promise.then do |many|
               many.each do |one|
-                promises << one.delete
+                trace __FILE__, __LINE__, self, __method__, " deleting associated : #{one}"
+                one.delete.then do |result|
+                  assoc_promises << result.to_promise
+                end.fail do |error|
+                  assoc_promises << Robe::Promise.error(error)
+                end
               end
+              promises << Robe::Promise.when(*assoc_promises)
+            end.fail do |error|
+              promises << Robe::Promise.error(error)
             end
           end
         end
-        Robe::Promise.when(*promises) do
-          self
-        end
+        Robe::Promise.when(*promises)
       end
     end
 
@@ -286,7 +304,9 @@ module Robe; module DB
     # ensures associations handled as required for db
     # TODO: should also insert associations
     # Returns a promise with self as value
-    def insert
+    # Only ignore associations if, for instance, reloading db dump
+    # and referential integrity can be guaranteed.
+    def insert(ignore_associations: false)
       unless new?
         fail("#{__FILE__},  #{__LINE__} : #{self.class} : should be new (not loaded from db) - cannot insert")
       end
@@ -295,11 +315,12 @@ module Robe; module DB
         fail("#{__FILE__},  #{__LINE__} : #{self.class} : with id #{id} already in cache - cannot insert")
       else
         # TODO: unwind associations if insert fails
-        save_associations.then do
+        promise = ignore_associations ? Robe::Promise.value(nil) : save_associations
+        promise.then do
           self.class.db.insert_one(self.class.collection_name, to_db_hash)
         end.then do
           @from_db = true
-          cache.insert(self) # no filter
+          cache.insert(self) if cache # no filter
           Robe::Promise.value(self)
         end
       end

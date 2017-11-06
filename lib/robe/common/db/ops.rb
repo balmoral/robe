@@ -1,6 +1,7 @@
 require 'robe/common/util'
 require 'robe/common/promise'
 
+# NB ******
 # to be included in either Robe::Client::DB or Robe::Server::DB
 # to support isomorphic DB interface
 module Robe; module Shared
@@ -19,6 +20,14 @@ module Robe; module Shared
         # Returns a promise.
         def collection_names
           op(:database, :collection_names)
+        end
+
+        def create(collection)
+          op(collection, :create)
+        end
+
+        def drop(collection)
+          op(collection, :drop)
         end
 
         # Returns a promise.
@@ -176,6 +185,10 @@ module Robe; module Shared
         # Returns a promise.
         def bulk_write(collection, ops)
           op(collection, :bulk_write, ops)
+        end
+
+        def drop_collection(name)
+          op
         end
       end
 
