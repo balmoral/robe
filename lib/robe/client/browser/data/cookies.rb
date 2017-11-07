@@ -4,58 +4,40 @@
 #   ref: https://www.nczonline.net/blog/2009/05/12/cookies-and-security/
 
 require 'robe/client/browser/browser_ext/cookies'
-require 'robe/common/model'
-require 'robe/common/redux/stores/model'
+require 'robe/common/redux/atom'
 
 # TODO: Cookies is a mess
 
 module Robe; module Browser
-  class Cookies < Robe::Redux::ModelStore
+  class Cookies < Robe::Redux::Atom
     include Enumerable
 
-    class State < Robe::Model
-      include Enumerable
-
-      attr :document, :change
-
-      def self.read_methods
-        [:[], :keys, :values, :each, :options]
-      end
-
-      def self.write_methods
-        [:[]=, :delete, :clear]
-      end
-
-      def initialize(document, change = nil)
-        super(document: document, change: change)
-        @cookies = ::Browser::Cookies.new(document)
-      end
-
-      (read_methods + write_methods).each do |method|
-        define_method(method) do |*args, &block|
-          @cookies.send(method, *args, &block)
-        end
-      end
-
-      def cookies
-        @cookies
-      end
-
-    end
-
-    model State
+    attr :document, :change, :cookies
 
     def initialize(document)
-      super State.new(document: document)
-      # state.cookies.on_change method(:on_change)
+      super(
+        document: document,
+        cookies: ::Browser::Cookies.new(document),
+        change: nil
+        )
     end
 
     def user=(user, expiry: Time.now + 60 * 60 * 24)
       self[:user] = user, { expires: expiry, secure: true }
     end
 
-    def on_change(**args)
-      dispatch(:change, args)
+    %i([] keys values each options).each do |method|
+      define_method(method) do |*args, &block|
+        cookies.send(method, *args, &block)
+      end
+    end
+
+    %i([]= delete clear).each do |method|
+      define_method(method) do |*args, &block|
+        cookies = ::Browser::Cookies.new(document)
+        cookies.send(method, *args, &block)
+        mutate!(cookies: cookies)
+      end
     end
 
   end

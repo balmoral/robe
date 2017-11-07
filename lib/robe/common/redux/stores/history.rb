@@ -1,31 +1,11 @@
 # http://redux.js.org/docs/recipes/ImplementingUndoHistory.html
 
-require 'robe/common/model'
-require 'robe/common/redux/stores/model'
+require 'robe/common/redux/atom'
 
 module Robe; module Redux
-  class History < Robe::Redux::ModelStore
-
-    class State < Robe::Model
+  class History < Robe::Redux::Atom
 
       attr :max_size, :version, :past, :present, :future
-
-      def self.read_state_methods
-        super + [
-          :past?, :now?, :present?, :future?,
-          :now, :can_undo?, :can_redo?,
-          :versions
-        ]
-      end
-
-      def self.reduce_dup_methods
-        super + [
-          :clear, :go_to_version,
-          :now!, :present!,
-          :undo, :back,
-          :redo, :forward
-        ]
-      end
 
       def self.initial(present: nil, max_size: nil)
         new(
@@ -58,10 +38,12 @@ module Robe; module Redux
 
       def undo
         if can_undo?
-          self.version = version - 1
-          self.future = [present] + future
-          self.present = past.last
-          self.past = past[0..-2]
+          mutate! do
+            self.version = version - 1
+            self.future = [present] + future
+            self.present = past.last
+            self.past = past[0..-2]
+          end
         end
       end
 
@@ -69,10 +51,12 @@ module Robe; module Redux
 
       def redo
         if can_redo?
-          self.version = version + 1
-          self.past = past + [present]
-          self.present = future.first
-          self.future = future[1..-1]
+          mutate! do
+            self.version = version + 1
+            self.past = past + [present]
+            self.present = future.first
+            self.future = future[1..-1]
+          end
         end
       end
 
@@ -92,10 +76,12 @@ module Robe; module Redux
       end
 
       def clear
-        self.version = 0
-        self.present = nil
-        self.past = []
-        self.future = []
+        mutate! do
+          self.version = 0
+          self.present = nil
+          self.past = []
+          self.future = []
+        end
       end
 
       # set the present state to given state,
@@ -114,13 +100,6 @@ module Robe; module Redux
       alias_method :now, :present
       alias_method :now!, :present!
       alias_method :now?, :present?
-    end
-
-    model State
-
-    def initialize(present: nil, max_size: nil)
-      super State.initial(present: present, max_size: max_size)
-    end
 
   end
 end end

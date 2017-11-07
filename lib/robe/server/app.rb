@@ -15,6 +15,8 @@ require 'robe/server/db'
 # require 'rack/protection'
 # roda ref: http://roda.jeremyevans.net/rdoc/files/README_rdoc.html
 
+# TODO: auth support
+# TODO: https://github.com/jeremyevans/rodauth
 
 module Robe; module Server
   class App < ::Roda
@@ -55,8 +57,8 @@ module Robe; module Server
     # :json - Allows match blocks to return arrays and hashes, using a json representation as the response body.
     plugin :json, classes: [Array, Hash, Robe::Model]
 
-    # cross site request forgery protection
-    plugin :csrf
+    # cross site request forgery protection, exempt json ??
+    plugin :csrf, skip_if: ->(req){req.env['CONTENT_TYPE'] =~ /application\/json/}
 
 
     # we expect only asset or socket requests

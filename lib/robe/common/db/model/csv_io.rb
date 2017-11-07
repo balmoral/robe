@@ -9,12 +9,13 @@ module Robe; module DB;
       # Assumes first line in csv is field names.
       # `field_procs` are optional procs for each field to preprocess field value.
       # `csv` may be a single csv with lines separated by "\n" or an array of csv strings.
-      def load_csv(csv, field_procs: nil, ignore_associations: false)
+      def load_csv(csv, field_procs: nil, map_attrs: {}, ignore_attrs: [], ignore_associations: false)
         lines = csv.is_a?(Array) ? csv : csv.split("\n")
         if lines.size > 1
           attrs = self.attrs
           csv_fields = lines[0].split(',').map(&:to_sym)
           csv_fields = csv_fields.map{|f| f == :id ? :_id : f}
+          csv_fields = csv_fields.map{|f| map_attrs[f] || f}
           csv_fields.each do |field|
             unless attrs.include?(field)
               raise Robe::DBError, "#{self.name}###{__method__} : csv field '#{field}' is not an attribute."
@@ -36,9 +37,11 @@ module Robe; module DB;
             end
             hash = {}
             values.each_with_index do |value, index|
-              proc = field_procs[index]
-              field = csv_fields[index]
-              hash[field] = proc ? proc.call(value) : value
+              attr = csv_fields[index]
+              unless ignore_attrs.include?(attr)
+                proc = field_procs[index]
+                hash[attr] = proc ? proc.call(value) : value
+              end
             end
             self.new(**hash).insert(ignore_associations: ignore_associations)
           end

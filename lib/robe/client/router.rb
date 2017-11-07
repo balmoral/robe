@@ -1,8 +1,8 @@
 require 'browser'
 require 'robe/common/trace'
-require 'robe/common/redux/stores/model'
+require 'robe/common/redux/atom'
 
-# Router is a Redux::Redux::ModelStore which keeps
+# Router is a Redux::Redux::Atom which keeps
 # the browser location and history in sync
 # with the store state.
 #
@@ -33,11 +33,12 @@ require 'robe/common/redux/stores/model'
 # REF: https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_is_a_URL
 
 module Robe; module Client
+  class Router < Robe::Redux::Atom
 
-  class Route < Robe::Model
     attr :path, :params
 
-    def initialize(path)
+    # parses path into path and params
+    def self.parse(path)
       # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
       parts = path.split('/').reject(&:empty?)
       # trace __FILE__, __LINE__, self, __method__, " : parts=#{parts}"
@@ -52,25 +53,17 @@ module Robe; module Client
       end
       path = '/' + parts.join('/')
       # trace __FILE__, __LINE__, self, __method__, " : path=#{path} params=#{params}"
-      super(path: path, params: params)
+      { path: path, params: params}
+    end
+
+    def initialize
+      super(**parse(location.path))
+      navigate_to('/')
     end
 
     def to_s
       "#{path} #{params}"
     end
-  end
-
-  class Router < Robe::Redux::Store
-
-    reduce :route do | path|
-      Route.new(path)
-    end
-
-    def initialize
-      super Route.new(location.path)
-      navigate_to('/')
-    end
-
     def window
       Robe::Client::Browser.window
     end
@@ -93,22 +86,22 @@ module Robe; module Client
       location.path
     end
 
-    # returns current Route (my state)
+    # returns current route (my state)
     def route
-      state
+      self
     end
 
     # called by app following `onpopstate` event (user pressed back or forward)
     def update
       # trace __FILE__, __LINE__, self, __method__, " : location.href=#{location.href} location.path=#{location.path} location.search=#{location.search}"
-      dispatch(:route, "#{location.path}#{location.search}")
+      mutate!(**parse("#{location.path}#{location.search}"))
     end
 
     def navigate_to(path)
       # trace __FILE__, __LINE__, self, __method__, "(#{path}) : history.push(#{path})"
       history.push(path, {state: 'dummy_state'}, Time.now.to_s) # need this
       # trace __FILE__, __LINE__, self, __method__, "(#{path}) : dispatch(:route, #{path})"
-      dispatch(:route, path)
+      mutate!(**parse(path))
     end
 
     alias_method :redirect_to, :navigate_to
@@ -123,5 +116,10 @@ module Robe; module Client
       # trace __FILE__, __LINE__, self, __method__, " : #{location.href} #{location.path}"
     end
 
+    private
+
+    def parse(path)
+      self.class.parse(path)
+    end
   end
 end end
