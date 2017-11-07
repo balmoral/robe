@@ -25,13 +25,12 @@ module Robe
         init_threads
       end
 
-      # task name should be symbol identifying the task
-      # lambda must be a lambda which performs the task
-      def register(name, lambda)
-        unless lambda.is_a?(Proc) && lambda.lambda?
-          raise ArgumentError, "task requires a lambda (not a #{lambda})"
+      # Task name should be symbol identifying the task
+      def register(name, lambda = nil, &block)
+        unless lambda || block
+          raise ArgumentError, 'task requires a lambda or block'
         end
-        tasks[name.to_sym] = lambda
+        tasks[name.to_sym] = lambda || block
       end
 
       private

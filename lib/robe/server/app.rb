@@ -43,9 +43,9 @@ module Robe; module Server
 
     # Register a server task.
     # `name` should be a symbol identifying the task.
-    # `lambda` must be a lambda which performs the task.
-    def self.task(name, lambda)
-      tasks.register(name, lambda)
+    # `lambda` or block perform the task.
+    def self.task(name, lambda = nil, &block)
+      tasks.register(name, lambda, &block)
     end
 
     # for r.session[:...]

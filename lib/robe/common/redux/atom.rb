@@ -203,6 +203,10 @@ module Robe; module Redux
       @observers = {}
     end
 
+    def to_h
+      @state.to_h
+    end
+
     def mutation_count
       @state.mutation_count
     end
