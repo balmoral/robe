@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'sprockets-sass', '2.0.0.beta1'
   spec.add_dependency 'json', '~> 2.1'
-  spec.add_dependency 'sass' '~> 3.5'
+  spec.add_dependency 'sass', '~> 3.5'
   spec.add_dependency 'uglifier', '~> 3.2'
   spec.add_dependency 'logger', '~> 1.2'
   spec.add_dependency 'mongo', '~> 2.4'
