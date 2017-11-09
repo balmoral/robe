@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version = Robe::VERSION
   spec.authors = ["Colin Gunn"]
   spec.email = ["colgunn@icloud.com"]
-  spec.summary = %q{Back end to front end in Ruby}
-  spec.description = %q{Back end to front end in Ruby}
+  spec.summary = %q{Ruby on both ends.}
+  spec.description = %q{A full Ruby framework for server and client.}
   spec.homepage = "https://github.com/balmoral/robe"
   spec.license = "MIT"
 
