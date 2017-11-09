@@ -6,13 +6,14 @@ require 'robe/client/sockets'
 require 'robe/client/server'
 require 'robe/client/db'
 require 'robe/client/browser/data/cookies'
+require 'robe/client/app/state'
 
 module Robe
   module Client
     class App
       include Robe::Client::Browser
 
-      attr_reader :router, :component, :root, :on_render, :cookies
+      attr_reader :state, :router, :component, :root, :on_render, :cookies
 
       def self.current
         @@current
@@ -28,6 +29,7 @@ module Robe
 
       def initialize(component = nil)
         # trace __FILE__, __LINE__, self, __method__, ' '
+        @state = State.new
         @component = component
         @router = Router.new(self)
         @on_render = []
@@ -40,11 +42,37 @@ module Robe
         end
       end
 
-      # to be implemented by subclasses
       def user
-        nil
+        state.user
       end
 
+      def user?
+        state.user?
+      end
+
+      # Signs in via User##sign_out.
+      # Async operation - return value is meaningless.
+      # App state.user is set when sign_in completed
+      # or state.sign_in_error is set if error in sign_in.
+      # Subclasses should observe(app.state, :user) and
+      # observe(app.state, :sign_in_error). If app.state.user?
+      # returns false then no user is signed in.
+      # An error will be raised if user is not signed out.
+      def sign_in(id, password)
+        User.sign_in(id, password)
+      end
+
+      # Signs out via User##sign_out.
+      # Async operation - return value is meaningless.
+      # App state.user is set to nil sign_in completed.
+      # Subclasses should observe(app.state, :user).
+      # If app.state.user? returns false then no user is signed in.
+      # An error will be raised if user is not signed in.
+      def sign_out
+        raise Robe::UserError, 'there is no current user to sign out' unless user?
+        user.sign_out
+      end
+      
       def server
         @server ||= Robe.server
       end

@@ -42,10 +42,23 @@ module Robe; module Server
     end
 
     # Register a server task.
-    # `name` should be a symbol identifying the task.
-    # `lambda` or block perform the task.
-    def self.task(name, lambda = nil, &block)
-      tasks.register(name, lambda, &block)
+    #
+    # @param [ Symbol ] name Symbol identifying the task.
+    # @param [ Boolean ] auth Whether to provide session user cookie to task. Defaults to true.
+    # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
+    #
+    # @yieldparam [ Hash ] Keyword args from client over socket.
+    def self.task(name, lambda = nil, auth: true, &block)
+      tasks.register(name, lambda, auth: auth, &block)
+    end
+
+    task :sign_in do |id:, password:|
+      raise Robe::TaskError, "sign_in task needs to be implemented in your subclass of #{self.name}"
+    end
+
+    # expects user signature
+    task :sign_out do |user:|
+      raise Robe::TaskError, "sign_in task needs to be implemented in your subclass of #{self.name}"
     end
 
     # for r.session[:...]

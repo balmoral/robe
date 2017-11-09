@@ -1,6 +1,7 @@
 # Adapted from Volt. We don't use drb for now.
 
 require 'singleton'
+require 'roda'
 require 'json'
 require 'timeout'     # ruby stdlib
 require 'concurrent'  # concurrent-ruby gem
@@ -25,12 +26,18 @@ module Robe
         init_threads
       end
 
-      # Task name should be symbol identifying the task
-      def register(name, lambda = nil, &block)
+      # Register a server task.
+      #
+      # @param [ Symbol ] name Symbol identifying the task.
+      # @param [ Boolean ] auth Whether to provide session user cookie to task. Defaults to true.
+      # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
+      #
+      # @yieldparam [ Hash ] Keyword args from client over socket.
+      def register(name, lambda = nil, auth:, &block)
         unless lambda || block
           raise ArgumentError, 'task requires a lambda or block'
         end
-        tasks[name.to_sym] = lambda || block
+        tasks[name.to_sym] = { lambda: lambda || block, auth: auth }
       end
 
       private
@@ -65,7 +72,7 @@ module Robe
       # Dispatch takes an incoming task from the client and runs
       # it on the server, returning the result to the client.
       # Tasks returning a promise will wait to return.
-      def process_request(request)
+      def process_request(request) # , session)
         # trace __FILE__, __LINE__, self, __method__, "(#{request})"
         request = request.symbolize_keys
         # trace __FILE__, __LINE__, self, __method__, "(#{request})"
@@ -77,7 +84,8 @@ module Robe
               name: request[:task],
               kwargs: request[:kwargs],
               promise_id: request[:promise_id],
-              meta_data: request[:meta_data]
+              meta_data: request[:meta_data],
+              # session: session
             )
           # rescue => e
           #   err = "Task thread exception for #{message}\n"
@@ -120,9 +128,11 @@ module Robe
       # Returns a promise.
       def resolve_task(task_name, kwargs, meta_data)
         # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} kwargs=#{kwargs}"
-        lambda = tasks[task_name.to_sym]
-        if lambda
-          kwargs = kwargs.symbolize_keys
+        task = tasks[task_name.to_sym]
+        if task
+          lambda = task[:lambda]
+          kwargs = kwargs.dup.symbolize_keys
+          kwargs[:user] = 
           # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
           Timeout.timeout(@timeout) do
             # trace __FILE__, __LINE__, self, __method__

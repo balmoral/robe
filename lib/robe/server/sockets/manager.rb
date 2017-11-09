@@ -38,6 +38,7 @@ module Robe; module Server
       def call(env)
         # trace __FILE__, __LINE__, self, __method__
         if Faye::WebSocket.websocket?(env)
+          # trace __FILE__, __LINE__, self, __method__, "env=#{env}"
           protocols = nil
           options = { ping: 5 } # keep socket alive : Chrome seems to time out in about 10?
           socket = Faye::WebSocket.new(env, protocols, options)

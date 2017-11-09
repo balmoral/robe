@@ -22,10 +22,6 @@ module Robe; module Browser
         )
     end
 
-    def user=(user, expiry: Time.now + 60 * 60 * 24)
-      self[:user] = user, { expires: expiry, secure: true }
-    end
-
     %i([] keys values each options).each do |method|
       define_method(method) do |*args, &block|
         cookies.send(method, *args, &block)
