@@ -17,8 +17,10 @@ module Robe; module DB;
           csv_fields = csv_fields.map{|f| f == :id ? :_id : f}
           csv_fields = csv_fields.map{|f| map_attrs[f] || f}
           csv_fields.each do |field|
-            unless attrs.include?(field)
-              raise Robe::DBError, "#{self.name}###{__method__} : csv field '#{field}' is not an attribute."
+            unless ignore_attrs.include?(field)
+              unless attrs.include?(field)
+                raise Robe::DBError, "#{self.name}###{__method__} : csv field '#{field}' is not an attribute."
+              end
             end
           end
           field_procs = csv_fields.map { |name|

@@ -13,5 +13,19 @@ end
 require 'robe/server/rack_server'
 Robe::RackServer.load
 
+module Robe
+  module_function
+
+  def server?
+    true
+  end
+
+  def client?
+    false
+  end
+
+end
+
 # require server app
 require 'robe/server/app'
+

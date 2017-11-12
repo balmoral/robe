@@ -106,11 +106,13 @@ module Robe
           run_time = ((Time.now.to_f - start_time) * 1000).round(3)
           Task::Logger.log_perform(name, run_time, kwargs)
         end.fail do |error|
+          trace __FILE__, __LINE__, self, __method__, " error=#{error}"
           # begin
             if error.is_a?(Timeout::Error)
               error = Timeout::Error.new("Task timed out after #{@timeout} seconds: #{message}")
             end
             begin
+              trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, promise_id: #{promise_id}, error: #{error})"
               send_response(task: name, promise_id: promise_id, error: error)
             rescue JSON::GeneratorError => e
               # Convert the error into a string so it can be serialized to something.
@@ -141,9 +143,11 @@ module Robe
             begin
               # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{lambda} with #{kwargs}"
               result = kwargs.empty? ? lambda.call : lambda.call(**kwargs)
-              # trace __FILE__, __LINE__, self, __method__, " result=#{result.class}"
-              cookies = nil # TODO: @task_class.fetch_cookies
-              Robe::Promise.value([result, cookies])
+              result.as_promise.then do |result|
+                # trace __FILE__, __LINE__, self, __method__, " result=#{result.class}"
+                cookies = nil # TODO: @task_class.fetch_cookies
+                Robe::Promise.value([result, cookies])
+              end
             rescue ArgumentError => e
               trace __FILE__, __LINE__, self, __method__, " : #{e}"
               Robe::Promise.error(e.to_s)

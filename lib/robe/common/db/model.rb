@@ -101,7 +101,7 @@ module Robe; module DB
         cache.find(self, filter)
       else
         # trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
-        db.find(collection_name, filter.stringify_keys).then do |raw|
+        db.find(collection_name, filter.stringify_keys).as_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, " : db.find(#{collection_name}, filter: #{filter}) => '#{raw.class}'"
           raw == [raw] unless raw.is_a?(Array)
           raw.compact.map { |hash|
@@ -112,15 +112,15 @@ module Robe; module DB
       end
     end
 
-    # If the class is cache'd returns a model or nil.
-    # If the class is not cache'd returns a promise whose value is nil or a model.
+    # If on server or the class is cache'd returns a model or nil.
+    # If on client and the class is not cache'd returns a promise whose value is nil or a model.
     def self.find_one(**filter)
       __method = __method__
       if cache
         cache.find(self, filter).first
       else
         trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
-        db.find_one(collection_name, filter.stringify_keys).then do |raw|
+        db.find_one(collection_name, filter.stringify_keys).as_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
           if Hash === raw
             raw[:__from_db__] = true
@@ -131,7 +131,7 @@ module Robe; module DB
           else
             msg = " : unexpected value returned from find #{raw.class}"
             trace __FILE__,  __LINE__, self, __method, msg
-            Robe::Promise.error("#{__FILE__}[#{__LINE__}] #{name}##find" + msg)
+            raise DBError, "#{__FILE__}[#{__LINE__}] #{name}##find" + msg
           end
         end
       end
@@ -243,53 +243,48 @@ module Robe; module DB
     def invalid?(&_block)
     end
 
-    # Returns a promise whose value is self.
+    # If on client and no cache then returns a promise whose value is self.
+    # If on server or cache then returns self.
     # Delete this model from database (by id), and
     # if there are has_one or has_many associations
     # then delete them too.
     # The model's deleted? method will return true if deleted.
     # It will be removed from the cache if the latter is active.
     def delete
-      self.class.db.delete_with_id(self.class.collection_name, id).then do
+      self.class.db.delete_with_id(self.class.collection_name, id).as_promise_then do
         @deleted = true
         if cache && !cache.includes?(self.class, id)
           msg = " : #{self.class.name} : expected model with id #{id} to be in cache - cannot delete"
           trace __FILE__, __LINE__, self, __method__, msg
-          fail "#{__FILE__}[#{__LINE__}]#{msg}"
+          raise DBError, "#{__FILE__}[#{__LINE__}]#{msg}"
         end
         cache.delete(self) if cache
-        promises = []
+        results = []
         self.class.has_one_associations.each do |assoc|
           if assoc.owner
-            send(assoc.local_attr).to_promise.then do |one|
-              promises << one.delete
+            send(assoc.local_attr).as_promise_then do |one|
+              results << one.delete
             end
           end
         end
-        Robe::Promise.when(*promises).then do
-          self
-        end
-      end.then do
-        promises = []
+        results.as_promise_when
+      end.as_promise_then do
+        results = []
         self.class.has_many_associations.each do |assoc|
           if assoc.owner
-            assoc_promises = []
-            send(assoc.local_attr).to_promise.then do |many|
+            assoc_results = []
+            results << send(assoc.local_attr).to_promise.as_promise_then do |many|
               many.each do |one|
                 trace __FILE__, __LINE__, self, __method__, " deleting associated : #{one}"
-                one.delete.then do |result|
-                  assoc_promises << result.to_promise
-                end.fail do |error|
-                  assoc_promises << Robe::Promise.error(error)
-                end
+                assoc_results << one.delete
               end
-              promises << Robe::Promise.when(*assoc_promises)
-            end.fail do |error|
-              promises << Robe::Promise.error(error)
+              assoc_results.as_promise_when_on_client
             end
           end
         end
-        Robe::Promise.when(*promises)
+        results.as_promise_when.then do
+          self
+        end
       end
     end
 
@@ -308,20 +303,20 @@ module Robe; module DB
     # and referential integrity can be guaranteed.
     def insert(ignore_associations: false)
       unless new?
-        fail("#{__FILE__},  #{__LINE__} : #{self.class} : should be new (not loaded from db) - cannot insert")
+        raise DBError, "#{__FILE__},  #{__LINE__} : #{self.class} : should be new (not loaded from db) - cannot insert"
       end
       self.id = uuid unless id
       if cache && cache.includes?(self.class, id)
-        fail("#{__FILE__},  #{__LINE__} : #{self.class} : with id #{id} already in cache - cannot insert")
+        raise DBError, "#{__FILE__},  #{__LINE__} : #{self.class} : with id #{id} already in cache - cannot insert"
       else
         # TODO: unwind associations if insert fails
-        promise = ignore_associations ? Robe::Promise.value(nil) : save_associations
-        promise.then do
+        result = (ignore_associations ? nil : save_associations).as_promise_on_client
+        result.as_promise_then do
           self.class.db.insert_one(self.class.collection_name, to_db_hash)
-        end.then do
+        end.as_promise_then do
           @from_db = true
           cache.insert(self) if cache # no filter
-          Robe::Promise.value(self)
+          self.as_promise_on_client
         end
       end
     end
@@ -333,33 +328,33 @@ module Robe; module DB
       if exists?
         if id
           if cache && !cache.includes?(self.class, id)
-            fail("#{__FILE__},  #{__LINE__} : #{model.class} : expected model with id #{id} to be in cache - cannot update")
+            raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : expected model with id #{id} to be in cache - cannot update"
           else
             # TODO: unwind associations if update fails
-            save_associations.then do
+            save_associations.as_promise_then do
               self.class.db.update_document_by_id(self.class.collection_name, to_db_hash)
-            end.then do
-              Robe::Promise.value(self)
+            end.as_promise_then do
+              self.as_promise_on_client
             end
           end
         else
-          fail("#{__FILE__},  #{__LINE__} : #{model.class} : expected model from db to have id set - cannot update")
+          raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : expected model from db to have id set - cannot update"
         end
       else
-        fail("#{__FILE__},  #{__LINE__} : #{model.class} : cannot update model not loaded from db - it should be inserted")
+        raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : cannot update model not loaded from db - it should be inserted"
       end
     end
 
     # returns a promise whose value is self
     def save_associations
-      promises = []
+      results = []
       self.class.associations.each do | _type, associations |
         associations.each do |association|
-          promises << association.save(self)
+          results << association.save(self)
         end
       end
-      Robe::Promise.when(*promises).then do
-        Robe::Promise.value(self)
+      results.as_promise_when_on_client.as_promise_then do
+        self.as_promise_on_client
       end
     end
 

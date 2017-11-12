@@ -52,7 +52,7 @@ module Robe; module Shared
           filter = (filter || {}).stringify_keys
           options = (options || {}).stringify_keys
           # trace __FILE__, __LINE__, self, __method__, "(#{collection}, filter: #{filter})"
-          op(collection, :find, filter, options).then do |many|
+          op(collection, :find, filter, options).as_promise_then do |many|
             Array === many ? many.first : nil
           end
         end
@@ -95,7 +95,7 @@ module Robe; module Shared
             if upsert
               document[ID] = Robe::Util.uuid
             else
-              return Robe::Promise.error("#{__method__} : no id set in document to update")
+              raise DBError, "#{self.name}###{__method__} : no id set in document to update"
             end
           end
           update_one(collection,

@@ -61,7 +61,7 @@ module Robe
         #
         # Synchronous operation - no promise.
         #
-        def sync_op(target, method, *args)
+        def op(target, method, *args)
           trace __FILE__, __LINE__, self, __method__, " : target=#{target} method=#{method} args[0]=#{args[0]}"
           target = target.to_s
           target = case target
@@ -79,15 +79,6 @@ module Robe
           rescue Mongo::Error => e
             raise DBError, "'Mongo::Error => #{e}"
           end
-        end
-
-        # Returns result of mongo operation as a Robe::Promise -
-        # i.e. is an asynchronous operation.
-        # `target` should be one of [database, collection, index]
-        # `method` should be a method appropriate to target
-        # `args` should be an array in json format
-        def op(target, method, *args)
-          sync_op(target, method, *args).as_promise
         end
 
       end

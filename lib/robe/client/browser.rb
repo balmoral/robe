@@ -6,6 +6,10 @@ module Robe
     module Browser
       module_function
 
+      def browser
+        self
+      end
+      
       def document
         $document # from opal-browser
       end

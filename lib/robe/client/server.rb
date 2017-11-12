@@ -7,14 +7,10 @@ module Robe
 
       module_function
 
-      def tasks
-        Robe.tasks
-      end
-
       # Returns a promise
       def perform_task(name, **kwargs)
-        # trace __FILE__, __LINE__, self, __method__, "(name: #{name}, params=#{params})"
-        tasks.perform(name, **kwargs)
+        trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs})"
+        Robe.tasks.perform(name, **kwargs)
       end
 
     end

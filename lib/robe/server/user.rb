@@ -13,6 +13,42 @@ module Robe
 
       module_function
 
+      def sign_in_success_response(user_id, data: nil)
+        trace __FILE__, __LINE__, self, __method__
+        result = {
+          status: 'success',
+          user: {
+            id: user_id,
+            signature: user_signature(user_id),
+            data: data
+          }
+        }
+        trace __FILE__, __LINE__, self, __method__, " result=#{result}"
+        result
+      end
+
+      def sign_in_error_response(user_id, message)
+        {
+          id: user_id,
+          status: 'error',
+          message: message
+        }
+      end
+
+      def sign_in_invalid_user_response(user_id)
+        {
+          id: user_id,
+          status: 'invalid user'
+        }
+      end
+
+      def sign_in_invalid_password_response(user_id)
+        {
+          id: user_id,
+          status: 'invalid password'
+        }
+      end
+
       # Returns a password hash suited to storing in database.
       def password_hash(password)
         BCrypt::Password.create(password)
@@ -21,13 +57,16 @@ module Robe
       # Returns a signature based on salted and tokenized user id
       # which is suitable for use as a user id in session cookies
       # and socket requests.
-      def user_signature(user)
+      def user_signature(user_id)
+        trace __FILE__, __LINE__, self, __method__, "(#{user_id})"
         unless Robe.config.app_secret
-          raise RuntimeError, '"app secret not configured for server" '
+          trace __FILE__, __LINE__, self, __method__, 'app secret not configured for server'
+          raise RuntimeError, 'app secret not configured for server'
         end
-        user_id = user.is_a?(String) ? user : user.id
         token = tokenize_user_id(user_id)
-        "#{user_id}#{SIGNATURE_HOOK}#{token}"
+        result = "#{user_id}#{SIGNATURE_HOOK}#{token}"
+        trace __FILE__, __LINE__, self, __method__, " result=#{result}"
+        result
       end
 
       def current_thread

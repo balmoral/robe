@@ -9,27 +9,38 @@ require 'robe/client/browser/data/cookies'
 require 'robe/client/app/state'
 
 module Robe
+  module_function
+
+  def client?
+    true
+  end
+
+  def server?
+    false
+  end
+
   module Client
     class App
       include Robe::Client::Browser
 
       attr_reader :state, :router, :component, :root, :on_render, :cookies
 
-      def self.current
-        @@current
+      def self.instance
+        @@instance
       end
 
-      def self.current=(instance)
-        @@current = instance
+      def self.instance=(instance)
+        @@instance = instance
       end
 
       def self.mount
-        current.mount
+        instance.mount
       end
 
       def initialize(component = nil)
         # trace __FILE__, __LINE__, self, __method__, ' '
-        @state = State.new
+        self.class.instance = self
+        @state = Robe::Client::App::State.new
         @component = component
         @router = Router.new(self)
         @on_render = []
@@ -42,12 +53,17 @@ module Robe
         end
       end
 
-      def user
-        state.user
+      %i(user server_error sign_in_invalid_user sign_in_invalid_password).each do |method|
+        define_method(method) { state.send(method) }
+        define_method(:"#{method}?") { state.send(:"#{method}?") }
       end
 
-      def user?
-        state.user?
+      def user_id
+        user? ? user.id : nil
+      end
+
+      %i(signed_in? signed_out?).each do |method|
+        define_method(method) { state.send(method) }
       end
 
       # Signs in via User##sign_out.
@@ -59,7 +75,8 @@ module Robe
       # returns false then no user is signed in.
       # An error will be raised if user is not signed out.
       def sign_in(id, password)
-        User.sign_in(id, password)
+        trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
+        Robe::Client::App::User.sign_in(id, password)
       end
 
       # Signs out via User##sign_out.
@@ -78,6 +95,7 @@ module Robe
       end
 
       def perform_task(name, **kwargs)
+        trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs})"
         server.perform_task(name, **kwargs)
       end
 
@@ -87,7 +105,7 @@ module Robe
 
       def mount(&block)
         # trace __FILE__, __LINE__, self, __method__
-        self.class.current = self
+        self.class.instance = self
         render(&block)
         watch_url
         on_mount
@@ -178,7 +196,7 @@ module Robe
   end
 
   def app
-    app_class.current
+    app_class.instance
   end
 
 end

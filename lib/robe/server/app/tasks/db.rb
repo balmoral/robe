@@ -13,7 +13,7 @@ module Robe; module Server
       begin
         {
           success: true,
-          data: Robe.db.sync_op(target, method, *args)
+          data: Robe.db.op(target, method, *args)
         }
       rescue DBError => e
         Robe.logger.error(msg)

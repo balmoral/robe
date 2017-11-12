@@ -9,20 +9,21 @@ module Robe
       # Perform the named task on the server with given keyword args.
       # Returns a promise whose value is the task response from the server.
       def perform(task_name, **kwargs)
-        # trace __FILE__, __LINE__, self, __method__, "(#{task_name}, {kwargs})"
-
+        trace __FILE__, __LINE__, self, __method__, "(#{task_name}, {kwargs})"
         # Meta data is passed from the browser to the server so the server can know things like who's logged in.
         # We pass meta_data[:user] as hash with user id and user token if available.
         # TODO: consider allowing task to specify required meta data, and caller to be responsible
         meta_data = {}
-        if Robe.app.user
+        trace __FILE__, __LINE__, self, __method__
+        if Robe.app.user?
           user = Robe.app.user
           meta_data[:user] = {}.tap do |hash|
-            %i(id token).each do |attr|
+            %i(id signature).each do |attr|
               hash[attr] = user.send(attr) if user.respond_to?(attr)
             end
           end
         end
+        trace __FILE__, __LINE__, self, __method__, " meta_data=#{meta_data}"
         send_request(task_name, meta_data, **kwargs)
       end
 
@@ -31,12 +32,13 @@ module Robe
       # Send request for the named task to be performed on the server
       # # with given meta data and keyword args.
       def self.send_request(task_name, meta_data, **kwargs)
-        # trace __FILE__, __LINE__, self, __method__, "(#{task_name}, #{meta_data}, #{kwargs})"
+        trace __FILE__, __LINE__, self, __method__, "(#{task_name}, #{meta_data}, #{kwargs})"
         @promises ||= {}
         @promise_id ||= 0
         promise_id = (@promise_id += 1)
         promise = @promises[promise_id] = Robe::Promise.new
         # TODO: timeout on these callbacks
+        trace __FILE__, __LINE__, self, __method__
         channel.send_message(
           event: :request,
           content: {
