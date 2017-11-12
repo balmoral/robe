@@ -146,10 +146,19 @@ module Robe; module Client
       end
 
       def remove_sign_icon(callback: nil, attributes: nil, tooltip: nil, popover: nil)
+        _attributes = {
+          style: {
+            color: 'red',
+          }
+        }
+        if attributes
+          # argument takes precedence
+          _attributes = merge_attributes(_attributes, attributes)
+        end
         icon(
           :remove_sign,
           callback: callback,
-          attributes: merge_attributes({ style: {color: 'red'} }, attributes),
+          attributes: _attributes,
           tooltip: tooltip,
           popover: popover
         )

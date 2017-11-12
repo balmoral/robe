@@ -23,8 +23,8 @@ module Robe
         @minify = production?
         @config = Robe::Server::Config
         # puts "#{__FILE__}[#{__LINE__}] : @rack_env=#{@rack_env} @minify=#{@minify} @config=#{@config}"
+        register_opal_unaware_gems # do first
         init_source_maps
-        register_opal_unaware_gems
         precompile if production?
       end
 
@@ -219,9 +219,10 @@ module Robe
       # Gems which are Opal aware set load paths within Opal.
       def register_opal_unaware_gems
         config.opal_unaware_gems.each do |gem|
-          # trace __FILE__, __LINE__, self, __method__, " : calling Opal.use_gem(#{gem}, true)"
+          trace __FILE__, __LINE__, self, __method__, " : calling Opal.use_gem(#{gem}, true)"
           Opal.use_gem(gem, true)
         end
+        trace __FILE__, __LINE__, self, __method__, " : Opal.paths => #{Opal.paths}"
       end
 
       def source_map_prefix
