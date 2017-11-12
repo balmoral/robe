@@ -42,7 +42,7 @@ module Robe
         self.class.instance = self
         @state = Robe::Client::App::State.new
         @component = component
-        @router = Router.new(self)
+        @router = Robe::Client::Router.new
         @on_render = []
         @watching_url = false
         document.on('visibilitychange') do
@@ -119,7 +119,7 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__, " : @watching_url=#{@watching_url}"
         unless @watching_url
           window.on('popstate') do
-            # trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
+            trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
             router.update
           end
           @watching_url = true
@@ -132,6 +132,7 @@ module Robe
         @will_render = true
 
         # If the app isn't being shown, wait to render until it is.
+        trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name}"
         if document.hidden?
           @render_on_visibility_change = true
           return

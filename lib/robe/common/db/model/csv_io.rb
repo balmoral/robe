@@ -45,7 +45,8 @@ module Robe; module DB;
                 hash[attr] = proc ? proc.call(value) : value
               end
             end
-            self.new(**hash).insert(ignore_associations: ignore_associations)
+            instance = self.new(**hash)
+            instance.insert(ignore_associations: ignore_associations)
           end
         end
       end

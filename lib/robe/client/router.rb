@@ -7,27 +7,24 @@ require 'robe/common/redux/atom'
 # with the store state.
 #
 # The app (or owner) should subscribe to router
-#   router.subscribe do | route |
+#   router.observe
 #     ...
-#     route.path
-#     route.params
+#     router.path
+#     router.params
 #   end
 #
 # or more sensibly bind to the router so that
 # when the route changes the page is automatically
 # updated:
 #
-#   bind(router) { |route|
-#     case route.parts.first
-#       when 'user'
-#         Page::User.new(route.params('user'))
-#       when 'todos'
-#         Page::Todos.new(route.params('todos'))
+#   bind(router) {
+#     case router.path
+#       when '/user'
+#         Page::User.new(router.params('user'))
+#       when '/todos'
+#         Page::Todos.new(router.params('todos'))
 #       ...
 #   }
-#
-# The state of the store will be the current route
-# (a Robe::Client::Route).
 #
 
 # REF: https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_is_a_URL
@@ -35,7 +32,8 @@ require 'robe/common/redux/atom'
 module Robe; module Client
   class Router < Robe::Redux::Atom
 
-    attr :path, :params
+    attr :path
+    attr :params
 
     # parses path into path and params
     def self.parse(path)
@@ -52,17 +50,18 @@ module Robe; module Client
         end
       end
       path = '/' + parts.join('/')
-      # trace __FILE__, __LINE__, self, __method__, " : path=#{path} params=#{params}"
+      trace __FILE__, __LINE__, self, __method__, " : parts=#{parts} path=#{path} params=#{params}"
       { path: path, params: params}
     end
 
     def initialize
       super(**parse(location.path))
+      trace __FILE__, __LINE__, self, __method__, " self=#{self.to_h}"
       navigate_to('/')
     end
 
     def to_s
-      "#{path} #{params}"
+      "#{path}:#{params}"
     end
     def window
       Robe::Client::Browser.window
@@ -81,16 +80,6 @@ module Robe; module Client
       location.href
     end
 
-    # returns current path (location.path)
-    def path
-      location.path
-    end
-
-    # returns current route (my state)
-    def route
-      self
-    end
-
     # called by app following `onpopstate` event (user pressed back or forward)
     def update
       # trace __FILE__, __LINE__, self, __method__, " : location.href=#{location.href} location.path=#{location.path} location.search=#{location.search}"
@@ -100,7 +89,6 @@ module Robe; module Client
     def navigate_to(path)
       # trace __FILE__, __LINE__, self, __method__, "(#{path}) : history.push(#{path})"
       history.push(path, {state: 'dummy_state'}, Time.now.to_s) # need this
-      # trace __FILE__, __LINE__, self, __method__, "(#{path}) : dispatch(:route, #{path})"
       mutate!(**parse(path))
     end
 
