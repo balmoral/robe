@@ -18,7 +18,7 @@ module Robe; module Client; module Browser
     def initialize(url)
       trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
       @native = `new WebSocket(url)`
-      trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
+      # trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       add_handlers
       on(:open) do
@@ -26,7 +26,7 @@ module Robe; module Client; module Browser
         @connected = true
       end
       on(:close) do
-        # trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
         @connected = false
       end
       on(:error) do |error|
@@ -65,11 +65,15 @@ module Robe; module Client; module Browser
     end
 
     # Reconnect the websocket after a short delay if it is interrupted
-    def auto_reconnect!(delay: 10)
-      return if @auto_reconnect
-      @auto_reconnect = true
-      on :close do
-        Robe.browser.delay(delay) { initialize @url }
+    def auto_reconnect!(delay: 1)
+      unless @auto_reconnect
+        @auto_reconnect = true
+        on :close do
+          trace __FILE__, __LINE__, self, __method__, " : auto_reconnect!(delay: #{delay})"
+          Robe.browser.delay(delay) {
+            initialize(@url)
+          }
+        end
       end
     end
 
