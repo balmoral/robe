@@ -16,7 +16,8 @@ module Robe; module Client; module Browser
     # TODO: timeout
 
     def initialize(url)
-      trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
+      @url = url
+      trace __FILE__, __LINE__, self, __method__, " @url='#{@url}'"
       @native = `new WebSocket(url)`
       # trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
       @handlers ||= Hash.new { |h, k| h[k] = [] }
