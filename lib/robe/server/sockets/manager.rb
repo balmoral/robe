@@ -111,7 +111,7 @@ module Robe; module Server
 
       # Subscribe to any messages sent via redis
       # from our channels, and resend them over
-      # the chanel's socket.
+      # the channel's socket.
       def monitor_redis
         redis.dup.subscribe(redis_channel) do |on|
           on.message do |_, message|

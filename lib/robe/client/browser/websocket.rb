@@ -15,24 +15,29 @@ module Robe; module Client; module Browser
 
     # TODO: timeout
 
-    def initialize(url)
+    def initialize(url, handlers = nil)
       @url = url
       trace __FILE__, __LINE__, self, __method__, " @url='#{@url}'"
       @native = `new WebSocket(url)`
       # trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
-      @handlers ||= Hash.new { |h, k| h[k] = [] }
-      add_handlers
-      on(:open) do
-        # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
-        @connected = true
-      end
-      on(:close) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
-        @connected = false
-      end
-      on(:error) do |error|
-        trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
-        @connected = false
+      if handlers
+        @handlers = handlers
+      else
+        @handlers = handlers
+        @handlers ||= Hash.new { |h, k| h[k] = [] }
+        add_handlers
+        on(:open) do
+          # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
+          @connected = true
+        end
+        on(:close) do
+          trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
+          @connected = false
+        end
+        on(:error) do |error|
+          trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
+          @connected = false
+        end
       end
     end
 
@@ -72,10 +77,14 @@ module Robe; module Client; module Browser
         on :close do
           trace __FILE__, __LINE__, self, __method__, " : auto_reconnect!(delay: #{delay})"
           Robe.browser.delay(delay) {
-            initialize(@url)
+            reconnect!
           }
         end
       end
+    end
+
+    def reconnect!
+      initialize(@url, @handlers)
     end
 
     def close(reason = `undefined`)
