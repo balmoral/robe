@@ -31,7 +31,9 @@ module Robe
       def route(r)
         puts "#{__FILE__}[#{__LINE__}] #{self.class.name}##{__method__} : r=>#{r.inspect}"
         r.get 'favicon.ico' do
-           ''
+           if config.favicon
+            r.redirect config.favicon
+           end
         end
         unless production?
           targets.each do |target, folders|

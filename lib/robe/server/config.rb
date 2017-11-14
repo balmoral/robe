@@ -17,6 +17,14 @@ module Robe
           @app_secret = string
         end
 
+        def favicon=(path)
+          @favicon = path
+        end
+
+        def favicon
+          @favicon
+        end
+        
         def source_maps?
           !!@source_maps
         end
