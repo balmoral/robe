@@ -23,22 +23,9 @@ module Robe; module Client; module Browser
       if handlers
         @handlers = handlers
       else
-        @handlers = handlers
-        @handlers ||= Hash.new { |h, k| h[k] = [] }
-        add_handlers
-        on(:open) do
-          # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
-          @connected = true
-        end
-        on(:close) do
-          trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
-          @connected = false
-        end
-        on(:error) do |error|
-          trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
-          @connected = false
-        end
+        init_handlers
       end
+      init_native_events
     end
 
     def timeout
@@ -93,7 +80,24 @@ module Robe; module Client; module Browser
 
     private
 
-    def add_handlers
+    def init_handlers
+      @handlers = handlers
+      @handlers ||= Hash.new { |h, k| h[k] = [] }
+      on(:open) do
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
+        @connected = true
+      end
+      on(:close) do
+        trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
+        @connected = false
+      end
+      on(:error) do |error|
+        trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
+        @connected = false
+      end
+    end
+    
+    def init_native_events
       EVENT_NAMES.each do |event_name|
         %x{
           #@native["on" + #{event_name}] = function(event) {
