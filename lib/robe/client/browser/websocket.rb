@@ -81,18 +81,17 @@ module Robe; module Client; module Browser
     private
 
     def init_handlers
-      @handlers = handlers
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
         # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
         @connected = true
       end
       on(:close) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{url} closed "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} closed "
         @connected = false
       end
       on(:error) do |error|
-        trace __FILE__, __LINE__, self, __method__, " websocket #{url} got error #{error} "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} got error #{error} "
         @connected = false
       end
     end

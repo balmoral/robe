@@ -52,7 +52,7 @@ module Robe; module Shared
           filter = (filter || {}).stringify_keys
           options = (options || {}).stringify_keys
           # trace __FILE__, __LINE__, self, __method__, "(#{collection}, filter: #{filter})"
-          op(collection, :find, filter, options).as_promise_then do |many|
+          op(collection, :find, filter, options).to_promise_then do |many|
             Array === many ? many.first : nil
           end
         end

@@ -351,6 +351,11 @@ module Robe; module Redux
     alias_method :unsubscribe, :unobserve
     alias_method :subscriber?, :observer?
 
+    # to mimic a store
+    def state
+      self
+    end
+    
     def state_to_h
       @state.to_h
     end
@@ -369,6 +374,7 @@ module Robe; module Redux
     # The subscriber callbacks will be given the prior state
     # and store as arguments.
     def broadcast(prior)
+      trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
       inc_mutation_count
       # important that we dup observers before iterating
       # as subscribers they may delete other subscribers
@@ -397,7 +403,7 @@ module Robe; module Redux
             changed = true
           end
           if changed
-            # trace __FILE__, __LINE__, self, __method__, " : calling observer at #{observer[:who]}"
+            trace __FILE__, __LINE__, self, __method__, " : broadcasting change from #{prior} to #{self} to observer at #{observer[:who]}"
             observer[:callback].call(prior)
           end
         end

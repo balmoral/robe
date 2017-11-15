@@ -299,7 +299,7 @@ module Robe
       self ^ Robe::Promise.new(success: block)
     end
 
-    alias as_promise_then then
+    alias to_promise_then then
 
     def fail(&block)
       if @next
@@ -309,7 +309,7 @@ module Robe
       self ^ Robe::Promise.new(failure: block)
     end
 
-    alias as_promise_fail fail
+    alias to_promise_fail fail
 
     def always(&block)
       if @next
@@ -320,8 +320,8 @@ module Robe
     end
 
     alias ensure always
-    alias as_promise_always always
-    alias as_promise_ensure ensure
+    alias to_promise_always always
+    alias to_promise_ensure ensure
 
     def trace(depth = nil, &block)
       if @next
@@ -392,7 +392,7 @@ module Robe
       def each(&block)
         raise ArgumentError, 'no block given' unless block
 
-        self.as_promise_then {|values|
+        self.to_promise_then {|values|
           values.each(&block)
         }
       end
@@ -400,13 +400,13 @@ module Robe
       def collect(&block)
         raise ArgumentError, 'no block given' unless block
 
-        self.as_promise_then {|values|
+        self.to_promise_then {|values|
           When.new(values.map(&block))
         }
       end
 
       def inject(*args, &block)
-        self.as_promise_then {|values|
+        self.to_promise_then {|values|
           values.reduce(*args, &block)
         }
       end
@@ -461,21 +461,21 @@ class Object
   end
   
   # for promise agnostic code
-  def as_promise_then(&block)
+  def to_promise_then(&block)
     block.call self
   end
 
   # for promise agnostic code
-  def as_promise_fail(&block)
+  def to_promise_fail(&block)
     block.call self
   end
 
   # for promise agnostic code
-  def as_promise_always(&block)
+  def to_promise_always(&block)
     block.call self
   end
 
-  alias_method :as_promise_ensure, :as_promise_always
+  alias_method :to_promise_ensure, :to_promise_always
 
   def to_promise
     if self.is_a?(Robe::Promise)
@@ -489,9 +489,6 @@ class Object
     Robe.client? ? to_promise : self
   end
 
-  alias_method :as_promise, :to_promise
-  alias_method :as_promise_on_client, :to_promise_on_client
-
   def to_promise_error
     Robe::Promise.error(self)
   end
@@ -499,9 +496,6 @@ class Object
   def to_promise_error_on_client
     Robe.client? ? to_promise_error : self
   end
-
-  alias_method :as_promise_error, :to_promise_error
-  alias_method :as_promise_error_on_client, :to_promise_error_on_client
 
   def to_promise_when
     self.is_a?(Enumerable) ? Robe::Promise.when(*self.to_a) : Robe::Promise.when(self)
@@ -511,13 +505,14 @@ class Object
     Robe.client? ? to_promise_when : self
   end
 
-  alias_method :as_promise_when, :to_promise_when
-  alias_method :as_promise_when_on_client, :to_promise_when_on_client
 end
 
 module Enumerable
   def to_promise_when
     Robe::Promise.when(*self.map(&:to_promise))
   end
-  alias_method :as_promise_when, :to_promise_when
+
+  def to_promise_when_on_client
+    Robe::Promise.when(*self.map(&:to_promise_on_client))
+  end
 end

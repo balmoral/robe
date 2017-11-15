@@ -99,12 +99,12 @@ module Robe
 
       # Perform the task, running inside of a worker thread.
       def perform_task(name:, kwargs:, promise_id:, meta_data:)
-        # trace __FILE__, __LINE__, self, __method__, " : name: #{name} kwargs: #{kwargs} meta_data: #{meta_data} promise_id: #{promise_id}"
+        Tasks::Logger.performing(name, kwargs)
         start_time = Time.now.to_f
         resolve_task(name, kwargs, meta_data).then do |result, cookies|
           send_response(task: name, promise_id: promise_id, result: result, error: nil, cookies: cookies)
           run_time = ((Time.now.to_f - start_time) * 1000).round(3)
-          Task::Logger.log_perform(name, run_time, kwargs)
+          Tasks::Logger.performed(name, run_time, kwargs)
         end.fail do |error|
           trace __FILE__, __LINE__, self, __method__, " error=#{error}"
           # begin
@@ -136,21 +136,22 @@ module Robe
           kwargs = kwargs.dup.symbolize_keys
           kwargs[:user] = 
           # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
-          Timeout.timeout(@timeout) do
+          Timeout.timeout(@timeout, Robe::TimeoutError) do
             # trace __FILE__, __LINE__, self, __method__
             Thread.current['meta'] = meta_data
             # trace __FILE__, __LINE__, self, __method__
             begin
               # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{lambda} with #{kwargs}"
               result = kwargs.empty? ? lambda.call : lambda.call(**kwargs)
-              result.as_promise.then do |result|
+              result.to_promise.then do |result|
                 # trace __FILE__, __LINE__, self, __method__, " result=#{result.class}"
                 cookies = nil # TODO: @task_class.fetch_cookies
                 Robe::Promise.value([result, cookies])
               end
-            rescue ArgumentError => e
-              trace __FILE__, __LINE__, self, __method__, " : #{e}"
-              Robe::Promise.error(e.to_s)
+            rescue Robe::TimeoutError => e
+              msg = "task `#{task_name}` timed out after #{@timeout} seconds"
+              trace __FILE__, __LINE__, self, __method__, " : #{msg}"
+              Robe::Promise.error(msg)
             ensure
               Thread.current['meta'] = nil
             end

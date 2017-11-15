@@ -13,4 +13,5 @@ module Robe
   class PromiseError  < Robe::Exception; end
   class UserError     < Robe::Exception; end
   class TaskError     < Robe::Exception; end
+  class TimeoutError  < Robe::Exception; end
 end

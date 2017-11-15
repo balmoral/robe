@@ -82,12 +82,12 @@ module Robe; module Client
 
     # called by app following `onpopstate` event (user pressed back or forward)
     def update
-      # trace __FILE__, __LINE__, self, __method__, " : location.href=#{location.href} location.path=#{location.path} location.search=#{location.search}"
+      trace __FILE__, __LINE__, self, __method__, " : location.href=#{location.href} location.path=#{location.path} location.search=#{location.search}"
       mutate!(**parse("#{location.path}#{location.search}"))
     end
 
     def navigate_to(path)
-      # trace __FILE__, __LINE__, self, __method__, "(#{path}) : history.push(#{path})"
+      trace __FILE__, __LINE__, self, __method__, "(#{path}) : history.push(#{path})"
       history.push(path, {state: 'dummy_state'}, Time.now.to_s) # need this
       mutate!(**parse(path))
     end

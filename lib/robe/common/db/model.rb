@@ -101,7 +101,7 @@ module Robe; module DB
         cache.find(self, filter)
       else
         # trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
-        db.find(collection_name, filter.stringify_keys).as_promise_then do |raw|
+        db.find(collection_name, filter.stringify_keys).to_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, " : db.find(#{collection_name}, filter: #{filter}) => '#{raw.class}'"
           raw == [raw] unless raw.is_a?(Array)
           raw.compact.map { |hash|
@@ -120,7 +120,7 @@ module Robe; module DB
         cache.find(self, filter).first
       else
         trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
-        db.find_one(collection_name, filter.stringify_keys).as_promise_then do |raw|
+        db.find_one(collection_name, filter.stringify_keys).to_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
           if Hash === raw
             raw[:__from_db__] = true
@@ -251,7 +251,7 @@ module Robe; module DB
     # The model's deleted? method will return true if deleted.
     # It will be removed from the cache if the latter is active.
     def delete
-      self.class.db.delete_with_id(self.class.collection_name, id).as_promise_then do
+      self.class.db.delete_with_id(self.class.collection_name, id).to_promise_then do
         @deleted = true
         if cache && !cache.includes?(self.class, id)
           msg = " : #{self.class.name} : expected model with id #{id} to be in cache - cannot delete"
@@ -262,27 +262,27 @@ module Robe; module DB
         results = []
         self.class.has_one_associations.each do |assoc|
           if assoc.owner
-            send(assoc.local_attr).as_promise_then do |one|
+            send(assoc.local_attr).to_promise_then do |one|
               results << one.delete
             end
           end
         end
-        results.as_promise_when
-      end.as_promise_then do
+        results.to_promise_when
+      end.to_promise_then do
         results = []
         self.class.has_many_associations.each do |assoc|
           if assoc.owner
             assoc_results = []
-            results << send(assoc.local_attr).to_promise.as_promise_then do |many|
+            results << send(assoc.local_attr).to_promise.to_promise_then do |many|
               many.each do |one|
                 trace __FILE__, __LINE__, self, __method__, " deleting associated : #{one}"
                 assoc_results << one.delete
               end
-              assoc_results.as_promise_when_on_client
+              assoc_results.to_promise_when_on_client
             end
           end
         end
-        results.as_promise_when.then do
+        results.to_promise_when.then do
           self
         end
       end
@@ -310,13 +310,13 @@ module Robe; module DB
         raise DBError, "#{__FILE__},  #{__LINE__} : #{self.class} : with id #{id} already in cache - cannot insert"
       else
         # TODO: unwind associations if insert fails
-        result = (ignore_associations ? nil : save_associations).as_promise_on_client
-        result.as_promise_then do
+        result = (ignore_associations ? nil : save_associations).to_promise_on_client
+        result.to_promise_then do
           self.class.db.insert_one(self.class.collection_name, to_db_hash)
-        end.as_promise_then do
+        end.to_promise_then do
           @from_db = true
           cache.insert(self) if cache # no filter
-          self.as_promise_on_client
+          self.to_promise_on_client
         end
       end
     end
@@ -331,10 +331,10 @@ module Robe; module DB
             raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : expected model with id #{id} to be in cache - cannot update"
           else
             # TODO: unwind associations if update fails
-            save_associations.as_promise_then do
+            save_associations.to_promise_then do
               self.class.db.update_document_by_id(self.class.collection_name, to_db_hash)
-            end.as_promise_then do
-              self.as_promise_on_client
+            end.to_promise_then do
+              self.to_promise_on_client
             end
           end
         else
@@ -353,8 +353,8 @@ module Robe; module DB
           results << association.save(self)
         end
       end
-      results.as_promise_when_on_client.as_promise_then do
-        self.as_promise_on_client
+      results.to_promise_when_on_client.to_promise_then do
+        self.to_promise_on_client
       end
     end
 

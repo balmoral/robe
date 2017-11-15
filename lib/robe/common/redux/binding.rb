@@ -5,7 +5,7 @@ module Robe; module Redux
   class Binding
     attr_reader :store, :bound_block, :where
 
-    # block 'provides' bound value
+    # bound block 'provides' bound value
     def initialize(store, state_method = nil, *state_method_args, where: nil, &bound_block)
       # trace __FILE__, __LINE__, self, __method__, " : state_method=#{state_method}"
       @where = where || 'unspecified bind location'
@@ -23,11 +23,11 @@ module Robe; module Redux
     # callback is an intermediate subscriber block which manages the binding
     def bind(&callback)
       raise ArgumentError, "#{self.class.name}##{__method__} expects a callback block" unless callback
-      # trace __FILE__, __LINE__, self, __method__, " : store=#{store.class} : callback=#{callback.class} where=#{where}"
+      trace __FILE__, __LINE__, self, __method__, " : store=#{store.class} : callback=#{callback.class} where=#{where}"
       @subscription_id = store.subscribe(who: where) do | prior |
         # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} changed?=#{changed?(prior_state)}  | calling #{bound_block.class}"
         if changed?(prior)
-          # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} changed?=true | calling #{bound_block.class}"
+          trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior} changed?=true | calling #{bound_block.class}"
           callback.call(prior)
         end
       end

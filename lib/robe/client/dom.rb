@@ -257,22 +257,29 @@ module Robe; module Client
       element_bindings(element, init: true) << binding
       current_content = sanitize_content(binding.initial, element)
       binding.bind do |prior_state|
-        # remember for next time!
-        new_content = binding.resolve(prior_state)
-        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
-        new_content = sanitize_content(new_content, element)
-        # trace __FILE__, __LINE__, self, __method__, " : new_content=#{new_content}"
+        trace __FILE__, __LINE__, self, __method__, " : STARTING BINDING FOR #{binding.store.class} : #{binding.store.state}"
         old_content = current_content
+        trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        unbind_descendant_bindings(old_content)
+        trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        new_content = binding.resolve(prior_state)
+        trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        new_content = sanitize_content(new_content, element)
+        trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         replace_bound_content(element, new_content, old_content)
+        trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         current_content = new_content
+        trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
       end
       current_content
     end
 
     def replace_bound_content(element, new_content, old_content)
       # trace __FILE__, __LINE__, self, __method__, "(element: #{element}, new_content: #{new_content}, old_content: #{old_content}"
-      unbind_descendant_bindings(old_content)
-      # trace __FILE__, __LINE__, self, __method__, " : replacing child"
+      trace __FILE__, __LINE__, self, __method__, ' ************** START WINDOW ANIMATION ON BINDING **************'
       window.animation_frame do
         if old_content
           if new_content
@@ -287,6 +294,7 @@ module Robe; module Client
           end
         end
       end
+      trace __FILE__, __LINE__, self, __method__, ' ************** END WINDOW ANIMATION ON BINDING **************'
       # trace __FILE__, __LINE__, self, __method__, " :=>"
     end
 

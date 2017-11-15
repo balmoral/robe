@@ -1,3 +1,5 @@
+require 'robe/common/promise'
+
 module Robe; module DB; class Model
   class Cache
 
@@ -54,18 +56,6 @@ module Robe; module DB; class Model
       init_methods
     end
 
-    def use(&block)
-      fail "#{self.class} is already in use by #{@use_block}" if @use_block
-      @use_block = block
-      load.then do
-        block.call(self, nil)
-      end.fail do |errors|
-        block.call(self, errors)
-      end.ensure do
-        stop
-      end
-    end
-
     # Returns promise with self as value when all scoped classes loaded.
     def load(&callback)
       promises = []
@@ -76,17 +66,19 @@ module Robe; module DB; class Model
         @prior_caches[model_class] = model_class.cache
         model_class.cache = nil # we want the class to go to db
         filter = {} if filter.nil? || filter == :all
-        # trace __FILE__, __LINE__, self, __method__, " : filter = #{filter}"
+        trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter}"
         promises << model_class.find(**filter.symbolize_keys).then do |result|
           callback.call(loaded: model_class) if callback
-          @models[model_class] = result.to_a
+          result = result.to_a
+          trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} : result.size = #{result.size}"
+          @models[model_class] = result
           model_class.cache = self # from now on we want the class to go through self
         end
       end
-      Robe::Promise.when(*promises) {
-        trace __FILE__, __LINE__, self, __method__, " : ALL CACHE CLASSES LOADED"
+      promises.to_promise_when_on_client.then do
+        trace __FILE__, __LINE__, self, __method__, " : ALL #{promises.size} CACHE CLASSES LOADED"
         self
-      }
+      end
     end
 
     def stop

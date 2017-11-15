@@ -27,4 +27,13 @@ class String
   end
   alias_method :rgb_lighten, :rgb_lighter
 
+  def rgb_inverse
+    hex_color = gsub('#','')
+    rgb = hex_color.scan(/../).map {|color| color.hex}
+    rgb[0] = [(255 - rgb[0].to_i), 0].max
+    rgb[1] = [(255 - rgb[1].to_i), 0].max
+    rgb[2] = [(255 - rgb[2].to_i), 0].max
+    '#%02x%02x%02x' % rgb
+  end
+
 end

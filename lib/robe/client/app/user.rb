@@ -42,16 +42,16 @@ module Robe
                   secure: true
                 }
                 trace __FILE__, __LINE__, self, __method__
-                user.as_promise
+                user.to_promise
               when 'server_error'
                 Robe.app.state.mutate!(user: nil, server_error: result[:error])
-                result[:error].as_promise_error
+                result[:error].to_promise_error
               when 'invalid user'
                 Robe.app.state.mutate!(user: nil, sign_in_invalid_user: true)
-                'invalid user'.as_promise_error
+                'invalid user'.to_promise_error
               when 'invalid password'
                 Robe.app.state.mutate!(user: nil, sign_in_invalid_password: true)
-                'invalid password'.as_promise_error
+                'invalid password'.to_promise_error
             end
           end.fail do |error|
             trace __FILE__, __LINE__, self, __method__, " error=#{error}"
@@ -60,7 +60,7 @@ module Robe
               server_error: error
             )
             Robe.app.cookies.delete(:user_id)
-            error.as_promise_error
+            error.to_promise_error
           end
         end
 

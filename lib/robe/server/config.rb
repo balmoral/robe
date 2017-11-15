@@ -172,13 +172,14 @@ module Robe
            @js_file_order = ary
         end
 
-        # for task data
+        # for task logging
         def filter_task_keys
-          @filter_keys ||= [:password]
+          @filter_task_keys ||= [:password]
         end
 
+        # for task logging
         def filter_task_keys=(ary)
-          @filter_keys = (ary.to_a.map{|e| e.to_s.to_sym} << [:password]).uniq
+          @filter_task_keys = (ary.to_a.map{|e| e.to_s.to_sym} << [:password]).uniq
         end
 
         def task_timeout
