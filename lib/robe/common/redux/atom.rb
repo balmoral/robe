@@ -200,7 +200,7 @@ module Robe; module Redux
       # trace __FILE__, __LINE__, self, __method__, "(#{seed})"
       @state = self.class.state_class.new(seed)
       @observer_id = 0
-      @observers = {}
+      @observers = []
     end
 
     def to_h
@@ -331,19 +331,19 @@ module Robe; module Redux
       # trace __FILE__, __LINE__, self, __method__, "(attrs: #{attrs}, eval: #{eval.class}, who: #{who}, block: #{block.class})"
       @observer_id += 1
       # trace __FILE__, __LINE__, self, __method__, " set @observer_id=#{@observer_id}"
-      @observers[@observer_id] = { who: who, attrs: attrs, eval: eval, callback: block, terminated: false }
+      @observers << { id: @observer_id, who: who, attrs: attrs, eval: eval, callback: block, terminated: false }
       # trace __FILE__, __LINE__, self, __method__, " return @observer_id=#{@observer_id}"
       @observer_id
     end
 
     def unobserve(id)
       # trace __FILE__, __LINE__, self, __method__, "(#{id})"
-      observer = @observers[id]
-      observer[:terminated] = true if observer
+      i = @observers.index { |e| e[:id] == id }
+      @observers.delete_at(i)[:terminated] = true if i
     end
 
     def observer?(id)
-      (observer = @observers[id]) && !observer[:terminated]
+      (observer = @observers.detect { |e| e[:id] == id }) && !observer[:terminated]
     end
 
     # compatibility with Store
@@ -374,12 +374,12 @@ module Robe; module Redux
     # The subscriber callbacks will be given the prior state
     # and store as arguments.
     def broadcast(prior)
-      trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
+      # trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
       inc_mutation_count
       # important that we dup observers before iterating
       # as subscribers they may delete other subscribers
       # (for instance through bindings)
-      prioritised_observers.each do |observer|
+      @observers.each do |observer|
         # a observer can be terminated/unsubscribed by another earlier interested subscriber
         unless observer[:terminated]
           attrs = observer[:attrs]
@@ -403,17 +403,10 @@ module Robe; module Redux
             changed = true
           end
           if changed
-            trace __FILE__, __LINE__, self, __method__, " : broadcasting change from #{prior} to #{self} to observer at #{observer[:who]}"
             observer[:callback].call(prior)
           end
         end
       end
-    end
-
-    # if store is observing itself, it gets to look before others
-    def prioritised_observers
-      @observers.values.select{|o| o[:who].equal?(self)} +
-      @observers.values.reject{|o| o[:who].equal?(self)}
     end
 
     def inc_mutation_count

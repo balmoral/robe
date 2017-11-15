@@ -6,8 +6,8 @@ module Robe; module Redux
     attr_reader :store, :bound_block, :where
 
     # bound block 'provides' bound value
-    def initialize(store, state_method = nil, *state_method_args, where: nil, &bound_block)
-      # trace __FILE__, __LINE__, self, __method__, " : state_method=#{state_method}"
+    def initialize(store, store_method = nil, *store_method_args, where: nil, &bound_block)
+      # trace __FILE__, __LINE__, self, __method__, " : store_method=#{store_method}"
       @where = where || 'unspecified bind location'
       unless store.is_a?(Robe::Redux::Store) || store.is_a?(Robe::Redux::Atom)
         raise ArgumentError, "#{self.class.name}##{__method__} store must be Redux store (called from #{where})"
@@ -16,18 +16,27 @@ module Robe; module Redux
         raise ArgumentError, "#{self.class.name}##{__method__} expects a bound block (called from #{where})"
       end
       @store, @bound_block = store, bound_block
-      @state_method, @state_method_args = state_method, state_method_args
+      @store_method, @store_method_args = store_method, store_method_args
       @subscription_id = nil
+    end
+
+    def to_s
+      "#{self.class} : store=#{store.class} where=#{where}"
     end
 
     # callback is an intermediate subscriber block which manages the binding
     def bind(&callback)
-      raise ArgumentError, "#{self.class.name}##{__method__} expects a callback block" unless callback
-      trace __FILE__, __LINE__, self, __method__, " : store=#{store.class} : callback=#{callback.class} where=#{where}"
-      @subscription_id = store.subscribe(who: where) do | prior |
-        # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} changed?=#{changed?(prior_state)}  | calling #{bound_block.class}"
+      if @subscription_id
+        raise RuntimeError, "already subscribed to store=#{store.class} where=#{where}"
+      end
+      unless callback
+        raise ArgumentError, "#{self.class.name}##{__method__} expects a callback block"
+      end
+      # trace __FILE__, __LINE__, self, __method__, " : BIND : store=#{store.class} : where=#{where}"
+      @subscription_id = store.observe(who: where) do | prior |
+        # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior_store} changed?=#{changed?(prior_store)}  | calling #{bound_block.class}"
         if changed?(prior)
-          trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior} changed?=true | calling #{bound_block.class}"
+          # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior} changed?=true | calling #{bound_block.class}"
           callback.call(prior)
         end
       end
@@ -38,19 +47,19 @@ module Robe; module Redux
     end
 
     def changed?(prior)
-      if @state_method
-        # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} @state_method=#{@state_method} prior=#{prior} current=#{current}"
-        if @state_method.is_a?(Proc)
-          @state_method.call(prior)
+      if @store_method
+        # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior_store} @store_method=#{@store_method} prior=#{prior} current=#{current}"
+        if @store_method.is_a?(Proc)
+          @store_method.call(prior)
         else
-          prior = prior ? prior.send(@state_method, *@state_method_args) : nil
+          prior = prior ? prior.send(@store_method, *@store_method_args) : nil
           current = if store.is_a?(Robe::Redux::Atom)
-            store.send(@state_method, *@state_method_args)
+            store.send(@store_method, *@store_method_args)
           else
-            store.state ? store.state.send(@state_method, *@state_method_args) : nil
+            store.state ? store.state.send(@store_method, *@store_method_args) : nil
           end
         end
-        # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} state=#{store.state} prior_state=#{prior_state} @state_method=#{@state_method} prior=#{prior} current=#{current}"
+        # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior_store} @store_method=#{@store_method} prior=#{prior} current=#{current}"
         prior != current
       else
         true
@@ -69,6 +78,7 @@ module Robe; module Redux
 
     def unbind
       if @subscription_id
+        # trace __FILE__, __LINE__, self, __method__, " : UNBIND : store=#{store.class} : where=#{where}"
         store.unsubscribe(@subscription_id)
         @subscription_id = nil
         @bound_block = ->{

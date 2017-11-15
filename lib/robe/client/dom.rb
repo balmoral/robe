@@ -31,6 +31,14 @@ module Robe; module Client
       @document ||= Robe::Client::Browser.document
     end
 
+    def clear(element)
+      if element
+        unbind_descendant_bindings(element)
+        element.clear
+      end
+      nil
+    end
+
     # Returns a Browser::DOM::Element
     def tag(name, *args)
       # trace __FILE__, __LINE__, self, __method__, "(#{name}, #{args})"
@@ -43,7 +51,7 @@ module Robe; module Client
         # turn args into hash
         args = Hash === args.first ? args.first : { content: args }
         # get content
-        content = args[:content] # args.delete(:content)
+        content = args.delete(:content) # args[:content]
         content = content.call if content.is_a?(Proc)
         if content.is_a?(Enumerable)
           n = content.size
@@ -56,6 +64,7 @@ module Robe; module Client
         # trace __FILE__, __LINE__, self, __method__, " : content=#{content})"
         # what's left are other attributes, such as class, style, etc
         attributes = args
+        # trace __FILE__, __LINE__, self, __method__, " : name=#{name} attributes=#{attributes})"
         css = attributes[:css] # either :class or :css
         attributes[:class] = css if css
         # trace __FILE__, __LINE__, self, __method__, " : attributes=#{attributes})"
@@ -107,6 +116,7 @@ module Robe; module Client
     end
 
     def set_attribute(element, attribute, value)
+      # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.is_a?(Robe::Redux::Binding)
       value = resolve_attribute(element, attribute, value)
       attribute_handler(attribute).call(element, attribute, value)
     end
@@ -191,11 +201,17 @@ module Robe; module Client
     end
 
     def resolve_attribute(element, attr, value)
-      Robe::Redux::Binding === value ? resolve_attribute_binding(element, attr, value) : value
+      if value.is_a?(Robe::Redux::Binding)
+        # trace __FILE__, __LINE__, self, __method__, " : binding=#{value}"
+        resolve_attribute_binding(element, attr, value)
+      else
+        value
+      end
     end
 
     # the resolved binding will become an attribute of the element
     def resolve_attribute_binding(element, attr, binding)
+      # trace __FILE__, __LINE__, self, __method__, " binding=#{binding}"
       element_bindings(element, init: true) << binding
       binding.bind do |prior_state|
         update_element_attribute(binding, prior_state, element, attr)
@@ -230,6 +246,7 @@ module Robe; module Client
 
     # Returns a Browser::DOM::Element
     def sanitize_content(content, element = nil)
+      # trace __FILE__, __LINE__, self, __method__, " : content=#{content.class} element=#{element.class}"
       case content
         when Enumerable
           tag(:div, content)
@@ -241,6 +258,7 @@ module Robe; module Client
           content.to_element
         when binding_class
           if element
+            # trace __FILE__, __LINE__, self, __method__, " : content=#{content.class} element=#{element.class}"
             resolve_bound_content(element, content)
           else
             fail "binding #{binding.where} must belong to parent element : cannot be root"
@@ -254,32 +272,33 @@ module Robe; module Client
 
     # the resolved binding will become a child of the element
     def resolve_bound_content(element, binding)
+      # trace __FILE__, __LINE__, self, __method__, " binding=#{binding}"
       element_bindings(element, init: true) << binding
       current_content = sanitize_content(binding.initial, element)
       binding.bind do |prior_state|
-        trace __FILE__, __LINE__, self, __method__, " : STARTING BINDING FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : STARTING BINDING FOR #{binding.store.class} : #{binding.store.state}"
         old_content = current_content
-        trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
         unbind_descendant_bindings(old_content)
-        trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
-        trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = binding.resolve(prior_state)
-        trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = sanitize_content(new_content, element)
-        trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         replace_bound_content(element, new_content, old_content)
-        trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        # trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         current_content = new_content
-        trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
+        # trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
       end
       current_content
     end
 
     def replace_bound_content(element, new_content, old_content)
       # trace __FILE__, __LINE__, self, __method__, "(element: #{element}, new_content: #{new_content}, old_content: #{old_content}"
-      trace __FILE__, __LINE__, self, __method__, ' ************** START WINDOW ANIMATION ON BINDING **************'
+      # trace __FILE__, __LINE__, self, __method__, ' ************** START WINDOW ANIMATION ON BINDING **************'
       window.animation_frame do
         if old_content
           if new_content
@@ -294,7 +313,7 @@ module Robe; module Client
           end
         end
       end
-      trace __FILE__, __LINE__, self, __method__, ' ************** END WINDOW ANIMATION ON BINDING **************'
+      # trace __FILE__, __LINE__, self, __method__, ' ************** END WINDOW ANIMATION ON BINDING **************'
       # trace __FILE__, __LINE__, self, __method__, " :=>"
     end
 
@@ -383,6 +402,8 @@ module Robe; module Client
           # trace __FILE__, __LINE__, self, __method__, " : element=#{element} descendant=#{descendant}"
           unbind_element_bindings(descendant)
         end
+      else
+        # trace __FILE__, __LINE__, self, __method__, " : cannot unbind descendants for #{element.class}"
       end
     end
 

@@ -165,7 +165,7 @@ module Robe
       end
 
       def perform_render
-        # puts "#{__FILE__}[#{__LINE__}] : #{self.class.name}##{__method__} : root=#{root} "
+        trace __FILE__, __LINE__, self, __method__, " root=#{root}"
         if root.nil?
           raise TypeError, 'Cannot render to a non-existent root element. Make sure the document ready event has been triggered before invoking the application.'
         end

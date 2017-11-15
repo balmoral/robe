@@ -113,8 +113,7 @@ module Robe; module Client
     end
 
     def clear
-      @root.clear if @root
-      @root = nil
+      @root = DOM.clear(@root)
     end
 
     # Returns a Browser::DOM::Element

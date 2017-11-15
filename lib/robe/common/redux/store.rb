@@ -143,6 +143,10 @@ module Robe; module Redux
       !!subscriptions[id]
     end
 
+    alias_method :observe, :subscribe
+    alias_method :observed?, :subscribe
+    alias_method :unobserve, :unsubscribe
+
     protected
 
     # Broadcast change of state to all subscribers.

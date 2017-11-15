@@ -60,10 +60,12 @@ module Robe; module Client;
         )
         unless modified
           event.prevent
-          subscription = app.router.subscribe { window.scroll(0, 0) }
+          # subscription = app.router.subscribe(who: "#{__FILE__}[#{__LINE__}]") do
+          #   window.scroll(0, 0)
+          # end
           # puts "#{__FILE__}##{__LINE__} : #{self.class.name}##{__method__} : calling app.router.navigate_to(#{href})"
           app.router.navigate_to(href)
-          app.router.unsubscribe(subscription)
+          # app.router.unsubscribe(subscription)
         end
       end
 
