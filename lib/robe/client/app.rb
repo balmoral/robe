@@ -119,7 +119,7 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__, " : @watching_url=#{@watching_url}"
         unless @watching_url
           window.on('popstate') do
-            trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
+            # trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
             router.update
           end
           @watching_url = true

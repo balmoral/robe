@@ -1,4 +1,3 @@
-require 'robe/common/trace'
 require 'robe/common/errors'
 
 # Pilfered the lot from opal
@@ -106,24 +105,8 @@ require 'robe/common/errors'
 module Robe
   class Promise
 
-    module Util
-      def make_promise(&block)
-        promise = Robe::Promise.new
-        block.call promise
-        promise
-      end
-
-      def on_promise(promise, &block)
-       promise.then do |response|
-         block.call(response)
-       end.fail do |error|
-         trace __FILE__, __LINE__, self, __method__, "promise failed => #{error}"
-         # app.errors << error
-       end
-      end
-    end
-
     def self.value(value)
+      value.is_a?(Robe::Promise)
       new.resolve(value)
     end
 
@@ -197,6 +180,7 @@ module Robe
     end
 
     def >>(promise)
+      fail unless promise.is_a?(Robe::Promise)
       @next = promise
 
       if exception?
@@ -242,6 +226,7 @@ module Robe
       @value    = value
 
       if @next
+        fail unless @next.is_a?(Robe::Promise)
         @next.resolve(value)
       else
         @delayed = [value]
@@ -279,6 +264,7 @@ module Robe
       @error    = value
 
       if @next
+        fail unless @next.is_a?(Robe::Promise)
         @next.reject(value)
       else
         @delayed = [value]
@@ -497,22 +483,14 @@ class Object
     Robe.client? ? to_promise_error : self
   end
 
+end
+
+class Array
   def to_promise_when
-    self.is_a?(Enumerable) ? Robe::Promise.when(*self.to_a) : Robe::Promise.when(self)
+    Robe::Promise.when(*self.to_a)
   end
 
   def to_promise_when_on_client
     Robe.client? ? to_promise_when : self
-  end
-
-end
-
-module Enumerable
-  def to_promise_when
-    Robe::Promise.when(*self.map(&:to_promise))
-  end
-
-  def to_promise_when_on_client
-    Robe::Promise.when(*self.map(&:to_promise_on_client))
   end
 end

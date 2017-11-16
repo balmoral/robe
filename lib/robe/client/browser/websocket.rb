@@ -13,26 +13,12 @@ module Robe; module Client; module Browser
       @instance ||= new(url)
     end
 
-    # TODO: timeout
-
-    def initialize(url, prior_handlers = nil)
+    def initialize(url, auto_reconnect: true)
+      trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
       @url = url
-      trace __FILE__, __LINE__, self, __method__, " @url='#{@url}'"
-      @native = `new WebSocket(url)`
-      # trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
-      @handlers ||= Hash.new { |h, k| h[k] = [] }
-      if prior_handlers
-        prior_handlers.each do |event, block|
-          on(event, &block)
-        end
-      else
-        init_handlers
-      end
-      init_native_events
-    end
-
-    def timeout
-
+      @auto_reconnect = auto_reconnect
+      init_native
+      init_handlers
     end
 
     # Expects any object that can JSON can be generated from.
@@ -41,11 +27,11 @@ module Robe; module Client; module Browser
       self
     end
 
-    # On open event will call handler with no args.
+    # On :open event will call handler with no args.
     #
-    # On a close event will call block with CloseEvent.
+    # On :close event will call block with CloseEvent.
     #
-    # On message event will call block with an IncomingMessage.
+    # On :message event will call block with an IncomingMessage.
     #
     def on(event_name, &block)
       event_name = event_name.to_sym
@@ -60,21 +46,8 @@ module Robe; module Client; module Browser
       @connected
     end
 
-    # Reconnect the websocket after a short delay if it is interrupted
-    def auto_reconnect!(delay: 1)
-      unless @auto_reconnect
-        @auto_reconnect = true
-        on :close do
-          trace __FILE__, __LINE__, self, __method__, " : auto_reconnect!(delay: #{delay})"
-          Robe.browser.delay(delay) {
-            reconnect!
-          }
-        end
-      end
-    end
-
     def reconnect!
-      initialize(@url, @handlers)
+      init_native
     end
 
     def close(reason = `undefined`)
@@ -84,13 +57,20 @@ module Robe; module Client; module Browser
     private
 
     def init_handlers
+      @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
-        # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} opened "
         @connected = true
       end
       on(:close) do
         trace __FILE__, __LINE__, self, __method__, " websocket #{@url} closed "
         @connected = false
+        if @auto_reconnect
+          Robe.browser.delay(1) {
+            trace __FILE__, __LINE__, self, __method__, " : calling reconnect"
+            reconnect!
+          }
+        end
       end
       on(:error) do |error|
         trace __FILE__, __LINE__, self, __method__, " websocket #{@url} got error #{error} "
@@ -98,7 +78,8 @@ module Robe; module Client; module Browser
       end
     end
     
-    def init_native_events
+    def init_native
+      @native = `new WebSocket(#{@url})`
       EVENT_NAMES.each do |event_name|
         %x{
           #@native["on" + #{event_name}] = function(event) {

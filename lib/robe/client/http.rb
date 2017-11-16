@@ -67,6 +67,7 @@ module Robe; module Client
 
     def promise_on_response(request, promise)
       request.on :load do
+        trace __FILE__, __LINE__, self, __method__, " response.class=#{request.response.class}"
         promise.resolve(request.response)
       end
       request.on :error do |event|

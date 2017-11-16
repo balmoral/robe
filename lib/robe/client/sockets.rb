@@ -108,11 +108,9 @@ module Robe
       def send_message(channel:, event:, content: nil, attempt: 0)
         message = { channel: channel, event: event, content: content }.compact
         trace __FILE__, __LINE__, self, __method__, " message = #{message}"
-        promise = Robe::Promise.new
         if connected?
           trace __FILE__, __LINE__, self, __method__, " : @websocket.send_message(#{message})"
           @websocket.send_message(message)
-          promise.resolve(true)
         else
           if attempt == 20
             trace __FILE__, __LINE__, self, __method__, ' : unable to connect to websocket'
@@ -124,17 +122,13 @@ module Robe
             send_message(**message)
           end
         end
-        promise
-      rescue => exception # TODO: avoid generalized exception traps
-        promise.reject(exception)
       end
 
       private
 
       def init_socket
         trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
-        @websocket = Robe::Client::Browser::WebSocket.instance(url)
-        @websocket.auto_reconnect!
+        @websocket = Robe::Client::Browser::WebSocket.instance(url, auto_reconnect: true)
         # @websocket.auto_reconnect!
         on_open do |event|
           # trace __FILE__, __LINE__, self, __method__, " : open event = #{event}"

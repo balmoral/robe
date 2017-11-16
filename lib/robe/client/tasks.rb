@@ -35,8 +35,9 @@ module Robe
         trace __FILE__, __LINE__, self, __method__, "(#{task_name}, #{meta_data}, #{kwargs})"
         @promises ||= {}
         @promise_id ||= 0
+        promise = Robe::Promise.new
         promise_id = (@promise_id += 1)
-        promise = @promises[promise_id] = Robe::Promise.new
+        @promises[promise_id] = promise
         # TODO: timeout on these callbacks
         trace __FILE__, __LINE__, self, __method__
         channel.send_message(
@@ -66,7 +67,7 @@ module Robe
         @channel
       end
 
-      # a task response comes as an array [promise_id, result, error] in json
+      # a task response comes as a hash {promise_id:, result:, error:} in json
       def self.process_response(response)
         response = response.symbolize_keys
         # trace __FILE__, __LINE__, self, __method__, " response=#{response.class}"
@@ -81,6 +82,7 @@ module Robe
             Robe.logger.error("Task error: #{error}")
             promise.reject(error)
           else
+            trace __FILE__, __LINE__, self, __method__, " response.class=#{response.class} result.class=#{result.class}"
             promise.resolve(result)
           end
         else
