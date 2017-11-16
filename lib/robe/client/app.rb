@@ -181,7 +181,7 @@ module Robe
       end
 
       def run_callbacks
-        # trace __FILE__, __LINE__, self, __method__, ' : on_render=#{on_render}'
+        trace __FILE__, __LINE__, self, __method__, ' : on_render=#{on_render}'
         on_render.each(&:render)
         on_render.clear
       end

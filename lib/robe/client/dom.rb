@@ -33,6 +33,7 @@ module Robe; module Client
 
     def clear(element)
       if element
+        trace __FILE__, __LINE__, self, __method__, " element=#{element}"
         unbind_descendant_bindings(element)
         element.clear
       end
@@ -127,7 +128,7 @@ module Robe; module Client
 
     def attribute_handlers
       @attribute_handlers ||= {
-        style: ->(element, attribute, value) {
+        style: ->(element, _attribute, value) {
           if value
             style = normalize_style(value)
             element.style(style)
@@ -278,20 +279,20 @@ module Robe; module Client
       binding.bind do |prior_state|
         # trace __FILE__, __LINE__, self, __method__, " : STARTING BINDING FOR #{binding.store.class} : #{binding.store.state}"
         old_content = current_content
-        # trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
         unbind_descendant_bindings(old_content)
-        # trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = binding.resolve(prior_state)
-        # trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = sanitize_content(new_content, element)
-        # trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         replace_bound_content(element, new_content, old_content)
-        # trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
+        trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         current_content = new_content
-        # trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
+        trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
       end
       current_content
     end

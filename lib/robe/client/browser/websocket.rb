@@ -15,13 +15,16 @@ module Robe; module Client; module Browser
 
     # TODO: timeout
 
-    def initialize(url, handlers = nil)
+    def initialize(url, prior_handlers = nil)
       @url = url
       trace __FILE__, __LINE__, self, __method__, " @url='#{@url}'"
       @native = `new WebSocket(url)`
       # trace __FILE__, __LINE__, self, __method__, " @native='#{@native}'"
-      if handlers
-        @handlers = handlers
+      @handlers ||= Hash.new { |h, k| h[k] = [] }
+      if prior_handlers
+        prior_handlers.each do |event, block|
+          on(event, &block)
+        end
       else
         init_handlers
       end
@@ -81,7 +84,6 @@ module Robe; module Client; module Browser
     private
 
     def init_handlers
-      @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
         # trace __FILE__, __LINE__, self, __method__, " websocket #{url} opened "
         @connected = true
