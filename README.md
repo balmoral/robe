@@ -1,20 +1,28 @@
 # Robe
 
-Ruby on 'both ends'! 
+The best of both worlds with **R**uby **o**n **b**oth **e**nds.
 
-Robe is a Ruby application framework which runs on both server and client.  
+Robe is a Ruby application framework for developing and deploying Ruby apps on both server and client.  
 
-### Robe provides:
+### Robe
 
-1. easy DOM management via client side Ruby
-1. adaptable components such as tables and forms 
-1. access to opal-browser DOM functionality without need for paggio dsl
-1. the basis for DOM functionality within the Volt framework 
+1. provides a readable, concise, adaptable, object-oriented DOM interface   
+1. provides simple and powerful **state** management
+1. facilitates **binding** the DOM to **state** clearly and simply 
+1. has built-in **Mongo** support on both ends 
+1. allows **tasks** to be defined on the server, requested from the client
+1. has simple configuration
+1. has little convention to master 
+1. has a small footprint compared to **Rails, Hyperloop, React,** ...
+1. requires no javascript libraries other than **jquery**, but...
+1. allows use of any javascript library via **Opal** 
+1. has a minimum of opaque magic
+1. delivers a maximum of productive happiness 
 
 ### Robe is:
 
 1. a work in progress serving existing bespoke commercial applications
-1. undergoing constant change as we learn and require more  
+1. undergoing constant change as we play, learn and require more  
   
 ## Installation
 
@@ -31,24 +39,30 @@ Or install it yourself as:
     $ gem install robe
 
 
-## Usage
 
 ## config.ru
-\ -s puma
+```
+$LOAD_PATH << File.join(Dir.pwd, 'lib')
+
 require 'bundler/setup'
 Bundler.require
+
 use Rack::Deflater
-require_relative './lib/server/app'
-run App
 
-Contributing
-============
+require 'your/server/app'
 
-1. Fork it ( http://github.com/[my-github-username]/dom-rb/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+Your::Server::App.configure
+Your::Server::App.start
+
+run Your:Server::App
+```
+
+## Usage
+```
+bundle exec puma config.ru
+```
+    
+more comming soon...
 
 License
 =======
