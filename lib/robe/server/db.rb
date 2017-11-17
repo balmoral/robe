@@ -11,6 +11,11 @@ module Robe
       include Robe::Shared::DB::Ops
 
       class << self
+
+        def start
+          mongo_client
+        end
+
         def config
           @config ||= Robe::Server::Config
         end

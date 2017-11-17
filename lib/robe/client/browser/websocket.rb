@@ -17,13 +17,14 @@ module Robe; module Client; module Browser
       trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
       @url = url
       @auto_reconnect = auto_reconnect
-      init_native
       init_handlers
+      connect!
     end
 
-    # Expects any object that can JSON can be generated from.
+    # Expects any object that JSON can be generated from.
     def send_message(message)
-      `#@native.send(#{JSON.generate(message)})`
+      json = JSON.generate(message)
+      `#@native.send(#{json})`
       self
     end
 
@@ -46,61 +47,73 @@ module Robe; module Client; module Browser
       @connected
     end
 
-    def reconnect!
-      init_native
-    end
-
     def close(reason = `undefined`)
+      trace __FILE__, __LINE__, self, __method__, " reason => #{reason}"
       `#@native.close(reason)`
     end
 
     private
 
+
     def init_handlers
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} opened "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : opened "
         @connected = true
       end
-      on(:close) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} closed "
+      on(:close) do |event|
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : closed => #{event}"
         @connected = false
-        if @auto_reconnect
-          Robe.browser.delay(1) {
-            trace __FILE__, __LINE__, self, __method__, " : calling reconnect"
-            reconnect!
-          }
-        end
+
+        # RADICAL BUT EFFECTIVE!
+        # If we lose the websocket connection to the server something nasty has happened
+        # like the server going down. Force a home page reload, and browser will report
+        # any problems.
+        #
+        $app.router.reload_root
+
+        # LESS DRAMATIC BUT PRONE TO PROBLEMS...
+        #
+        # if @auto_reconnect
+        #   Robe.browser.delay(3000) {
+        #     trace __FILE__, __LINE__, self, __method__, ' : calling connect!'
+        #     connect!
+        #   }
+        # end
       end
+      # a close event is always sent after an error, so no need to handle much here
       on(:error) do |error|
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} got error #{error} "
+        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : error => #{error} "
         @connected = false
       end
     end
     
-    def init_native
+    def connect!
       @native = `new WebSocket(#{@url})`
+      trace __FILE__, __LINE__, self, __method__, " : native => #{@native}"
       EVENT_NAMES.each do |event_name|
+        trace __FILE__, __LINE__, self, __method__, " : adding event listener for #{event_name} "
         %x{
-          #@native["on" + #{event_name}] = function(event) {
+          #@native.addEventListener(event_name, function(event) {
             var ruby_event;
 
             if(event.constructor === CloseEvent) {
-              ruby_event = #{CloseEvent.new(`event`)};
+              rb_event = #{CloseEvent.new(`event`)};
             } else if(event.constructor === MessageEvent) {
-              ruby_event = #{IncomingMessage.new(`event`)};
+              rb_event = #{IncomingMessage.new(`event`)};
             } else if(event.constructor === ErrorEvent) {
-              ruby_event = event;
+              rb_event = event;
             } else {
-              ruby_event = event;
+              rb_event = event;
             }
             #{
-              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} ruby_event=#{`ruby_event`}"
+              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} "
+              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} rb_event=#{`rb_event`} handlers=#{@handlers[event_name].map(&:class)}"
               @handlers[event_name].each do |handler|
-                handler.call(`ruby_event`)
+                handler.call(`rb_event`)
               end
             }
-          };
+          });
         }
       end
     end

@@ -22,7 +22,8 @@ module Robe; module Server
   class App < ::Roda
 
     def self.start
-      trace __FILE__, __LINE__, self, __method__
+      trace __FILE__, __LINE__, self, __method__, 'calling db.start'
+      db.start
     end
     
     def self.config
@@ -39,6 +40,10 @@ module Robe; module Server
 
     def self.tasks
       Robe.tasks
+    end
+
+    def self.db
+      Robe.db
     end
 
     # Register a server task.
@@ -94,6 +99,9 @@ module Robe; module Server
       self.class.sockets
     end
 
+    def db
+      self.class.db
+    end
 
   end
 end end

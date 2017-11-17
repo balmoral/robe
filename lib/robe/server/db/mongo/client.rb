@@ -5,7 +5,7 @@ module Robe; module DB
 
       LOCAL_HOST = '127.0.0.1:27017'
 
-      attr_reader :uri, :native
+      attr_reader :uri, :native, :database
 
       # hosts is array of strings with 'address:port'
       # - %w(127.0.0.1:27017)
@@ -15,6 +15,7 @@ module Robe; module DB
         self.logger_level = logger_level if logger_level
         trace __FILE__, __LINE__, self, __method__, " @uri=#{@uri}"
         @native = ::Mongo::Client.new(hosts, database: database, user: user, password: password)
+        @database ||= Robe::DB::Mongo::Database.new(self, native.database)
         at_exit do
           trace __FILE__, __LINE__, self, __method__, ' : disconnecting mongo client'
           close
@@ -24,10 +25,6 @@ module Robe; module DB
       # Returns a hash of various stats.
       def stats
         native.command('dbstats' => 1).documents.first
-      end
-
-      def database
-        @database ||= Robe::DB::Mongo::Database.new(self, native.database)
       end
 
       def close

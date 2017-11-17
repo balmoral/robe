@@ -1,4 +1,4 @@
-require 'browser'
+require 'robe/client/browser/browser_ext'
 require 'robe/common/trace'
 require 'robe/common/redux/atom'
 
@@ -65,7 +65,7 @@ module Robe; module Client
     end
 
     def window
-      Robe::Client::Browser.window
+      ::Browser.window
     end
 
     def location
@@ -91,6 +91,11 @@ module Robe; module Client
       # trace __FILE__, __LINE__, self, __method__, "(#{path}) : history.push(#{path})"
       history.push(path, {state: 'dummy_state'}, Time.now.to_s) # need this
       mutate!(**parse(path))
+    end
+
+    def reload_root
+      navigate_to('/')
+      location.reload(true)
     end
 
     alias_method :redirect_to, :navigate_to

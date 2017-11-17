@@ -3,8 +3,6 @@ module Browser
 
     @native = `window`
 
-    module_function
-
     if `#@native.requestAnimationFrame !== undefined`
       def animation_frame(&block)
         `requestAnimationFrame(block)`
@@ -97,11 +95,11 @@ module Browser
       end
 
       def reload(force = true)
-        `window.reload(force)`
+        `window.location.reload(force)`
       end
 
       def replace(url)
-        `window.replace(url)`
+        `window.location.replace(url)`
       end
 
       def assign(url)
@@ -134,6 +132,6 @@ module Browser
   module_function
 
   def window
-    Window
+    $window # from opal-browser
   end
 end
