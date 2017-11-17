@@ -7,9 +7,13 @@ module Robe
       class State < Robe::Redux::Atom
 
         attr :user
-        attr :server_error
+        attr :server_errors
         attr :sign_in_invalid_user
         attr :sign_in_invalid_password
+
+        def initialize
+          super(server_errors: [])
+        end
 
         def user?
           !!user
@@ -23,8 +27,16 @@ module Robe
           !signed_in?
         end
 
-        def server_error?
-          !!server_error
+        def server_errors?
+          server_errors.size > 0
+        end
+
+        def add_server_error(error)
+          mutate!(server_errors: server_errors.dup << error)
+        end
+
+        def clear_server_errors
+          mutate!(server_errors: [])
         end
 
         def sign_in_invalid_user?

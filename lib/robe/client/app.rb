@@ -53,7 +53,7 @@ module Robe
         end
       end
 
-      %i(user server_error sign_in_invalid_user sign_in_invalid_password).each do |method|
+      %i(user server_errors sign_in_invalid_user sign_in_invalid_password).each do |method|
         define_method(method) { state.send(method) }
         define_method(:"#{method}?") { state.send(:"#{method}?") }
       end

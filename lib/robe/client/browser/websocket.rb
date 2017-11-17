@@ -70,8 +70,11 @@ module Robe; module Client; module Browser
         # like the server going down. Force a home page reload, and browser will report
         # any problems.
         #
-        $app.router.reload_root
-
+        $app.state.add_server_error('Lost connection to server - attempting reload...')
+        Robe.browser.delay(3000) do
+          $app.router.reload_root
+        end
+        
         # LESS DRAMATIC BUT PRONE TO PROBLEMS...
         #
         # if @auto_reconnect

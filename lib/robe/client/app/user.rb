@@ -44,7 +44,9 @@ module Robe
                 trace __FILE__, __LINE__, self, __method__
                 user.to_promise
               when 'server_error'
-                Robe.app.state.mutate!(user: nil, server_error: result[:error])
+                Robe.app.state.mutate!(user: nil) do
+                  Robe.app.state.server_errors << result[:error]
+                end
                 result[:error].to_promise_error
               when 'invalid user'
                 Robe.app.state.mutate!(user: nil, sign_in_invalid_user: true)
@@ -55,10 +57,9 @@ module Robe
             end
           end.fail do |error|
             trace __FILE__, __LINE__, self, __method__, " error=#{error}"
-            Robe.app.state.mutate!(
-              user: nil,
-              server_error: error
-            )
+            Robe.app.state.mutate!(user: nil) do
+              Robe.app.state.server_errors << error
+            end
             Robe.app.cookies.delete(:user_id)
             error.to_promise_error
           end
