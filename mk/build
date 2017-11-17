@@ -1,3 +1,0 @@
-sh mk/commit
-gem build robe.gemspec
-gem install robe-0.1.2.gem
