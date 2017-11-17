@@ -1,8 +1,6 @@
 # Robe
 
-The best of both worlds with **R**uby **o**n **b**oth **e**nds.
-
-Robe
+- is the best of both worlds with **R**uby **o**n **b**oth **e**nds.
 - is a Ruby application framework for developing and deploying Ruby apps on both server and client.  
 - provides a readable, concise, adaptable, object-oriented DOM interface   
 - provides simple and powerful **state** management
