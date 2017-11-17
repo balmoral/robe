@@ -14,11 +14,13 @@ module Robe; module DB
       def initialize(hosts:, database:, user:, password:, logger_level: nil)
         self.logger_level = logger_level if logger_level
         trace __FILE__, __LINE__, self, __method__, " @uri=#{@uri}"
-        @native = ::Mongo::Client.new(hosts, database: database, user: user, password: password)
-        @database ||= Robe::DB::Mongo::Database.new(self, native.database)
-        at_exit do
-          trace __FILE__, __LINE__, self, __method__, ' : disconnecting mongo client'
-          close
+        ::Mongo::Client.new(hosts, database: database, user: user, password: password) do |native|
+          @native = native
+          @database ||= Robe::DB::Mongo::Database.new(self, native.database)
+          at_exit do
+            trace __FILE__, __LINE__, self, __method__, ' : disconnecting mongo client'
+            close
+          end
         end
       end
 

@@ -33,6 +33,8 @@ module Browser
       `window.scrollTo(x, y)`
     end
 
+    alias_method :scroll_to, :scroll
+
     # opal-browser puts location in a document, we want it in window
 
     def location

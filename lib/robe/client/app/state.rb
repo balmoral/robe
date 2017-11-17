@@ -6,13 +6,18 @@ module Robe
     class App
       class State < Robe::Redux::Atom
 
+        WEBSOCKET_CLOSED = 1001
+        ERRORS = {
+          WEBSOCKET_CLOSED => 'Web socket closed by server.'
+        }
+
         attr :user
         attr :server_errors
         attr :sign_in_invalid_user
         attr :sign_in_invalid_password
 
         def initialize
-          super(server_errors: [])
+          super(server_errors: {})
         end
 
         def user?
@@ -27,16 +32,29 @@ module Robe
           !signed_in?
         end
 
+        def error_message(error_code)
+          ERRORS[error_code]
+        end
+
         def server_errors?
           server_errors.size > 0
         end
 
-        def add_server_error(error)
-          mutate!(server_errors: server_errors.dup << error)
+        def add_server_error(error_code, message = nil)
+          message ||= error_message(error_code)
+          mutate!(server_errors: server_errors.merge({error_code => message}))
         end
 
+        def notify_web_socket_error
+          add_server_error(WEBSOCKET_CLOSED)
+        end
+
+        def websocket_closed?
+          server_errors.keys.include?(WEBSOCKET_CLOSED)
+        end
+        
         def clear_server_errors
-          mutate!(server_errors: [])
+          mutate!(server_errors: {})
         end
 
         def sign_in_invalid_user?
