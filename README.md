@@ -1,4 +1,4 @@
-# Robe
+# RoBE
 
 - is the best of both worlds with **R**uby **o**n **b**oth **e**nds
 - is a full stack application framework for deploying Ruby on both server and client  
