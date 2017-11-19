@@ -1,7 +1,7 @@
 # Robe
 
 - is the best of both worlds with **R**uby **o**n **b**oth **e**nds
-- is an application framework deploying Ruby on both server and client  
+- is a full stack application framework for deploying Ruby on both server and client  
 - provides a readable, concise, adaptable, object-oriented DOM interface   
 - provides simple and powerful **state** management
 - facilitates **binding** the DOM to **state** clearly and simply 
@@ -11,7 +11,7 @@
 - has little convention to master 
 - has a small footprint compared to **Rails, Hyperloop, React,** ...
 - requires no javascript libraries other than **jquery**, but...
-- allows use of any javascript library via **Opal** 
+- enables use of any javascript library via **Opal** 
 - has a minimum of opaque magic
 - delivers a maximum of productive happiness 
   
