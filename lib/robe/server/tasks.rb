@@ -6,6 +6,7 @@ require 'json'
 require 'timeout'     # ruby stdlib
 require 'concurrent'  # concurrent-ruby gem
 
+require 'robe/common/sockets'
 require 'robe/server/tasks/logger'
 require 'robe/common/promise'
 require 'robe/server/config'
@@ -46,7 +47,7 @@ module Robe
         @tasks ||= {}
       end
 
-      def sockets_channel
+      def task_channel
         sockets.task_channel
       end
 
@@ -56,8 +57,8 @@ module Robe
 
       def init_sockets
         # trace __FILE__, __LINE__, self, __method__
-        sockets.on(channel: sockets_channel, event: :request) do |params|
-          process_request(params)
+        sockets.on_channel(task_channel, :request) do |client:, content:|
+          process_request(client, content)
         end
       end
 
@@ -72,7 +73,7 @@ module Robe
       # Dispatch takes an incoming task from the client and runs
       # it on the server, returning the result to the client.
       # Tasks returning a promise will wait to return.
-      def process_request(request) # , session)
+      def process_request(client, request) # , session)
         # trace __FILE__, __LINE__, self, __method__, "(#{request})"
         request = request.symbolize_keys
         # trace __FILE__, __LINE__, self, __method__, "(#{request})"
@@ -81,6 +82,7 @@ module Robe
           # begin
           # trace __FILE__, __LINE__, self, __method__, "(#{request})"
             perform_task(
+              client: client,
               name: request[:task],
               kwargs: request[:kwargs],
               promise_id: request[:promise_id],
@@ -98,32 +100,26 @@ module Robe
       end
 
       # Perform the task, running inside of a worker thread.
-      def perform_task(name:, kwargs:, promise_id:, meta_data:)
+      def perform_task(client:, name:, kwargs:, promise_id:, meta_data:)
         Tasks::Logger.performing(name, kwargs)
         start_time = Time.now.to_f
         resolve_task(name, kwargs, meta_data).then do |result, cookies|
-          send_response(task: name, promise_id: promise_id, result: result, error: nil, cookies: cookies)
+          send_response(client: client, task: name, promise_id: promise_id, result: result, error: nil, cookies: cookies)
           run_time = ((Time.now.to_f - start_time) * 1000).round(3)
           Tasks::Logger.performed(name, run_time, kwargs)
         end.fail do |error|
           trace __FILE__, __LINE__, self, __method__, " error=#{error}"
-          # begin
-            if error.is_a?(Timeout::Error)
-              error = Timeout::Error.new("Task timed out after #{@timeout} seconds: #{message}")
-            end
-            begin
-              trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, promise_id: #{promise_id}, error: #{error})"
-              send_response(task: name, promise_id: promise_id, error: error)
-            rescue JSON::GeneratorError => e
-              # Convert the error into a string so it can be serialized to something.
-              error = "#{error.class.to_s}: #{error.to_s}"
-              send_response(task: name, promise_id: promise_id, error: error)
-            end
-          # rescue => e
-          #   Robe.logger.error "Error in fail dispatch: #{e.inspect}"
-          #   Robe.logger.error(e.backtrace.join("\n")) if e.respond_to?(:backtrace)
-          #   raise
-          # end
+          if error.is_a?(Timeout::Error)
+            error = Timeout::Error.new("Task timed out after #{@timeout} seconds: #{message}")
+          end
+          begin
+            trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, promise_id: #{promise_id}, error: #{error})"
+            send_response(task: name, promise_id: promise_id, error: error)
+          rescue JSON::GeneratorError => e
+            # Convert the error into a string so it can be serialized to something.
+            error = "#{error.class.to_s}: #{error.to_s}"
+            send_response(task: name, promise_id: promise_id, error: error)
+          end
         end
       end
 
@@ -163,9 +159,10 @@ module Robe
         end
       end
 
-      def send_response(task:, promise_id:, result: nil, error: nil, cookies: nil)
-        sockets.send_message(
-          channel: sockets_channel,
+      def send_response(client:, task:, promise_id:, result: nil, error: nil, cookies: nil)
+        trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
+        client.redis_publish(
+          channel: task_channel,
           event: :response,
           content: {
             task: task,

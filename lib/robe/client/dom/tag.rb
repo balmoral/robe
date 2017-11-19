@@ -38,22 +38,21 @@ module Robe; module Client
     class Tag
       attr_accessor :tag_name, :params
 
+      def initialize(tag_name = :div, *args)
+        self.tag_name = tag_name
+        self.params = args.first.is_a?(Hash) ? args.first : { content: args }
+      end
+
       # :name,
       %i(id css style name enabled disabled selected checked value type autofocus required for data aria on props href src properties height width content).each do |attr|
         if attr == :content
           define_method(attr) do | *args |
-            args = args.to_a.compact
-            if args.empty?
-              args = nil
-            elsif args.size == 1
-              args = args.first
-            end
             params[attr] = args
             self
           end
         elsif attr == :css
           define_method(attr) do | *args |
-            params[:class] = args.to_a
+            params[:class] = args
             self
           end
         else
@@ -79,22 +78,11 @@ module Robe; module Client
         self[binding]
       end
 
-      def initialize(tag_name = :div, *args)
-        self.tag_name = tag_name
-        self.params = args.first.is_a?(Hash) ? args.first : { content: args }
-      end
-
       alias_method :[], :content
 
       def <<(arg)
-        arg = self.class.new(:span, arg) if arg.is_a?(String)
-        content = params[:content] ||= []
-        if arg.is_a?(Enumerable)
-          arg = arg.to_a.compact # flatten.compact
-          content.concat(arg)
-        else
-          content << arg
-        end
+        # arg = self.class.new(:span, arg) if arg.is_a?(String)
+        (params[:content] ||= []) << arg
         self
       end
 

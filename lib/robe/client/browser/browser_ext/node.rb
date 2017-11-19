@@ -35,7 +35,7 @@ module Browser
       # 4. 'destroy'
       # see http://getbootstrap.com/javascript/#tooltips
       def tooltip(arg=nil)
-        if String === arg
+        if arg.is_a?(String)
           arg = {
             title: arg,
             trigger: 'hover focus',
@@ -46,7 +46,7 @@ module Browser
       end
 
       def popover(arg=nil)
-        if String === arg
+        if arg.is_a?(String)
           arg = {
             title: arg,
             trigger: 'hover focus',

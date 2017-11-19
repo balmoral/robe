@@ -122,7 +122,7 @@ module Robe; module DB
         trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
         db.find_one(collection_name, filter.stringify_keys).to_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
-          if Hash === raw
+          if raw.is_a?(Hash)
             raw[:__from_db__] = true
             new(**normalize_attrs(raw)) # keyword arg keys must be symbols
           elsif raw.nil?

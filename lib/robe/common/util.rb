@@ -46,7 +46,7 @@ module Robe
         if arg
           arg.each_pair do |key, next_value|
             current_value = result[key]
-            if Hash === current_value && Hash === next_value
+            if current_value.is_a?(Hash) && next_value.is_a?(Hash)
               result[key] = merge_attributes(current_value, next_value)
             else
               result[key] = next_value
@@ -62,7 +62,7 @@ module Robe
       result = []
       args.each do |arg|
         if arg
-          if Enumerable === arg && !(Hash === arg)
+          if arg.is_a?(Enumerable) && !arg.is_a?(Hash)
             arg.each do |e|
               result << e unless arg.nil?
             end

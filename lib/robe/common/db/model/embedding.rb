@@ -7,7 +7,7 @@ module Robe; module DB;
       attr :type, :model_class, :local_attr
 
       def initialize(model_class, **args)
-        raise ArgumentError, 'model_class should be a class' unless Class === model_class
+        raise ArgumentError, 'model_class should be a class' unless model_class.is_a?(Class)
 
         name_space = model_class.name.split('::')[0..-2].join('::')
 

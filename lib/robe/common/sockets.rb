@@ -5,10 +5,6 @@ module Robe
       :tasks
     end
 
-    def db_channel
-      :db
-    end
-
     def pubsub_channel
       :pubsub
     end
@@ -20,7 +16,6 @@ module Robe
     def channels
       @channels ||= [
         task_channel,
-        db_channel,
         pubsub_channel,
         chat_channel
       ]

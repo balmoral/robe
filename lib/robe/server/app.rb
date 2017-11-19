@@ -67,7 +67,7 @@ module Robe; module Server
     end
 
     # for r.session[:...]
-    use  Rack::Session::Cookie, secret: config.app_secret
+    use Rack::Session::Cookie, secret: config.app_secret
 
     # :head - treat HEAD requests like GET requests with an empty response body
     plugin :head

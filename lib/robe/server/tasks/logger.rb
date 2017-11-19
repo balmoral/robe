@@ -34,7 +34,7 @@ module Robe
         # private
 
         def runtime_s(t)
-          colorize(t.round.to_s + 'ms', :green)
+          colorize('%0.3fs' % (t.to_f / 1000.0), :green)
         end
 
         def name_s(name)

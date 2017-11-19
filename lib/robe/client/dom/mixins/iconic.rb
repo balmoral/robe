@@ -56,7 +56,7 @@ module Robe; module Client
         # trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
         icon = tag(:span, params)
         if tooltip
-          if String === tooltip
+          if tooltip.is_a?(String)
             tooltip = {
               animation: true, title: tooltip, placement: 'left', trigger: 'hover focus', delay: { hide: '200' }  }
           end
@@ -64,7 +64,7 @@ module Robe; module Client
           # tooltip[:container] = icon.id unless tooltip[:container]
           icon.tooltip(tooltip)
         elsif popover
-          if String === popover
+          if popover.is_a?(String)
             popover = { title: popover, placement: 'right', trigger: 'hover focus'}
           end
           popover[:container] ='body' unless popover[:container]

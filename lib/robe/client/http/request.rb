@@ -30,7 +30,7 @@ module Robe; module Client
 
         if method == :get || method == :delete
           `#@native.send()`
-        elsif Hash === data
+        elsif data.is_a?(Hash)
           `#@native.send(#{JSON.generate data})`
         elsif `!!data.native`
           `#@native.send(data.native)`

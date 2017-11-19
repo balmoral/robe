@@ -278,7 +278,7 @@ module Robe; module DB;
       def handle_belongs_to(model, associated)
         __method = __method__
         # trace __FILE__, __LINE__, self, __method__, " : model.class=#{model.class} associated=#{associated.class} has?=#{has?}"
-        associated = [associated] unless Array === associated
+        associated = [associated] unless associated.is_a?(Array)
         # trace __FILE__, __LINE__, self, __method__, " : associated.size=#{associated.size}"
         if has?
           associated.each do |associate|

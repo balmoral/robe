@@ -1,6 +1,7 @@
-# inspired by @jgaskins clearwater/power_strip
-
 require 'singleton'
+
+module Robe; module Server; class Sockets; end end end
+
 require 'robe/common/sockets'
 require 'robe/server/sockets/manager'
 
@@ -10,6 +11,9 @@ module Robe
       include Singleton
       include Robe::Sockets
 
+      REDIS_CHANNEL = :sockets
+      REDIS_HEAD_FIELD_LENGTH = 64 # sufficient for channel name or client uuid
+
       # expects roda request
       def route(r)
         r.on 'socket' do
@@ -18,16 +22,16 @@ module Robe
         end
       end
 
-      def on(channel:, event:, &block)
-        manager.on(channel: channel, event: event, &block)
-      end  
+      def on_channel(channel, event, &block)
+        manager.on_channel(channel, event, &block)
+      end
 
-      def send_message(channel:, event:, content: nil)
-        manager.send_message(channel: channel, event: event, content: content)
+      def redis_publish(channel:, event:, client: nil, content: nil)
+        manager.redis_publish(channel: channel, event: event, client: client, content: content)
       end
 
       private
-      
+
       def manager
         @manager ||= Manager.new
       end

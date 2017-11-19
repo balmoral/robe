@@ -14,12 +14,19 @@ module Robe; module Client
 
     module_function
 
+    BINDING_CLASS   = Robe::Redux::Binding
+    TAG_CLASS       = Robe::Client::DOM::Tag
+    LINK_CLASS      = Robe::Client::DOM::Link
+    NODE_CLASS      = ::Browser::DOM::Node
+    ELEMENT_CLASS   = ::Browser::DOM::Element
+    COMPONENT_CLASS = Robe::Client::Component
+
     HTML_TAGS = ::Robe::Client::Render::HTML::TAGS + ['link']
 
     HTML_TAGS.each do |tag|
       define_method tag do |*args|
         # puts "#{__FILE__}[#{__LINE__}] : #{self.class.name}##{tag}(#{args})"
-        tag_class.new(tag, *args)
+        TAG_CLASS.new(tag, *args)
       end
     end
 
@@ -45,21 +52,38 @@ module Robe; module Client
       # trace __FILE__, __LINE__, self, __method__, "(#{name}, #{args})"
       if name == :link || name == 'link'
         args = args.first
-        fail 'link expects keyword args' unless Hash === args
-        link_class.new(**args).root
+        fail 'link expects keyword args' unless args.class == Hash
+        LINK_CLASS.new(**args).root
       else
         # trace __FILE__, __LINE__, self, __method__, "(#{name}, #{args})"
         # turn args into hash
-        args = Hash === args.first ? args.first : { content: args }
+        args = args.first.class == Hash ? args.first : { content: args }
         # get content
-        content = args.delete(:content) # args[:content]
-        content = content.call if content.is_a?(Proc)
+        content = args.delete(:content)
         if content.is_a?(Enumerable)
           n = content.size
           if n == 0
             content = nil
-          elsif n == 1
-            content = content.first
+          else
+            # attempt to speed things up
+            # flatten has high overhead - only do if necessary
+            compact = []
+            content.each do |e|
+              if e
+                if e.is_a?(Enumerable)
+                  compact.concat(e.to_a.flatten.compact)
+                else
+                  compact << e
+                end
+              end
+            end
+            content = compact
+            n = content.size
+            if n == 0
+              content = nil
+            elsif n == 1
+              content = content.first
+            end
           end
         end
         # trace __FILE__, __LINE__, self, __method__, " : content=#{content})"
@@ -87,34 +111,10 @@ module Robe; module Client
     end
 
     def bind(store, state_method = nil, *state_method_arg, where: nil, &bound_block)
-      binding_class.new(store, state_method, *state_method_arg, where: where, &bound_block)
+      BINDING_CLASS.new(store, state_method, *state_method_arg, where: where, &bound_block)
     end
 
     # private api follows
-
-    def binding_class
-      @@binding_class ||= Robe::Redux::Binding
-    end
-
-    def tag_class
-      @@tag_class ||= Robe::Client::DOM::Tag
-    end
-
-    def link_class
-      @@link_class ||= Robe::Client::DOM::Link
-    end
-
-    def node_class
-      @@node_class || ::Browser::DOM::Node
-    end
-
-    def element_class
-      @@element_class || ::Browser::DOM::Element
-    end
-
-    def component_class
-      @@component_class ||= Robe::Client::Component
-    end
 
     def set_attribute(element, attribute, value)
       # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.is_a?(Robe::Redux::Binding)
@@ -136,7 +136,7 @@ module Robe; module Client
         },
         class: ->(element, attribute, value) {
           if value
-            value = if Enumerable === value
+            value = if value.is_a?(Enumerable)
               value.map{|e| underscore_to_dash(e)}.join(' ')
             else
               underscore_to_dash(value)
@@ -249,21 +249,21 @@ module Robe; module Client
     def sanitize_content(content, element = nil)
       # trace __FILE__, __LINE__, self, __method__, " : content=#{content.class} element=#{element.class}"
       case content
+        when TAG_CLASS
+          content.to_element
+        when NODE_CLASS
+          content
         when Enumerable
           tag(:div, content)
-        when node_class
-          content
-        when component_class
-          content.root
-        when tag_class
-          content.to_element
-        when binding_class
+        when BINDING_CLASS
           if element
             # trace __FILE__, __LINE__, self, __method__, " : content=#{content.class} element=#{element.class}"
             resolve_bound_content(element, content)
           else
             fail "binding #{binding.where} must belong to parent element : cannot be root"
           end
+        when COMPONENT_CLASS
+          content.root
         when NilClass
           nil
         else
@@ -343,7 +343,7 @@ module Robe; module Client
       result = {}
       hash.each do |k, v|
         k = strip_underscores(k)
-        result[k] = Symbol === v || String === v ? method(v) : v
+        result[k] = v.is_a?(Symbol) || v.is_a?(String) ? method(v) : v
       end
       result
     end
@@ -397,7 +397,7 @@ module Robe; module Client
 
     # unbind all bindings in the element and in all its descendants
     def unbind_descendant_bindings(element)
-      if element && element.is_a?(element_class)
+      if element && element.is_a?(ELEMENT_CLASS)
         # trace __FILE__, __LINE__, self, __method__, " : element=#{element}"
         descend(element) do |descendant|
           # trace __FILE__, __LINE__, self, __method__, " : element=#{element} descendant=#{descendant}"
@@ -444,7 +444,14 @@ module Robe; module Client
     end
 
   end
-end end
+end
 
-$dom = Robe::Client::DOM
+  module_function
+
+  def dom
+    Robe::Client::DOM
+  end
+end
+
+$dom = Robe.dom
 

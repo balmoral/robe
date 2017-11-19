@@ -23,7 +23,7 @@ module Browser; module DOM
       arg = {
         title: arg,
         trigger: 'hover focus',
-      } if String === arg
+      } if arg.is_a?(String)
       `$(#@native).tooltip(#{arg.to_n})`
     end
 
@@ -32,7 +32,7 @@ module Browser; module DOM
       arg = {
         title: arg,
         trigger: 'hover focus',
-      } if String === arg
+      } if arg.is_a?(String)
       `$(#@native).popover(#{arg.to_n})`
     end
 
