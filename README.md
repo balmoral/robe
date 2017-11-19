@@ -1,12 +1,13 @@
 # RoBE
 
-- is the best of both worlds with **R**uby **o**n **b**oth **e**nds
+- is the best of both worlds with **R**uby **o**n **B**oth **E**nds
 - is a full stack application framework for deploying Ruby on both server and client  
-- provides a readable, concise, adaptable, object-oriented DOM interface   
+- provides a readable, concise, it can all done in Ruby   
 - provides simple and powerful **state** management
 - facilitates **binding** the DOM to **state** clearly and simply 
-- has built-in **Mongo** support on both ends 
-- allows **tasks** to be defined on the server, requested from the client
+- enables **tasks** to be defined on the server, requested from the client
+- has built-in **Mongo** support, Sequel/ROM/AR to come 
+- has simple websocket implementation  
 - has simple configuration
 - has little convention to master 
 - has a small footprint compared to **Rails, Hyperloop, React,** ...
