@@ -38,7 +38,7 @@ We would particularly like to acknowledge these sources of inspiration and learn
 - the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) - thanks to Ryan Stout
 - the pure and powerful [*Clearwater*](https://github.com/clearwater-rb) - thanks to Jamie Gaskins
 - the amazing tierless and tireless [*Ruby-Hyperloop*](http://ruby-hyperloop.org) - thanks to Mitch VanDuyn and the team
-- the essential and extraorindary [*Opal*](http://opalrb.com/) - thanks to all at team Opal  
+- the essential and extraordinary [*Opal*](http://opalrb.com/) - thanks to all at team Opal  
   
 We've borrowed ideas and patterns and implementations from you all, 
 to have some fun experimenting and to learn by doing.
