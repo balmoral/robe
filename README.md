@@ -8,7 +8,9 @@
 - simple and powerful **state** management
 - explicit and easy **binding** of **DOM** to **state**  
 - **tasks** defined and performed on the server, requests made from the client
-- built-in **Mongo** support - Sequel/ROM/AR to come 
+- built-in **Mongo** support - Sequel/ROM/AR to come
+- database models with built-in validation and associations 
+- easy database write-through caching on the client 
 - simple websocket implementation  
 - simple server configuration
 - little convention to master 
