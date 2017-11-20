@@ -61,6 +61,10 @@ module Robe; module Client
     end
 
     def to_s
+      path_and_params
+    end
+
+    def path_and_params
       "#{path}:#{params}"
     end
 
