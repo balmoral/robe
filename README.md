@@ -57,7 +57,7 @@ Or install it yourself as:
 
 ##### config.ru
 
-```
+```ruby
 $LOAD_PATH << File.join(Dir.pwd, 'lib')
 
 require 'bundler/setup'
@@ -75,7 +75,7 @@ run Your:Server::App
 
 ##### execution
 
-```
+```ruby
 bundle exec puma config.ru
 ```
 
@@ -83,7 +83,7 @@ bundle exec puma config.ru
 
 ##### on the client
 
-```
+```ruby
 require 'robe/client/app'
 require 'robe/common/redux/atom'
 
@@ -130,7 +130,7 @@ end
 
 ##### on the server
 
-```
+```ruby
 require 'robe/server'
 
 class App < Robe::Server::App
