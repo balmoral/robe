@@ -12,10 +12,10 @@ module Robe::Server
     class Manager
 
       def initialize
-        @handlers = {} # server-side channel+event handler callbacks
-        @clients = {} # key: client id, value: a Client
-        @sockets = {} # key: socket object id. value: a Client
-        @subscribers = {} # key: channel name, value: an Hash of client_id => Client
+        @handlers = {}    # server-side channel+event handler callbacks
+        @clients = {}     # client id => a Client
+        @sockets = {}     # socket object id => a Client
+        @subscribers = {} # channel name => a Hash of client_id => Client
         Thread.new { monitor_redis }
       end
 

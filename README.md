@@ -1,7 +1,11 @@
 # RoBE
 
-- the best of both worlds with **R**uby **o**n **B**oth **E**nds
-- a full stack application framework for deploying Ruby on both server and client  
+**R**uby **o**n **B**oth **E**nds!
+
+An easily learned full stack application framework for deploying Ruby on both server and client.  
+
+Highlights are:
+
 - a readable, concise, adaptable, re-usable, object-oriented DOM interface
 - almost no HTML - do it all in Ruby
 - bring your own CSS   
