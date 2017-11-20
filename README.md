@@ -2,7 +2,7 @@
 
 **R**uby **o**n **B**oth **E**nds!
 
-An easily learned full stack application framework for deploying Ruby on both server and client.  
+An easily learned, easily deployed full stack Ruby application framework for server and client.  
 
 Highlights are:
 
@@ -16,7 +16,7 @@ Highlights are:
 - models come with built-in validation and associations 
 - easy write-through database caching on the client 
 - integrated **websocket** support plus **Redis** pub/sub  
-- server runs **Roda** for fast routing, CSRF protection 
+- runs **Roda** on the server for fast routing, CSRF protection 
 - simple one-stop server configuration
 - a minimum of convention to master 
 - no mandated JavaScript libraries (except jquery), but...
@@ -24,28 +24,19 @@ Highlights are:
 - **source maps** to easily debug Ruby code on the client
 - small footprint on server and client
 - an aversion to opaque magic
-- an embrace of **productive happiness** 
-  
-So why leave Ruby behind when coding for the client? 
+- an embrace of **productive happiness**  
 
 ## Acknowledgements
 
 RoBE has been inspired by the great work of some very dedicated, enthusiastic and talented
-people who have already developed great frameworks and toolkits for putting Ruby on the client. 
+people who have provided client-side Ruby libraries and frameworks. 
 
-We would particularly like to acknowledge these sources of inspiration and learning:
+Special appreciation and acknowledgement goes to these sources of inspiration and learning:
 
-- the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) - thanks to Ryan Stout
-- the pure and powerful [*Clearwater*](https://github.com/clearwater-rb) - thanks to Jamie Gaskins
-- the amazing tierless and tireless [*Ruby-Hyperloop*](http://ruby-hyperloop.org) - thanks to Mitch VanDuyn and the team
-- the essential and extraordinary [*Opal*](http://opalrb.com/) - thanks to all at team Opal  
-  
-We've borrowed ideas and patterns and implementations from you all, 
-to have some fun experimenting and to learn by doing.
- 
-We hope there's something useful here for others, 
-acknowledging that it's early days for us with much more yet to learn and implement.
-(We're still not sure we know what we're doing.)   
+- the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) - thanks Ryan Stout
+- the pure and powerful [*Clearwater*](https://github.com/clearwater-rb) - thanks Jamie Gaskins
+- the remarkable and reactive [*Ruby-Hyperloop*](http://ruby-hyperloop.org) - thanks Mitch VanDuyn and the team
+- the essential and enabling [*Opal*](http://opalrb.com/) - thanks to Adam Beynon, Elia Schito and the team  
 
 ## Installation
 
