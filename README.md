@@ -55,7 +55,7 @@ Or install it yourself as:
 
 ## Example
 
-##### on the client
+#### on the client
 
 ```ruby
 require 'robe/client/app'
@@ -105,7 +105,7 @@ class App < Robe::Client::App
 end
 ```
 
-##### on the server
+#### on the server
 
 ```ruby
 require 'robe/server'
@@ -126,7 +126,7 @@ class App < Robe::Server::App
 end
 ```
 
-##### config.ru
+#### config.ru
 
 ```ruby
 require 'bundler/setup'
@@ -138,7 +138,7 @@ require 'example/server/app'
 run ::App
 ```
 
-##### execution
+#### server execution
 
 ```ruby
 bundle exec puma config.ru
