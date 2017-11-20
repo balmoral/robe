@@ -149,6 +149,24 @@ class App < Robe::Server::App
 end
 ```
 
+##### config.ru
+
+```ruby
+require 'bundler/setup'
+Bundler.require
+use Rack::Deflater
+require 'example/server/app'
+::App.configure
+::App.start
+run ::App
+```
+
+##### execution
+
+```ruby
+bundle exec puma config.ru
+```
+
 ## License
 
 MIT
