@@ -59,7 +59,7 @@ Or install it yourself as:
 
 ```ruby
 require 'robe/client/app'
-require 'robe/common/redux/atom'
+require 'robe/common/state/atom'
 
 class App < Robe::Client::App
 
