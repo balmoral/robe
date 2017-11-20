@@ -3,7 +3,8 @@
 - the best of both worlds with **R**uby **o**n **B**oth **E**nds
 - a full stack application framework for deploying Ruby on both server and client  
 - a readable, concise, adaptable, re-usable, object-oriented DOM interface
-- almost no HTML - do it all in Ruby   
+- almost no HTML - do it all in Ruby
+- bring your own CSS   
 - simple and powerful **state** management
 - explicit and easy **binding** of **DOM** to **state**  
 - **tasks** defined and performed on the server, requests made from the client
