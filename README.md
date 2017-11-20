@@ -63,7 +63,7 @@ require 'robe/common/redux/atom'
 
 class App < Robe::Client::App
 
-  class Clock < Robe::Redux::Atom
+  class Clock < Robe::State::Atom
     attr :time
 
     def initialize

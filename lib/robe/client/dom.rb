@@ -14,7 +14,7 @@ module Robe; module Client
 
     module_function
 
-    BINDING_CLASS   = Robe::Redux::Binding
+    BINDING_CLASS   = Robe::State::Binding
     TAG_CLASS       = Robe::Client::DOM::Tag
     LINK_CLASS      = Robe::Client::DOM::Link
     NODE_CLASS      = ::Browser::DOM::Node
@@ -117,7 +117,7 @@ module Robe; module Client
     # private api follows
 
     def set_attribute(element, attribute, value)
-      # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.is_a?(Robe::Redux::Binding)
+      # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.is_a?(Robe::State::Binding)
       value = resolve_attribute(element, attribute, value)
       attribute_handler(attribute).call(element, attribute, value)
     end
@@ -202,7 +202,7 @@ module Robe; module Client
     end
 
     def resolve_attribute(element, attr, value)
-      if value.is_a?(Robe::Redux::Binding)
+      if value.is_a?(Robe::State::Binding)
         # trace __FILE__, __LINE__, self, __method__, " : binding=#{value}"
         resolve_attribute_binding(element, attr, value)
       else

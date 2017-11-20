@@ -1,9 +1,9 @@
 # http://redux.js.org/docs/recipes/ImplementingUndoHistory.html
 
-require 'robe/common/redux/atom'
+require 'robe/common/state/atom'
 
-module Robe; module Redux
-  class History < Robe::Redux::Atom
+module Robe; module State
+  class History < Robe::State::Atom
 
       attr :max_size, :version, :past, :present, :future
 

@@ -1,7 +1,7 @@
-require 'robe/common/redux/store'
+require 'robe/common/state/store'
 
-module Robe; module Redux
-  class HashStore < Robe::Redux::Store
+module Robe; module State
+  class HashStore < Robe::State::Store
     include Enumerable
 
     # delegate read methods which do not affect state :

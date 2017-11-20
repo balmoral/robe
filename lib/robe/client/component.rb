@@ -8,7 +8,7 @@ end end
 require 'robe/common/trace'
 require 'robe/client/browser'
 require 'robe/client/dom'
-require 'robe/common/redux'
+require 'robe/common/state'
 require 'robe/client/css/bootstrap3/colors'
 
 # GLOBAL ATTRIBUTES
@@ -121,7 +121,7 @@ module Robe; module Client
       unless @root
         # trace __FILE__, __LINE__, self, __method__
         @root = render
-        if @root.is_a?(Robe::Redux::Binding) || @root.is_a?(Enumerable)
+        if @root.is_a?(Robe::State::Binding) || @root.is_a?(Enumerable)
           @root = tag(:div, @root)
         end
         @root = sanitize_content(@root)

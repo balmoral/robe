@@ -1,4 +1,4 @@
-module Robe; module Redux
+module Robe; module State
 
   # A binding associates a change in a store due to an action
   # via a bound callback with a value derived from the store.
@@ -9,8 +9,8 @@ module Robe; module Redux
     def initialize(store, store_method = nil, *store_method_args, where: nil, &bound_block)
       # trace __FILE__, __LINE__, self, __method__, " : store_method=#{store_method}"
       @where = where || 'unspecified bind location'
-      unless store.is_a?(Robe::Redux::Store) || store.is_a?(Robe::Redux::Atom)
-        raise ArgumentError, "#{self.class.name}##{__method__} store must be Redux store (called from #{where})"
+      unless store.is_a?(Robe::State::Store) || store.is_a?(Robe::State::Atom)
+        raise ArgumentError, "#{self.class.name}##{__method__} store must be State store (called from #{where})"
       end
       unless bound_block
         raise ArgumentError, "#{self.class.name}##{__method__} expects a bound block (called from #{where})"
@@ -53,7 +53,7 @@ module Robe; module Redux
           @store_method.call(prior)
         else
           prior = prior ? prior.send(@store_method, *@store_method_args) : nil
-          current = if store.is_a?(Robe::Redux::Atom)
+          current = if store.is_a?(Robe::State::Atom)
             store.send(@store_method, *@store_method_args)
           else
             store.state ? store.state.send(@store_method, *@store_method_args) : nil

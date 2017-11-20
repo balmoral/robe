@@ -1,7 +1,7 @@
-require 'robe/common/redux/store'
+require 'robe/common/state/store'
 
-module Robe; module Redux
-  class ArrayStore < Robe::Redux::Store
+module Robe; module State
+  class ArrayStore < Robe::State::Store
     include Enumerable
 
     # Read-only methods which are delegated to the state.

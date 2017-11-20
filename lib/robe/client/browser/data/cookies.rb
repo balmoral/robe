@@ -4,12 +4,12 @@
 #   ref: https://www.nczonline.net/blog/2009/05/12/cookies-and-security/
 
 require 'robe/client/browser/browser_ext/cookies'
-require 'robe/common/redux/atom'
+require 'robe/common/state/atom'
 
 # TODO: Cookies is a mess
 
 module Robe; module Browser
-  class Cookies < Robe::Redux::Atom
+  class Cookies < Robe::State::Atom
     include Enumerable
 
     attr :document, :change, :cookies

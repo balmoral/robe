@@ -1,10 +1,10 @@
-require 'robe/common/redux/atom'
+require 'robe/common/state/atom'
 require 'robe/client/app/user'
 
 module Robe
   module Client
     class App
-      class State < Robe::Redux::Atom
+      class State < Robe::State::Atom
 
         WEBSOCKET_CLOSED = 1001
         ERRORS = {

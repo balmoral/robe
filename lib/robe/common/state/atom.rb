@@ -26,7 +26,7 @@ class Hash
   end
 end
 
-module Robe; module Redux
+module Robe; module State
   class Atom 
 
     class State

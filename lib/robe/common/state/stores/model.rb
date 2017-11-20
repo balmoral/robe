@@ -1,8 +1,8 @@
 require 'robe/common/model'
-require 'robe/common/redux/store'
+require 'robe/common/state/store'
 
-module Robe; module Redux
-  class ModelStore < Robe::Redux::Store
+module Robe; module State
+  class ModelStore < Robe::State::Store
     include Enumerable
 
     # def self.inherited(child_class)

@@ -1,13 +1,13 @@
 
 # http://redux.js.org/docs/basics/Store.html
 
-module Robe; module Redux
+module Robe; module State
   class Store
 
     class << self
 
       def reducers
-        @reducers ||= superclass < Robe::Redux::Store ? superclass.reducers.dup : {}
+        @reducers ||= superclass < Robe::State::Store ? superclass.reducers.dup : {}
       end
 
       # Register a block to handle (reduce) a dispatched action.

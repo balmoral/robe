@@ -1,8 +1,8 @@
 require 'robe/client/browser/browser_ext'
 require 'robe/common/trace'
-require 'robe/common/redux/atom'
+require 'robe/common/state/atom'
 
-# Router is a Redux::Redux::Atom which keeps
+# Router is a State::State::Atom which keeps
 # the browser location and history in sync
 # with the store state.
 #
@@ -30,7 +30,7 @@ require 'robe/common/redux/atom'
 # REF: https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_is_a_URL
 
 module Robe; module Client
-  class Router < Robe::Redux::Atom
+  class Router < Robe::State::Atom
 
     attr :path
     attr :params

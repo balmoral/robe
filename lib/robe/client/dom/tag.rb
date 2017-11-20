@@ -3,7 +3,7 @@ require 'robe/client/render/html/tags'
 require 'robe/client/browser'
 require 'robe/client/dom'
 require 'robe/common/util'
-require 'robe/common/redux/binding'
+require 'robe/common/state/binding'
 
 module Robe; module Client
   module DOM
@@ -74,7 +74,7 @@ module Robe; module Client
 
       # content from binding - shortcut
       def bind(store, state_method = nil, *state_method_args, where: nil, &bound_block)
-        binding = Robe::Redux::Binding.new(store, state_method, *state_method_args, where: where, &bound_block)
+        binding = Robe::State::Binding.new(store, state_method, *state_method_args, where: where, &bound_block)
         self[binding]
       end
 
