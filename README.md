@@ -53,32 +53,6 @@ Or install it yourself as:
     $ gem install robe
 
 
-## Usage
-
-##### config.ru
-
-```ruby
-$LOAD_PATH << File.join(Dir.pwd, 'lib')
-
-require 'bundler/setup'
-Bundler.require
-
-use Rack::Deflater
-
-require 'your/server/app'
-
-Your::Server::App.configure
-Your::Server::App.start
-
-run Your:Server::App
-```
-
-##### execution
-
-```ruby
-bundle exec puma config.ru
-```
-
 ## Example
 
 ##### on the client
@@ -102,12 +76,19 @@ class App < Robe::Client::App
     end
   end    
 
-  def initialize
-    @clock = Clock.new 
-  end
-
-  def on_mount
-    every(1000) { @clock.tick! }
+  class ClockComponent < Robe::Client::Component
+    def initialize
+      @clock = Clock.new
+      every(1000) { @clock.tick! }
+    end
+    
+    def render
+      bind(@clock) {
+        p[
+          "The time is now #{@clock.time}"
+        ]
+      }    
+    end
   end
   
   def render
@@ -118,11 +99,7 @@ class App < Robe::Client::App
       p.style(font_weight: :bold)[
         'Hello world!'
       ],
-      bind(@clock) {
-        p[
-          "The time is now #{@clock.time}"
-        ]
-      }
+      ClockComponent.new
     ]
   end
 end
