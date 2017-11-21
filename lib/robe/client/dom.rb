@@ -18,8 +18,8 @@ module Robe; module Client
     BINDING_CLASS   = Robe::State::Binding
     TAG_CLASS       = Robe::Client::DOM::Tag
     LINK_CLASS      = Robe::Client::DOM::Link
-    ELEMENT_CLASS   = Robe::Browser::DOM::Element
-    NODE_CLASS      = Robe::Browser::DOM::Node
+    ELEMENT_CLASS   = ::Browser::DOM::Element
+    NODE_CLASS      = ::Browser::DOM::Node
     COMPONENT_CLASS = Robe::Client::Component
 
     HTML_TAGS = ::Robe::Client::Render::HTML::TAGS + ['link']

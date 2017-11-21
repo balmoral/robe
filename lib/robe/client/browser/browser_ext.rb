@@ -1,5 +1,4 @@
-require 'native'
-require 'robe-browser'
+require 'opal-browser'
 require 'browser/event'
 require 'browser/animation_frame'
 require 'browser/history'
