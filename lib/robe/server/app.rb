@@ -23,7 +23,9 @@ module Robe; module Server
 
     def self.start
       trace __FILE__, __LINE__, self, __method__, 'calling db.start'
+      configure
       db.start if config.use_mongo?
+      self
     end
     
     def self.config
@@ -44,6 +46,10 @@ module Robe; module Server
 
     def self.db
       Robe.db
+    end
+
+    def self.configure
+      fail "your app need to implement it's own ##configure class method"
     end
 
     # Register a server task.
