@@ -1,8 +1,10 @@
 source 'https://rubygems.org'
-# gem 'robe', '>= 0.1.5'
-gem 'opal', '= 0.10.5'
-gem 'opal-browser', '~> 0.2', '>= 0.2.0'
-gem 'robe', :path => '/Users/col/dev/workspace/robe/gems/robe'
-# either puma or thin
-gem 'puma' # 'thin'
+
+# go to git masters until published gems catch up
+gem 'robe', :git => 'https://github.com/balmoral/robe'
+gem 'opal', :git => 'https://github.com/opal/opal' # 0.11.0.dev
+gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # 0.11.0.dev
+gem 'opal-browser', :git => 'https://github.com/opal/opal-browser'
+
+gem 'puma' # or thin
 

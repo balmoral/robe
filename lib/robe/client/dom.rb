@@ -1,5 +1,6 @@
 require 'robe/common/util'
 require 'robe/common/trace'
+require 'robe/client/browser/element'
 require 'robe/client/dom/link'
 require 'robe/client/dom/tag'
 
@@ -17,8 +18,8 @@ module Robe; module Client
     BINDING_CLASS   = Robe::State::Binding
     TAG_CLASS       = Robe::Client::DOM::Tag
     LINK_CLASS      = Robe::Client::DOM::Link
-    NODE_CLASS      = ::Browser::DOM::Node
-    ELEMENT_CLASS   = ::Browser::DOM::Element
+    ELEMENT_CLASS   = Robe::Browser::DOM::Element
+    NODE_CLASS      = Robe::Browser::DOM::Node
     COMPONENT_CLASS = Robe::Client::Component
 
     HTML_TAGS = ::Robe::Client::Render::HTML::TAGS + ['link']
@@ -251,7 +252,7 @@ module Robe; module Client
       case content
         when TAG_CLASS
           content.to_element
-        when NODE_CLASS
+        when ELEMENT_CLASS
           content
         when Enumerable
           tag(:div, content)

@@ -146,7 +146,7 @@ module Robe
         end
 
         def opal_unaware_gems
-          @opal_unaware_gems ||= %w(opal-browser)
+          @opal_unaware_gems ||= %w()
         end
 
         def add_opal_unaware_gems(ary)

@@ -1,2 +1,8 @@
 source 'https://rubygems.org'
+
+# go to git masters until published gems catch up
+gem 'opal', :git => 'https://github.com/opal/opal' # 0.11.0.dev
+gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # 0.11.0.dev
+gem 'opal-browser', :git => 'https://github.com/opal/opal-browser' 
+
 gemspec
