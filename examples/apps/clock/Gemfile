@@ -1,4 +1,8 @@
 source 'https://rubygems.org'
-gem 'robe', '>= 0.1.4'
+# gem 'robe', '>= 0.1.5'
+gem 'opal', '= 0.10.5'
+gem 'opal-browser', '~> 0.2', '>= 0.2.0'
+gem 'robe', :path => '/Users/col/dev/workspace/robe/gems/robe'
 # either puma or thin
 gem 'puma' # 'thin'
+

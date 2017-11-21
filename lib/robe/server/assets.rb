@@ -6,7 +6,7 @@ require 'sprockets-sass'
 require 'sass'
 require 'uglifier' if ENV['RACK_ENV'] == 'production'
 
-MIN_OPAL_VERSION = '0.11'
+MIN_OPAL_VERSION = '0.10.5' # 0.11'
 
 # TODO: see opal-sprockets server.rb for ideas
 
@@ -161,7 +161,7 @@ module Robe
       def css_file_names
         # puts "config.css_file_order=#{config.css_file_order}"
         path = css_path
-        unlisted = path ? Dir.entries(path).select{|e| e.end_with?('.css')} : []
+        unlisted = path && Dir.exists?(path) ? Dir.entries(path).select{|e| e.end_with?('.css')} : []
         (config.css_file_order || []) | unlisted
       end
 
@@ -192,7 +192,7 @@ module Robe
 
       def js_file_names
         path = js_path
-        unlisted = path ? Dir.entries(path).select{|e| e.end_with?('.js')} : []
+        unlisted = path && Dir.exists?(path) ? Dir.entries(path).select{|e| e.end_with?('.js')} : []
         (config.js_file_order || []) | unlisted
       end
 

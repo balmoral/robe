@@ -62,47 +62,60 @@ require 'robe/client/app'
 require 'robe/common/state/atom'
 
 class App < Robe::Client::App
-
   class Clock < Robe::State::Atom
     attr :time
 
     def initialize
       super
       tick!
-    end  
+    end
 
     def tick!
       mutate!(time: Time.now)
     end
-  end    
+  end
 
   class ClockComponent < Robe::Client::Component
     def initialize
       @clock = Clock.new
       every(1000) { @clock.tick! }
     end
-    
+
     def render
       bind(@clock) {
-        p[
-          "The time is now #{@clock.time}"
+        p.style(color: color)[
+          @clock.time.strftime('%I:%M:%S %p')
         ]
-      }    
+      }
+    end
+
+    def color
+      %i(green pink orange cyan orange)[@clock.time.to_i % 5]
     end
   end
-  
-  def render
-    div[
-      h1.style(color: :darkgray)[
-        'RoBE Example'
-      ],
-      p.style(font_weight: :bold)[
-        'Hello world!'
-      ],
-      ClockComponent.new
-    ]
+
+  class Page < Robe::Client::Component
+    def render
+      div.style(text_align: :center)[
+        h1[
+          'RoBE Example'
+        ],
+        p.style(font_weight: :bold, font_size: :larger, color: :blue)[
+          'The time has come for Ruby on the client!'
+        ],
+        ClockComponent.new
+      ]
+    end
+  end
+
+  def initialize
+    super Page.new
   end
 end
+
+# start the app
+::App.new.mount
+
 ```
 
 #### on the server
@@ -115,7 +128,7 @@ class App < Robe::Server::App
     config.client_app_path = 'example/client/app.rb'
     config.title = 'RoBE Example'
     config.source_maps = ENV['RACK_ENV'] == 'development'
-
+    # make sure you bring jquery
     config.html_literal_head = <<-HTML
       <meta charset="utf-8">
       <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
@@ -124,6 +137,15 @@ class App < Robe::Server::App
     HTML
   end
 end
+```
+
+#### Gemfile
+
+```ruby
+source 'https://rubygems.org'
+gem 'robe'
+gem 'puma' # or thin 
+
 ```
 
 #### config.ru

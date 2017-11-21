@@ -87,6 +87,7 @@ require 'robe/client/css/bootstrap3/colors'
 module Robe; module Client
 
   class Component
+    include Robe::Client::Browser
     include Robe::Client::DOM
     include Robe::CSS::Bootstrap3::Colors
     

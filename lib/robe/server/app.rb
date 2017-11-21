@@ -23,7 +23,7 @@ module Robe; module Server
 
     def self.start
       trace __FILE__, __LINE__, self, __method__, 'calling db.start'
-      db.start
+      db.start if config.use_mongo?
     end
     
     def self.config
