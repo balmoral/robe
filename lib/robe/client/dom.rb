@@ -1,6 +1,5 @@
 require 'robe/common/util'
 require 'robe/common/trace'
-require 'robe/client/browser/element'
 require 'robe/client/dom/link'
 require 'robe/client/dom/tag'
 
