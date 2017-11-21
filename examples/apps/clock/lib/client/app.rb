@@ -25,25 +25,29 @@ class App < Robe::Client::App
     def render
       bind(@clock) {
         p.style(color: color)[
-          @clock.time.strftime('%I:%M:%S %p')
+          @clock.time.to_s
         ]
       }
     end
 
     def color
-      %i(green pink orange cyan orange)[@clock.time.to_i % 5]
+      %i(magenta blue)[@clock.time.to_i % 2]
     end
   end
 
   class Page < Robe::Client::Component
     def render
-      div.style(text_align: :center)[
+      div.style(font_family: 'Helvetica', text_align: :center)[
         h1[
-          'RoBE Example'
+          'RoBE'
         ],
-        p.style(font_weight: :bold, font_size: :larger, color: :blue)[
+        h2.style(color: :darkred)[
+          'Ruby on Both Ends'
+        ],
+        h3.style(color: :orange)[
           'The time has come for Ruby on the client!'
         ],
+        hr,
         ClockComponent.new
       ]
     end

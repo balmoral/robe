@@ -62,6 +62,7 @@ require 'robe/client/app'
 require 'robe/common/state/atom'
 
 class App < Robe::Client::App
+
   class Clock < Robe::State::Atom
     attr :time
 
@@ -84,25 +85,29 @@ class App < Robe::Client::App
     def render
       bind(@clock) {
         p.style(color: color)[
-          @clock.time.strftime('%I:%M:%S %p')
+          @clock.time.to_s
         ]
       }
     end
 
     def color
-      %i(green pink orange cyan orange)[@clock.time.to_i % 5]
+      %i(magenta blue)[@clock.time.to_i % 2]
     end
   end
 
   class Page < Robe::Client::Component
     def render
-      div.style(text_align: :center)[
+      div.style(font_family: 'Helvetica', text_align: :center)[
         h1[
-          'RoBE Example'
+          'RoBE'
         ],
-        p.style(font_weight: :bold, font_size: :larger, color: :blue)[
+        h2.style(color: :darkred)[
+          'Ruby on Both Ends'
+        ],
+        h3.style(color: :orange)[
           'The time has come for Ruby on the client!'
         ],
+        hr,
         ClockComponent.new
       ]
     end
@@ -111,9 +116,9 @@ class App < Robe::Client::App
   def initialize
     super Page.new
   end
+
 end
 
-# start the app
 ::App.new.mount
 
 ```
@@ -143,8 +148,13 @@ end
 
 ```ruby
 source 'https://rubygems.org'
-gem 'robe'
-gem 'puma' # or thin 
+# go to git masters until published gems catch up
+gem 'robe', :git => 'https://github.com/balmoral/robe'
+gem 'opal', :git => 'https://github.com/opal/opal' # 0.11.0.dev
+gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # 0.11.0.dev
+gem 'opal-browser', :git => 'https://github.com/opal/opal-browser'
+# choose your server
+gem 'puma' # or thin
 
 ```
 
