@@ -17,6 +17,9 @@ Gem::Specification.new do |s|
   s.files = %w'README.md MIT-LICENSE' + Dir[File.join('lib', '**', '*')]
   s.require_paths = ['lib']
 
+  s.add_dependency 'opal', '>= 0.10.5'
+  s.add_dependency 'opal-sprockets', '0.4.1.0.11.0.rc1.3.1'
+  s.add_dependency 'opal-browser', '>= 0.2.0'
   s.add_dependency 'sprockets-sass', '2.0.0.beta1'
   s.add_dependency 'json', '~> 2.1'
   s.add_dependency 'sass', '~> 3.5'

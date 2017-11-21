@@ -1,7 +1,2 @@
 source 'https://rubygems.org'
-
-gem 'opal', '>= 0.10.5'
-gem 'opal-sprockets', '0.4.1.0.11.0.rc1.3.1'
-gem 'opal-browser', '>= 0.2.0'
-
 gemspec

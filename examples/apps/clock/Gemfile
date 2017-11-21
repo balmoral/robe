@@ -1,5 +1,4 @@
 source 'https://rubygems.org'
-gem 'robe', '~> 0.1'
+gem 'robe', '>= 0.1.4'
 # either puma or thin
 gem 'puma' # 'thin'
-
