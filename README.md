@@ -14,7 +14,7 @@ Highlights are:
 - simple explicit fine-grained **binding** of DOM to state  
 - **tasks** defined and performed on the server, requests made from the client
 - built-in **Mongo** support - Sequel/ROM/AR to come
-- models come with built-in validation and associations 
+- database models with built-in validation and associations 
 - easy write-through database caching on the client 
 - integrated **websocket** support with **Redis** pub/sub  
 - runs **Roda** on the server for fast routing, CSRF protection 
@@ -112,7 +112,6 @@ class App < Robe::Client::App
   end
 
   class Page < Robe::Client::Component
-
     def initialize
       @clock = Clock.new
       every(1000) do
@@ -129,7 +128,7 @@ class App < Robe::Client::App
         h1[
           'RoBE => Ruby on Both Ends.'
         ],
-        h5.style(color: :orangered, )[
+        h5.style(color: :orangered)[
           'the time has come for Ruby on the server and the client...'.upcase
         ],
         ClockDiv.new(@clock)

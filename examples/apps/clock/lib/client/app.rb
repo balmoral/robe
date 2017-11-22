@@ -40,7 +40,6 @@ class App < Robe::Client::App
   end
 
   class Page < Robe::Client::Component
-
     def initialize
       @clock = Clock.new
       every(1000) do
@@ -57,7 +56,7 @@ class App < Robe::Client::App
         h1[
           'RoBE => Ruby on Both Ends.'
         ],
-        h5.style(color: :orangered, )[
+        h5.style(color: :orangered)[
           'the time has come for Ruby on the server and the client...'.upcase
         ],
         ClockDiv.new(@clock)
