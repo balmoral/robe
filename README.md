@@ -65,9 +65,7 @@ This mini-app demonstrates RoBE's
 - performing server-side tasks 
 - minimum of server configuration
 
-in under 100 lines of easy-to-read Ruby code.
- 
-And only 4 lines of embedded HTML.
+in under 100 lines of easy-to-read Ruby.
 
 #### on the client
 
