@@ -56,7 +56,7 @@ Or install it yourself as:
 
 ## Example
 
-This mini-app demonstrates RoBE's:
+This mini-app demonstrates RoBE's
 
 - concise DOM DSL
 - reusable DOM components
@@ -65,7 +65,7 @@ This mini-app demonstrates RoBE's:
 - performing server-side tasks 
 - minimum of server configuration
 
-in under 100 lines of easy-to-read code.
+in under 100 lines of easy-to-read Ruby code (and only 4 lines of embedded HTML).
 
 #### on the client
 
