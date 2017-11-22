@@ -7,7 +7,8 @@ An easily learned, easily deployed full stack Ruby application framework for ser
 Highlights are:
 
 - a readable, concise, adaptable, re-usable, object-oriented DOM interface
-- almost **no HTML** - do it all in Ruby
+- **no HTML** (almost) - do it all in Ruby
+- **isomorphic** where you want it
 - bring-your-own CSS and JavaScript as required  
 - simple yet powerful **state** management
 - simple explicit fine-grained **binding** of DOM to state  
@@ -15,28 +16,28 @@ Highlights are:
 - built-in **Mongo** support - Sequel/ROM/AR to come
 - models come with built-in validation and associations 
 - easy write-through database caching on the client 
-- integrated **websocket** support plus **Redis** pub/sub  
+- integrated **websocket** support with **Redis** pub/sub  
 - runs **Roda** on the server for fast routing, CSRF protection 
 - simple one-stop server configuration
 - a minimum of convention to master 
 - no mandated JavaScript libraries (except jquery), but...
 - inline JavaScript and access to any JavaScript library via **Opal** 
-- **source maps** to easily debug Ruby code on the client
+- **source maps** to view and debug Ruby code on the client
 - small footprint on server and client
 - an aversion to opaque magic
 - an embrace of **productive happiness**  
 
 ## Acknowledgements
 
-RoBE has been inspired by the great work of some very dedicated, enthusiastic and talented
-people who have provided client-side Ruby libraries and frameworks. 
+RoBE has been inspired by the work of many dedicated, enthusiastic and talented
+people who have already provided great client-side Ruby libraries and frameworks. 
 
 Special appreciation and acknowledgement goes to these sources of inspiration and learning:
 
-- the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) - thanks Ryan Stout
-- the pure and powerful [*Clearwater*](https://github.com/clearwater-rb) - thanks Jamie Gaskins
-- the remarkable and reactive [*Ruby-Hyperloop*](http://ruby-hyperloop.org) - thanks Mitch VanDuyn and the team
-- the essential and enabling [*Opal*](http://opalrb.com/) - thanks to Adam Beynon, Elia Schito and the team  
+- the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) 
+- the virtual and virtuous [*Clearwater*](https://github.com/clearwater-rb)
+- the re-active and remarkable [*Ruby-Hyperloop*](http://ruby-hyperloop.org)
+- the essential and enabling [*Opal*](http://opalrb.com/) 
 
 ## Installation
 
@@ -55,6 +56,17 @@ Or install it yourself as:
 
 ## Example
 
+This mini-app demonstrates RoBE's:
+
+- concise DOM DSL
+- reusable DOM components
+- atomic state management
+- explicit binding of state to DOM
+- performing server-side tasks 
+- minimum of server configuration
+
+in under 100 lines of easy-to-read code.
+
 #### on the client
 
 ```ruby
@@ -64,51 +76,63 @@ require 'robe/common/state/atom'
 class App < Robe::Client::App
 
   class Clock < Robe::State::Atom
-    attr :time
-
-    def initialize
-      super
-      tick!
-    end
-
-    def tick!
-      mutate!(time: Time.now)
-    end
+    attr :client_time
+    attr :server_time
   end
 
-  class ClockComponent < Robe::Client::Component
-    def initialize
-      @clock = Clock.new
-      every(1000) { @clock.tick! }
+  class TimeDiv < Robe::Client::Component
+    def initialize(which, clock)
+      @name = which.to_s.upcase
+      @method = :"#{which}_time"
+      @clock = clock
     end
 
     def render
-      bind(@clock) {
-        p.style(color: color)[
-          @clock.time.to_s
-        ]
-      }
+      p.style(color: :white, background_color: :darkgray, width: 27.em, padding: 0.5.em)[
+        span[@name],
+        span[@clock.send(@method)].style(float: :right)
+      ]
+    end
+  end
+
+  class ClockDiv < Robe::Client::Component
+    def initialize(clock)
+      @clock = clock
     end
 
-    def color
-      %i(magenta blue)[@clock.time.to_i % 2]
+    def render
+      # update DOM when clock state changes
+      bind(@clock) {
+        div[
+          TimeDiv.new(:server, @clock),
+          TimeDiv.new(:client, @clock),
+        ]
+      }
     end
   end
 
   class Page < Robe::Client::Component
+
+    def initialize
+      @clock = Clock.new
+      every(1000) do
+        # get the time on the server using a task
+        app.perform_task(:time).then do |server_time|
+          @clock.mutate!(server_time: server_time)
+          @clock.mutate!(client_time: Time.now.to_s)
+        end
+      end
+    end
+
     def render
-      div.style(font_family: 'Helvetica', text_align: :center)[
+      div.style(font_family: 'Helvetica')[
         h1[
-          'RoBE'
+          'RoBE => Ruby on Both Ends.'
         ],
-        h2.style(color: :darkred)[
-          'Ruby on Both Ends'
+        h5.style(color: :orangered, )[
+          'the time has come for Ruby on the server and the client...'.upcase
         ],
-        h3.style(color: :orange)[
-          'The time has come for Ruby on the client!'
-        ],
-        hr,
-        ClockComponent.new
+        ClockDiv.new(@clock)
       ]
     end
   end
@@ -129,11 +153,16 @@ end
 require 'robe/server'
 
 class App < Robe::Server::App
+
+  task :time do
+    Time.now.to_s
+  end
+  
   def self.configure
-    config.client_app_path = 'example/client/app.rb'
-    config.title = 'RoBE Example'
+    config.client_app_path = 'client/app.rb'
+    config.title = 'RoBE Clock Example'
     config.source_maps = ENV['RACK_ENV'] == 'development'
-    # make sure you bring jquery
+
     config.html_literal_head = <<-HTML
       <meta charset="utf-8">
       <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
@@ -150,9 +179,9 @@ end
 source 'https://rubygems.org'
 # go to git masters until published gems catch up
 gem 'robe', :git => 'https://github.com/balmoral/robe'
-gem 'opal', :git => 'https://github.com/opal/opal' # 0.11.0.dev
-gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # 0.11.0.dev
-gem 'opal-browser', :git => 'https://github.com/opal/opal-browser'
+gem 'opal', :git => 'https://github.com/opal/opal' # 0.11.0.rc1
+gem 'opal-sprockets', :git => 'https://github.com/opal/opal-sprockets' # for opal 0.11.0.rc1
+gem 'opal-browser', :git => 'https://github.com/opal/opal-browser' # 0.2.0 
 # choose your server
 gem 'puma' # or thin
 
@@ -164,7 +193,7 @@ gem 'puma' # or thin
 require 'bundler/setup'
 Bundler.require
 use Rack::Deflater
-require 'example/server/app'
+require './example/server/app'
 run ::App.start
 ```
 
