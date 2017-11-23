@@ -35,7 +35,7 @@ class TodoApp < Robe::Client::App
       .value(todo.text)
       .style(width: 30.em)
       .on(
-        input: -> (event) {
+        input: ->(event) {
           todo.mutate!(text: event.target.value)
         }
       )
@@ -46,13 +46,21 @@ class TodoApp < Robe::Client::App
       .type(:checkbox)
       .checked(todo.completed)
       .style(margin_left: 2.em)
-      .on(click: ->{todo.mutate!(completed: !todo.completed)})
+      .on(
+        click: ->{
+          todo.mutate!(completed: !todo.completed)
+        }
+      )
     end
 
     def todo_delete(todo)
       button['X']
       .style(color: :red, font_size: :smaller, margin_left: 2.em)
-      .on(click: ->{TODOS.delete(todo)})
+      .on(
+        click: ->{
+          TODOS.delete(todo)
+        }
+      )
     end
   end
 end

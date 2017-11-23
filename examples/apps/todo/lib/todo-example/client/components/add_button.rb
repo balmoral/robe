@@ -1,7 +1,11 @@
 class TodoApp < Robe::Client::App
   class AddButton < Robe::Client::Component
     def render
-      button['Add todo...'].on(click: ->{add_todo})
+      button['Add todo...'].on(
+        click: ->{
+          add_todo
+        }
+      )
     end
 
     def add_todo
