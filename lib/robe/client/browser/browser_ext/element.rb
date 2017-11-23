@@ -6,6 +6,10 @@ module Browser
         !!`#@native.hidden`
       end
 
+      def focus
+        `#@native.focus()`
+      end
+
       def select
         `#@native.select()`
       end

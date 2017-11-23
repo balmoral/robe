@@ -44,7 +44,7 @@ module Robe; module Client
       end
 
       # :name,
-      %i(id css style name enabled disabled selected checked value type autofocus required for data aria on props href src properties height width content).each do |attr|
+      %i(id css style name focused enabled disabled selected checked value type autofocus required for data aria on props href src properties height width content).each do |attr|
         if attr == :content
           define_method(attr) do | *args |
             params[attr] = args

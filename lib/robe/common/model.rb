@@ -86,7 +86,7 @@ module Robe
     #
     #     def self.name_spec
     #       {
-    #         type: [TrueClass, FalseClass],
+    #         type: [TrueClass, FalseClass], # or :boolean
     #         read: ->(value) {
     #           value == 'T' ? true : false
     #         },
@@ -127,7 +127,10 @@ module Robe
             arg_spec.each do |key, value|
               index = case key
                 when :type
-                  if value.is_a?(Class)
+                  if value == :boolean
+                    value = [TrueClass, FalseClass]
+                    ATTR_SPEC_MULTI_TYPE
+                  elsif  value.is_a?(Class)
                     ATTR_SPEC_SINGLE_TYPE
                   elsif value.is_a?(Enumerable)
                     value = value.to_a

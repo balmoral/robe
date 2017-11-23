@@ -170,6 +170,9 @@ module Robe; module Client
         disabled: ->(element, attribute, value) {
           element[:disabled] = value
         },
+        focused: ->(element, attribute, value) {
+          element[:focused] = value
+        },
         props: ->(element, attribute, value) {
           value.each do |p, v|
             element[p] = v
