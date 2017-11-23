@@ -13,11 +13,6 @@ class App < Robe::Client::App
 
   class Todo < Robe::State::Atom
     attr :id, :text, :completed
-
-    def initialize(**args)
-      args[:completed] = false
-      super(**args)
-    end
   end
 
 
@@ -37,7 +32,7 @@ class App < Robe::Client::App
     end
 
     def add_todo
-      todo = Todo.new(id: TODOS.size, text: "todo ##{TODOS.size}")
+      todo = Todo.new(id: TODOS.size, text: "Todo ##{TODOS.size}", completed: false)
       TODOS << todo
     end
   end
