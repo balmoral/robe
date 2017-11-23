@@ -7,7 +7,6 @@ require 'todo-example/client/components/page'
 TODOS = Robe::State::ArrayStore.new
 
 class TodoApp < Robe::Client::App
-
   def initialize
     super Page.new
   end
