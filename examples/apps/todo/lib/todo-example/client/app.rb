@@ -79,7 +79,6 @@ class App < Robe::Client::App
       .id("todo-#{todo.id}-text")
       .value(todo.text)
       .style(width: 30.em)
-      .focused(todo == TODOS.last)
       .on(
         input: -> (event) {
           todo.mutate!(text: event.target.value)
@@ -133,7 +132,7 @@ class App < Robe::Client::App
     def button_link(which)
       link.href("/#{which}")[
         button
-        .disabled(app.completed_path == which)
+        .disabled(app.completed_scope == which)
         .style(margin_right: 1.em, width: 6.em)[
           which.to_s.capitalize
         ]
@@ -156,13 +155,13 @@ class App < Robe::Client::App
     super Page.new
   end
 
-  def completed_path
+  def completed_scope
     path = router.path.delete('/')
     path.empty? ? 'all' : path
   end
 
   def completed_states
-    case completed_path
+    case completed_scope
     when 'all';       [true, false]
     when 'active';    [false]
     when 'completed'; [true]
