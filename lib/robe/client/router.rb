@@ -19,9 +19,9 @@ require 'robe/common/state/atom'
 #
 #   bind(router) {
 #     case router.path
-#       when '/user'
+#       when '/page/user'
 #         Page::User.new(router.params('user'))
-#       when '/todos'
+#       when '/page/todos'
 #         Page::Todos.new(router.params('todos'))
 #       ...
 #   }

@@ -17,7 +17,6 @@ Highlights are:
 - database models with built-in validation and associations 
 - easy write-through database caching on the client 
 - integrated **websocket** support with **Redis** pub/sub  
-- runs **Roda** on the server for fast routing, CSRF protection 
 - simple one-stop server configuration
 - a minimum of convention to master 
 - no mandated JavaScript libraries (except jquery), but...
@@ -191,16 +190,24 @@ gem 'puma' # or thin
 ```ruby
 require 'bundler/setup'
 Bundler.require
-use Rack::Deflater
+
 require './example/server/app'
-run ::App.start
+run ::App.instance
 ```
 
 #### server execution
 
-```ruby
+```sh
 bundle exec puma config.ru
 ```
+
+or
+
+```sh
+bundle exec thin start --rackup config.ru -p 9292
+```
+
+Your Gemfile should specify `puma` or `thin` accordingly.
 
 ## License
 

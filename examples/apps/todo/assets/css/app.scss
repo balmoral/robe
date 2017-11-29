@@ -1,0 +1,19 @@
+// @import "bootstrap.min.css";
+
+$darkgray: darken(darkgray, 20%);
+
+body {
+    background-color: lightgray;
+}
+
+h1 {
+    font-family: serif;
+    color: $darkgray;
+}
+
+button {
+    color: white;
+    background-color: $darkgray;
+    border-style: none;
+    border-radius: 4px;
+}

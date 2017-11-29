@@ -1,5 +1,5 @@
 require 'bundler/setup'
 Bundler.require
-use Rack::Deflater
-require './lib/server/app'
-run ::App.start
+
+require './lib/clock-example/server/app'
+run ::App.instance

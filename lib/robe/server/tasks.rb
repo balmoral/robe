@@ -1,7 +1,6 @@
 # Adapted from Volt. We don't use drb for now.
 
 require 'singleton'
-require 'roda'
 require 'json'
 require 'timeout'     # ruby stdlib
 require 'concurrent'  # concurrent-ruby gem

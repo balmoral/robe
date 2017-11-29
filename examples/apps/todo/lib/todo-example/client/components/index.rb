@@ -8,10 +8,10 @@ class TodoApp < Robe::Client::App
           # and whenever the TODOS change update the list
           div[
             bind(TODOS) {
-              TODOS.map { |todo|
-                # if completed state not in scope then give a nil
-                bind(todo, :completed) {
-                  if app.completed_states.include?(todo.completed)
+              TODOS.all.map { |todo|
+                # if done state not in scope then give a nil
+                bind(todo, :done) {
+                  if app.done_states.include?(todo.done)
                     todo_item(todo)
                   end
                 }
@@ -25,7 +25,7 @@ class TodoApp < Robe::Client::App
     def todo_item(todo)
       div.style(margin_bottom: 1.em)[
         todo_text(todo),
-        todo_completed(todo),
+        todo_done(todo),
         todo_delete(todo),
       ]
     end
@@ -41,14 +41,14 @@ class TodoApp < Robe::Client::App
       )
     end
 
-    def todo_completed(todo)
+    def todo_done(todo)
       input
       .type(:checkbox)
-      .checked(todo.completed)
+      .checked(todo.done)
       .style(margin_left: 2.em)
       .on(
         click: ->{
-          todo.mutate!(completed: !todo.completed)
+          todo.mutate!(done: !todo.done)
         }
       )
     end

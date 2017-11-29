@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'logger'
 
 module Robe
   module Server
@@ -17,6 +18,15 @@ module Robe
           @app_secret = string
         end
 
+        # Defaults to 30 days
+        def session_expiry
+          @session_expiry ||= 30 * 24 * 60 * 60
+        end
+
+        def session_expiry=(seconds)
+          @session_expiry = seconds
+        end
+
         def favicon=(path)
           @favicon = path
         end
@@ -24,9 +34,12 @@ module Robe
         def favicon
           @favicon
         end
-        
+
         def source_maps?
-          !!@source_maps
+          if @source_maps.nil?
+            @source_maps = ENV['RACK_ENV'] == 'development'
+          end
+          @source_maps
         end
 
         def source_maps=(bool)
@@ -86,19 +99,64 @@ module Robe
           @mongo_password = password
         end
 
-        def client_app_path
-          unless @client_app_path
-            fail "config.client_app_path must be set before running app (e.g. 'app_name/client/app.rb')"
-          end
-          @client_app_path
+        # Directory structure is conventionally:
+        # |-- .
+        # |   |-- assets
+        # |       |-- css
+        # |       |-- fonts
+        # |       |-- images
+        # |       |-- js
+        # |       |-- keys
+        # |   |-- lib
+        # |       |-- app-name
+        # |           |-- client
+        # |           |-- common
+        # |           |-- server
+        # |-- config.ru
+        # |-- Gemfile
+        # |-- Procfile
+        #
+
+        def assets_path
+          @assets_path ||= 'assets'
+        end
+        
+        def assets_path=(path)
+          @assets_path = path
         end
 
-        def client_app_path=(n)
-          @client_app_path = n
+        def rb_path
+          @rb_path ||= 'lib'
+        end
+
+        def rb_path=(path)
+          @rb_path = path
+        end
+
+        def client_app_rb_path
+          unless @client_app_rb_path
+            raise "Set `config.client_app_rb_path = 'app-name/client/app.rb'` as required in the #configure method of your Robe::Server::App subclass."
+          end
+          @client_app_rb_path
+        end
+
+        # Set path to client-side app file within #rb_path.
+        # Conventionally 'app-name/client/app.rb'.
+        def client_app_rb_path=(n)
+          @client_app_rb_path = n
+        end
+
+        # Default is 'public/assets'
+        def public_assets_path
+          @public_assets_path ||= 'public/assets'
+        end
+
+        def public_assets_path=(path)
+          @public_assets_path = path
         end
 
         def title
-          @title ||= 'Robe App'
+          @title ||= 'RoBE App'
         end
 
         def title=(t)
@@ -110,7 +168,6 @@ module Robe
             <meta charset="utf-8">
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
             <meta http-equiv="x-ua-compatible" content="ie=edge"/>    
-            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
             <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
           HTML
         end
@@ -133,9 +190,9 @@ module Robe
             css: 'assets/css',
             js: 'assets/js',
             images: 'assets/images',
-          # fonts: 'assets/fonts',
+            fonts: 'assets/fonts',
             keys: 'assets/keys',
-            rb: 'lib'
+            rb: rb_path
           }
         end
 
@@ -199,6 +256,45 @@ module Robe
 
         def max_task_threads=(val)
           @max_task_threads = val
+        end
+
+        def sprockets_memory_cache?
+          sprockets_memory_cache_size > 0
+        end
+
+        # Defaults to 1000 files
+        def sprockets_memory_cache_size
+          @sprockets_memory_cache_size ||= 1000
+        end
+
+        # Sprockets memory cache is much faster than file cache.
+        #
+        # Set to zero for no memory cache,
+        # otherwise enough to handle all files
+        # in your source, gems, assets, etc.
+        def sprockets_memory_cache_size=(num_files)
+          @sprockets_memory_cache_size = num_files
+        end
+
+        def sprockets_logger_level
+          @sprockets_logger_level ||= Logger::FATAL
+        end
+
+        def sprockets_logger_level=(level)
+          @sprockets_logger_level = if level.is_a?(Symbol)
+            case level
+              when :unknown;  Logger::UNKNOWN
+              when :fatal;    Logger::FATAL
+              when :error;    Logger::ERROR
+              when :warn;     Logger::WARN
+              when :info;     Logger::INFO
+              when :debug;    Logger::DEBUG
+              else
+                raise Robe::ConfigError, "invalid sprockets logger level : ##{level}"
+            end
+          else
+            level
+          end
         end
 
       end

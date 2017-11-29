@@ -3,7 +3,7 @@ require 'singleton'
 module Robe; module Server; class Sockets; end end end
 
 require 'robe/common/sockets'
-require 'robe/server/sockets/manager'
+require 'robe/server/rack/sockets/manager'
 
 module Robe
   module Server
@@ -14,12 +14,8 @@ module Robe
       REDIS_CHANNEL = :sockets
       REDIS_HEAD_FIELD_LENGTH = 64 # sufficient for channel name or client uuid
 
-      # expects roda request
-      def route(r)
-        r.on 'socket' do
-          trace __FILE__, __LINE__, self, __method__, " : r.on 'socket' r=#{r.inspect}"
-          r.run manager
-        end
+      def call(env)
+        manager.call(env)
       end
 
       def on_channel(channel, event, &block)

@@ -10,7 +10,7 @@ end
 # add gems which aren't aware of Opal
 # Opal.use_gem 'paggio'
 
-require 'robe/server/rack_server'
+require 'robe/server/rack/sockets/rack_server'
 Robe::RackServer.load
 
 module Robe

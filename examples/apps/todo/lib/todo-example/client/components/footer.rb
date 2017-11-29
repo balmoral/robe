@@ -4,11 +4,11 @@ class TodoApp < Robe::Client::App
       bind(router) {
         div[
           bind(TODOS) {
-            if TODOS.size > 1
+            if TODOS.count > 1
               div[
                 button_link('all'),
                 button_link('active'),
-                button_link('completed')
+                button_link('done')
               ]
             end
           }
@@ -21,13 +21,15 @@ class TodoApp < Robe::Client::App
     # in place of anchor tags to prevent the
     # browser doing getting url from the server.
     def button_link(which)
-      link.href("/#{which}")[
+      link.href("/page/#{which}")[
         button
-        .disabled(app.completed_scope == which)
+        .css(:button)
+        .disabled(app.done_scope == which)
         .style(margin_right: 1.em, width: 6.em)[
-          which.to_s.capitalize
+          "#{which.to_s.capitalize} (#{TODOS.count(which)})"
         ]
       ]
     end
+
   end
 end

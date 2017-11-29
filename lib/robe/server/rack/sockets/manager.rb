@@ -2,7 +2,7 @@ require 'json'
 require 'faye/websocket'
 require 'robe/common/util'
 require 'robe/server/redis'
-require 'robe/server/sockets/client'
+require 'robe/server/rack/sockets/client'
 
 # TODO: implement redis to store socket/client lookup for lots of clients
 

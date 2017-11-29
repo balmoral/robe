@@ -1,39 +1,50 @@
-require 'roda'
+require 'opal-sprockets'
 require 'robe/common/errors'
 require 'robe/common/trace'
 require 'robe/server/logger'
 require 'robe/server/config'
-require 'robe/server/assets'
-require 'robe/server/sockets'
+require 'robe/server/rack'
 require 'robe/server/tasks'
 require 'robe/common/model'
 require 'robe/server/db'
 
-# ref: http://mrcook.uk/simple-roda-blog-tutorial
-# ref: http://mrcook.uk/static-websites-with-roda-framework
 # require 'bcrypt'
-# require 'rack/protection'
-# roda ref: http://roda.jeremyevans.net/rdoc/files/README_rdoc.html
 
 # TODO: auth support
-# TODO: https://github.com/jeremyevans/rodauth
+# TODO: security/protection/csrf
 
 module Robe; module Server
-  class App < ::Roda
+  class App
 
-    def self.start
-      trace __FILE__, __LINE__, self, __method__, 'calling db.start'
-      configure
-      db.start if config.use_mongo?
+    def self.instance
+      unless @started
+        configure
+        trace __FILE__, __LINE__, self, __method__, ' : calling http'
+        http
+        trace __FILE__, __LINE__, self, __method__, ' : calling sockets'
+        sockets
+        trace __FILE__, __LINE__, self, __method__, ' : calling db.start'
+        db.start if config.use_mongo?
+        trace __FILE__, __LINE__, self, __method__
+        @started = true
+      end
       self
     end
-    
+
+    def self.call(env)
+      if Faye::WebSocket.websocket?(env)
+        sockets.call(env)
+      else
+        http.call(env)
+      end
+    end
+
     def self.config
       Robe.config
     end
 
-    def self.assets
-      Robe.assets
+    def self.http
+      Robe.http
     end
 
     def self.sockets
@@ -49,7 +60,7 @@ module Robe; module Server
     end
 
     def self.configure
-      fail "your app need to implement it's own ##configure class method"
+      raise Robe::ConfigError, "#configure method must be implemented in your subclass of #{self.name}"
     end
 
     # Register a server task.
@@ -64,49 +75,12 @@ module Robe; module Server
     end
 
     task :sign_in do |id:, password:|
-      raise Robe::TaskError, "sign_in task needs to be implemented in your subclass of #{self.name}"
+      raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 
     # expects user signature
     task :sign_out do |user:|
-      raise Robe::TaskError, "sign_in task needs to be implemented in your subclass of #{self.name}"
-    end
-
-    # for r.session[:...]
-    use Rack::Session::Cookie, secret: config.app_secret
-
-    # :head - treat HEAD requests like GET requests with an empty response body
-    plugin :head
-
-    # :json - Allows match blocks to return arrays and hashes, using a json representation as the response body.
-    plugin :json, classes: [Array, Hash, Robe::Model]
-
-    # cross site request forgery protection, exempt json ??
-    plugin :csrf, skip_if: ->(req){req.env['CONTENT_TYPE'] =~ /application\/json/}
-
-
-    # we expect only asset or socket requests
-    route do |r|
-      sockets.route(r) # sockets first
-      assets.route(r)
-    end
-
-    # FYI called for every router request
-    def initialize(*args, &block)
-      # trace __FILE__, __LINE__, self, __method__, " ************************************ "
-      super
-    end
-
-    def assets
-      self.class.assets
-    end
-
-    def sockets
-      self.class.sockets
-    end
-
-    def db
-      self.class.db
+      raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 
   end

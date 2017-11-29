@@ -29,7 +29,8 @@ module Robe
       end
 
       def route(r)
-        puts "#{__FILE__}[#{__LINE__}] #{self.class.name}##{__method__} : r=>#{r.inspect}"
+        puts
+        trace __FILE__, __LINE__, self, __method__, " : r=>#{r.inspect}"
         r.get 'favicon.ico' do
            if config.favicon
             r.redirect config.favicon
@@ -40,27 +41,24 @@ module Robe
             folders.each do |folder|
               # trace __FILE__, __LINE__, self, __method__, " : target=#{target} folder='#{folder}' "
               r.on folder do
-                if folder == 'public'
-                  r.on 'assets' do
-                    # trace __FILE__, __LINE__, self, __method__, " : public/assets "
-                    env = send(target)
-                    # trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
-                    r.run env
-                  end
-                else
-                  # trace __FILE__, __LINE__, self, __method__, " : MATCH for #{target}"
-                  env = send(target)
-                  # trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
-                  r.run env
-                end
+                trace __FILE__, __LINE__, self, __method__, " : MATCH for #{target} => #{folder}"
+                processor = send(target) # will be sprockets or source_map_server
+                trace __FILE__, __LINE__, self, __method__, " : processor=#{processor}"
+                r.run processor
               end
             end
           end
         end
-        # r.root do # load for any path other than assets requests above
-        r.get do
-          # trace __FILE__, __LINE__, self, __method__, ' : r.root=> index_html'
-          index_html
+        if production?
+          r.root do
+            trace __FILE__, __LINE__, self, __method__, ' : r.get=> index_html'
+            index_html
+          end
+        else
+          r.get do
+            trace __FILE__, __LINE__, self, __method__, ' : r.get=> index_html'
+            index_html
+          end
         end
       end
 
@@ -109,11 +107,11 @@ module Robe
           @sprockets.cache = Sprockets::Cache::MemoryStore.new(4096) # default is only 1000
           # @sprockets.cache = Sprockets::Cache::FileStore.new('/tmp', 50 * 1024 * 1024)
           Opal.paths.each do |path|
-            # trace __FILE__, __LINE__, self, __method__, " @sprockets.append_path #{path}"
+            trace __FILE__, __LINE__, self, __method__, " @sprockets.append_path #{path}"
             @sprockets.append_path(path)
           end
           config.app_asset_paths.values.flatten.each do |path|
-            # trace __FILE__, __LINE__, self, __method__, " @sprockets.append_path #{path}"
+            trace __FILE__, __LINE__, self, __method__, " @sprockets.append_path #{path}"
             @sprockets.append_path(path)
           end
           @sprockets.js_compressor = :uglifier if minify?
@@ -125,7 +123,7 @@ module Robe
       def targets
         @targets ||= if production?
           {
-            sprockets: %w(public) # %w(/public/assets/)
+            sprockets: %w(public/assets) # %w(/public/assets/)
           }
         else
           {
@@ -197,9 +195,9 @@ module Robe
       end
 
       def rb_tag
-        rb_file_name = config.client_app_path
+        rb_file_name = config.client_app_rb_path
         if production?
-          rb_file_name = file.sub('.rb', '') + '.js'
+          rb_file_name = rb_file_name.split('/').last.sub('.rb', '') + '.js'
           %{<script src="#{precompiled_path(rb_file_name)}"></script>\n}
         else
           debug = Opal::Config.source_map_enabled
@@ -207,14 +205,14 @@ module Robe
           ::Opal::Sprockets.javascript_include_tag(
             rb_file_name,
             sprockets: sprockets,
-            prefix: rb_path,
+            prefix: config.client_rb_path,
             debug: debug
           )
         end
       end
 
-      def rb_path
-        config.app_asset_paths[:rb] || 'lib'
+      def rb_file_names
+        [config.client_app_rb_path]
       end
 
       # Tell Opal about all gems which aren't Opal aware.
@@ -237,6 +235,8 @@ module Robe
           ::Opal::Sprockets::SourceMapHeaderPatch.inject!(source_map_prefix)
           opal_source_map_server = Opal::SourceMapServer.new(sprockets, source_map_prefix)
           builder = Rack::Builder.new do
+            use Rack::Deflater
+            use Rack::ShowExceptions
             use Rack::ConditionalGet
             use Rack::ETag
             run opal_source_map_server
@@ -254,20 +254,27 @@ module Robe
         @source_map_server
       end
 
-      def precompile
-        rb_files = [rb_file]
-        files = css_file_names +
-          js_file_names +
-          rb_files.map { |f| f.sub('.rb', '') + '.js' }
+      def public_assets_path
+        config.public_assets_path
+      end
 
-        FileUtils.mkdir_p('public/assets')
+      def precompile
+        files = []
+        files += css_file_names
+        files += js_file_names
+        files += rb_file_names.map { |f| f.sub('.rb', '') + '.js' }
+
+        FileUtils.mkdir_p(public_assets_path)
 
         assets = files.each_with_object({}) do |file, hash|
-          print "Compiling #{file}..."
           asset = sprockets[file]
-          hash[file] = asset.digest_path
-          compile_file(file, "public/assets/#{asset.digest_path}")
-          puts ' done'
+          trace __FILE__, __LINE__, self, __method__, " : asset.digest_path=#{asset.digest_path}"
+          puts "Compiling #{file}..."
+          source_file_name = file.split('/').last
+          compiled_file_name = asset.digest_path.split('/').last
+          hash[source_file_name] = compiled_file_name
+          compile_file(file, "#{public_assets_path}/#{compiled_file_name}")
+          puts '...done'
         end
 
         puts "#{__FILE__}[#{__LINE__}] : assets=#{assets}"
@@ -276,10 +283,8 @@ module Robe
 
       def precompiled_path(file)
         config_file = precompiled_config[file]
-        unless config_file
-          raise "file not found in config: #{file}"
-        end
-        "/public/assets/#{config_file}"
+        raise "'#{file}' not found in assets.yml: " unless config_file
+        "#{public_assets_path}/#{config_file}"
       end
 
       def precompiled_config
@@ -288,13 +293,15 @@ module Robe
           unless @precompiled_config
             warn 'Precompiled assets config is broken'
           end
+          # trace __FILE__, __LINE__, self, __method__, " : @precompiled_config => #{@precompiled_config}"
         end
         @precompiled_config
       end
 
-      def compile_file(rb_file_name, output_filename)
-        opal_code = Opal::Sprockets.load_asset(rb_file_name)
-        compiled = sprockets[rb_file_name].to_s + opal_code
+      def compile_file(source_file_name, output_filename)
+        opal_code = Opal::Sprockets.load_asset(source_file_name)
+        compiled = sprockets[source_file_name].to_s + opal_code
+        trace __FILE__, __LINE__, self, __method__, " : #{source_file_name} => writing #{compiled.size} bytes to #{output_filename}"
         File.write(output_filename, compiled)
         nil
       end
