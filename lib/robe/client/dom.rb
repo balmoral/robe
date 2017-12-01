@@ -95,7 +95,8 @@ module Robe; module Client
         # trace __FILE__, __LINE__, self, __method__, " : attributes=#{attributes})"
         namespace = attributes[:namespace] ? { namespace: attributes[:namespace] } : {}
         element = document.create_element(name, namespace)
-        element.id = attributes[:id] || "#{name}_#{Robe::Util.hex_id(6)}"
+        id = attributes[:id] # || "#{name}_#{Robe::Util.hex_id(6)}"
+        element.id = id if id
         attributes.each do |attribute, value|
           unless attributes == :css || attributes == :content # already dealt with
             ## trace __FILE__, __LINE__, self, __method__, " : attribute=#{attribute} value=#{value}) set"

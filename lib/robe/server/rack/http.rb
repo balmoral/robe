@@ -2,15 +2,40 @@ require 'yaml'
 require 'opal'
 require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
 require 'rack-protection'
-# require 'uglifier' if ENV['RACK_ENV'] == 'production'
+require 'uglifier'
 
 MIN_OPAL_VERSION = '0.10.5' # 0.11'
 
-# TODO: see opal-sprockets server.rb for ideas
+# Thanks to roda-opal_assets (Jamie Gaskins) for structure and code snippets.
+
+module Opal::Sprockets::Processor
+  module PlainJavaScriptLoader
+    def self.call(input)
+      sprockets = input[:environment]
+      asset = OpenStruct.new(input)
+
+      opal_extnames = sprockets.engines.map do |ext, engine|
+        ext if engine <= ::Opal::Processor
+      end.compact
+
+      path_extnames     = -> path  { File.basename(path).scan(/\.[^.]+/) }
+      processed_by_opal = -> asset { (path_extnames[asset.filename] & opal_extnames).any? }
+
+      unless processed_by_opal[asset]
+        trace __FILE__, __LINE__, self, __method__, " : input[:name]=#{input[:name]}"
+        [
+          input[:data],
+          %{if (typeof(OpalLoaded) === 'undefined') OpalLoaded = []; OpalLoaded.push(#{input[:name].to_json});}
+        ].join(";\n")
+      end
+    end
+  end
+end
 
 module Robe
   module Server
     class Http
+      OPAL_PREFIX_PATH = '/__OPAL__'
       SOURCE_MAPS_PREFIX_PATH = '/__OPAL_SOURCE_MAPS__'
 
       def self.instance
@@ -24,7 +49,7 @@ module Robe
         @rack_env = (ENV['RACK_ENV'] || :development).to_sym
         @config = Robe::Server::Config
         # trace __FILE__, __LINE__, self, __method__, " : @rack_env=#{@rack_env} @config=#{@config}"
-        init_rack_app
+        build_rack_app
         precompile if production?
       end
 
@@ -42,15 +67,13 @@ module Robe
 
       private
 
-      def init_rack_app
+      def build_rack_app
         # local variables because of instance_eval in Rack blocks
         _config = config
         _source_map_enabled = Opal::Config.source_map_enabled = _config.source_maps? && development?
-        # trace __FILE__, __LINE__, self, __method__, " _source_map_enabled=#{_source_map_enabled}"
-        _sprockets_lambda = sprockets_lambda
+        _http_sprockets_lambda = http_sprockets_lambda
         _source_map_server = source_map_server if _source_map_enabled
-        _rack = rack
-        _reload = reload
+        _redirect = redirect
         _production = production?
         @rack_app = Rack::Builder.app do
           use Rack::Deflater
@@ -62,57 +85,48 @@ module Robe
             secret: _config.app_secret
           use Rack::Protection
 
-          if _source_map_enabled
-            map(SOURCE_MAPS_PREFIX_PATH) do
-              use Rack::ConditionalGet
-              use Rack::ETag
-              run _source_map_server
-            end
+          # ASSETS
+          map(File.join('/', _config.assets_path)) do
+            run _http_sprockets_lambda
           end
-
-          # TODO: better than this
-          map('/page') do
-            run _reload
-          end
-
-          map('/assets') do
-            run _sprockets_lambda
-          end
-          
           if _production
-            run _rack
-          else
-            map('/') do
-              run _sprockets_lambda
+            map File.join('/', _config.public_path) do
+              run _http_sprockets_lambda
             end
+          else # development
+            # OPAL/RUBY
+            map(OPAL_PREFIX_PATH) do
+              run _http_sprockets_lambda
+            end
+            # SOURCE MAPS
+            if _source_map_enabled
+              map(SOURCE_MAPS_PREFIX_PATH) do
+                use Rack::ConditionalGet
+                use Rack::ETag
+                run _source_map_server
+              end
+            end
+          end
+
+          # By now it's not assets, ruby or source_maps
+          # so assume it's a browser request for a page.
+          # As we're expecting only a single page app
+          # (for now) we redirect the browser to the
+          # root page and provide 'route' parameters.
+          map('/') do
+            run _redirect
           end
         end
       end
 
-      def reload
+      # Redirect the browser to the root page
+      # and provide 'route' parameters derived
+      # from requested url/path.
+      def redirect
         lambda do |env|
-          trace __FILE__, __LINE__, self, __method__, " : #{env['PATH_INFO']}"
-          [302, {'location' => '/'}, [] ]
-        end
-      end
-
-      def rack
-        # The Rack::Static middleware intercepts requests for static files
-        # (javascript files, images, stylesheets, etc)
-        # based on the url prefixes or route mappings passed in the options,
-        # and serves them using a Rack::File object.
-        #
-        # This allows a Rack stack to serve both static and dynamic content.
-        #
-        # ref: http://www.rubydoc.info/gems/rack/Rack/Static
-        rack = ::Rack::Static.new(
-          lambda { |_env| not_found },
-          urls: ['', 'assets'],
-          root: production? ? '/public' : '/'
-        )
-        lambda do |env|
-          trace __FILE__, __LINE__, self, __method__, " : run _rack : #{env['PATH_INFO']}"
-          rack.call(env)
+          path = env['PATH_INFO'][1..-1]
+          trace __FILE__, __LINE__, self, __method__, " : #{path}"
+          [302, {'location' => "/#route=/#{path}" }, [] ]
         end
       end
 
@@ -126,10 +140,6 @@ module Robe
 
       def config
         @config
-      end
-
-      def minify?
-        production?
       end
 
       def production?
@@ -158,20 +168,54 @@ module Robe
         HTML
       end
 
-      def sprockets_lambda
-        unless @sprockets_lambda
-          @sprockets_lambda = lambda do |env|
-            sprockets_sync do
-              sprockets.call(env)
+      def http_sprockets_lambda
+        unless @http_sprockets_lambda
+          @http_sprockets_lambda = if production?
+            # no thread locking
+            lambda do |env|
+              trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
+              http_sprockets.call(env)
+            end
+          else
+            # thread locking to stop sprockets concurrency issues in development
+            lambda do |env|
+              trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
+              http_sprockets_sync do
+                http_sprockets.call(env)
+              end
             end
           end
         end
-        @sprockets_lambda
+        @http_sprockets_lambda
       end
 
       # ref: https://github.com/rails/sprockets/blob/master/guides/how_sprockets_works.md
-      def sprockets
-        unless @sprockets
+      def http_sprockets
+        unless @http_sprockets
+          if development?
+            register_opal_unaware_gems # do first so Opal::paths set
+          end
+          sprockets = ::Sprockets::Environment.new
+          sprockets.logger.level = config.sprockets_logger_level
+          if config.sprockets_memory_cache_size
+            sprockets.cache = Sprockets::Cache::MemoryStore.new(config.sprockets_memory_cache_size)
+          end
+          if production?
+            sprockets.append_path(config.public_path)
+            sprockets.js_compressor = :uglifier
+          else
+            ::Opal.paths.each { |path| sprockets.append_path(path) }
+            sprockets.append_path(config.rb_path)
+          end
+          sprockets.append_path(config.assets_path)
+          @http_sprockets = sprockets
+        end
+        @http_sprockets
+      end
+
+      # ref: https://github.com/rails/sprockets/blob/master/guides/how_sprockets_works.md
+      def compiler_sprockets
+        unless @compiler_sprockets
           register_opal_unaware_gems # do first so Opal::paths set
           sprockets = ::Sprockets::Environment.new
           sprockets.logger.level = config.sprockets_logger_level
@@ -179,20 +223,24 @@ module Robe
             sprockets.cache = Sprockets::Cache::MemoryStore.new(config.sprockets_memory_cache_size)
           end
           ::Opal.paths.each { |path| sprockets.append_path(path) }
-          sprockets.append_path(config.assets_path)
           sprockets.append_path(config.rb_path)
-          sprockets.js_compressor = :uglifier if minify?
-          @sprockets = sprockets
+          sprockets.append_path(config.assets_path)
+          @compiler_sprockets = sprockets
         end
-        @sprockets
+        @compiler_sprockets
+      end
+
+      def prefix_opal(path)
+        File.join(OPAL_PREFIX_PATH, path)
       end
 
       def source_map_server
         unless @source_map_server
-          source_map_server  = ::Opal::SourceMapServer.new(sprockets, SOURCE_MAPS_PREFIX_PATH)
+          source_map_server  = ::Opal::SourceMapServer.new(http_sprockets, SOURCE_MAPS_PREFIX_PATH)
           ::Opal::Sprockets::SourceMapHeaderPatch.inject!(SOURCE_MAPS_PREFIX_PATH)
           @source_map_server = lambda do |env|
-            sprockets_sync do
+            trace __FILE__, __LINE__, self, __method__, " SOURCE MAPS : PATH_INFO=#{env['PATH_INFO']}"
+            http_sprockets_sync do
               source_map_server.call(env)
             end
           end
@@ -203,11 +251,22 @@ module Robe
       # To avoid concurrency problem in sprockets which results in
       # `RuntimeError: can't add a new key into hash during iteration.`
       # we sync all calls to sprockets - only in development?
-      def sprockets_sync(&block)
+      def http_sprockets_sync(&block)
         if production?
           block. call
         else  
           (@sprockets_mutex ||= Mutex.new).synchronize(&block)
+        end
+      end
+
+      def sprockets_asset_path(file_name, path, suffixes_regexp, suffix, compiled: production?)
+        # sprockets expect the compiled suffix, e.g. .scss => .css, .rb => .js
+        file_name = file_name.sub(suffixes_regexp, suffix)
+        if compiled
+          public_assets_file_path(file_name)
+        else
+          path = path.sub(config.assets_path, '')[1..-1] if production?
+          File.join(path, file_name)
         end
       end
 
@@ -223,17 +282,23 @@ module Robe
         end
       end
 
+      def css_sprockets_paths(compiled: production?)
+        css_file_names.map { |name|
+          css_sprockets_path(name, compiled: compiled)
+        }
+      end
+
       def css_tag(file_name, media: :all)
-        path = if production?
-          precompiled_path(file_name)
-        else
-          File.join('css', file_name.sub(css_suffixes_regexp, '.css'))
-        end
+        path = css_sprockets_path(file_name)
         %{<link href="#{path}" media="#{media}" rel="stylesheet" />}
       end
 
+      def css_sprockets_path(file_name, compiled: production?)
+        sprockets_asset_path(file_name, css_path, css_suffixes_regexp, '.css', compiled: compiled)
+      end
+
       def css_path
-        config.app_asset_paths[:css] || 'assets/css'
+        config.asset_paths[:css] || 'assets/css'
       end
 
       # anything in #css_path (e.g. 'assets/css') - no name check
@@ -241,7 +306,8 @@ module Robe
         path = css_path
         unlisted = path && Dir.exists?(path) ? Dir.entries(path).reject{|e| e[0] == '.'} : []
         names = (config.css_file_order || []) | unlisted
-        names.select { |name| name =~ css_suffixes_regexp }
+        names = names.select { |name| name =~ css_suffixes_regexp }
+        names
       end
 
       def css_suffixes_regexp
@@ -250,7 +316,7 @@ module Robe
 
       def css_suffixes
         unless @css_suffixes
-          @css_suffixes = sprockets.compressors['text/css'].keys.map { |s| ".#{s}" }
+          @css_suffixes = http_sprockets.compressors['text/css'].keys.map { |s| ".#{s}" }
           @css_suffixes << '.css' unless @css_suffixes.include?('.css')
         end
         @css_suffixes
@@ -259,33 +325,36 @@ module Robe
       def js_tags
         ''.tap do |result|
           js_file_names.each do |name|
-            result << if production?
-              %{<script src="#{precompiled_path(file)}"></script>\n}
-            else
-              js_tag(name)
-            end
+            result << js_tag(name) << "\n"
           end
         end
       end
 
-      def js_tag(js_file_name)
-        ::Opal::Sprockets.javascript_include_tag(
-          File.join('js', js_file_name.sub(js_suffixes_regexp, '')), # no suffix - otherwise screws up in opal sprockets
-          sprockets: sprockets,
-          prefix: '',
-          debug: false
-        )
+      def js_sprockets_paths(compiled: production?)
+        js_file_names.map { |name|
+          js_sprockets_path(name, compiled: compiled)
+        }
+      end
+
+      def js_tag(file_name)
+        path = js_sprockets_path(file_name)
+        %{<script src="#{path}"></script>}
+      end
+
+      def js_sprockets_path(file_name, compiled: production?)
+        sprockets_asset_path(file_name, js_path, js_suffixes_regexp, '.js', compiled: compiled)
       end
 
       def js_path
-        config.app_asset_paths[:js] || 'assets/js'
+        config.asset_paths[:js] || 'assets/js'
       end
 
       def js_file_names
         path = js_path
         unlisted = path && Dir.exists?(path) ? Dir.entries(path).reject{|e| e[0] == '.'} : []
         names = (config.js_file_order || []) | unlisted
-        names.select { |name| name =~ js_suffixes_regexp }
+        names = names.select { |name| name =~ js_suffixes_regexp }
+        names
       end
 
       def js_suffixes_regexp
@@ -294,7 +363,7 @@ module Robe
 
       def js_suffixes
         unless @js_suffixes
-          @js_suffixes = sprockets.compressors['application/javascript'].keys.map { |s| ".#{s}" }
+          @js_suffixes = http_sprockets.compressors['application/javascript'].keys.map { |s| ".#{s}" }
           @js_suffixes << '.js' unless @css_suffixes.include?('.js')
         end
         @js_suffixes
@@ -302,29 +371,32 @@ module Robe
 
       def rb_tag
         if production?
-          rb_path = File.split(config.client_app_rb_path).last.sub('.rb', '') + '.js'
-          %{<script src="#{precompiled_path(rb_path)}"></script>\n}
+          js_path = File.split(config.client_app_rb_path).last.sub('.rb', '') + '.js'
+          js_path = public_assets_file_path(js_path)
+          %{<script src="#{js_path}"></script>\n}
         else
           opal_js_tags
         end
       end
 
       # Adapted from Opal::Sprockets##javascript_include_tag
-      # so we can see what we're doing...
+      # so we can see/control what we're doing...
       def opal_js_tags
         rb_path = config.client_app_rb_path
         tags = []
         if config.source_maps?
-          asset = sprockets[rb_path]
+          asset = http_sprockets[rb_path]
           puts "#{__FILE__}[#{__LINE__}] #{self.class}##{__method__}: Cannot find asset: #{rb_path}" if asset.nil?
           raise "Cannot find asset: #{rb_path}" if asset.nil?
           asset.to_a.map do |dependency|
-            tags << %{<script src="#{dependency.logical_path}?body=1"></script>}
+            trace __FILE__, __LINE__, self, __method__, " "
+            tags << %{<script src="#{prefix_opal(dependency.logical_path)}?body=1"></script>}
           end
         else
-          tags << %{<script src="#{rb_path.sub('.rb', '')}.js"></script>}
+          tags << %{<script src="#{prefix_opal(rb_path.sub('.rb', ''))}.js"></script>}
         end
         tags << %{<script>#{::Opal::Sprockets.load_asset(rb_path)}</script>}
+        trace __FILE__, __LINE__, self, __method__, " tags = #{tags}"
         tags.join("\n")
       end
 
@@ -346,57 +418,57 @@ module Robe
       end
 
       def public_assets_path
-        config.public_assets_path
+        @public_assets_path ||= File.join(config.public_path, config.public_assets_path)
       end
 
       def precompile
-        files = []
-        files += css_file_names
-        files += js_file_names
-        files += rb_file_names.map { |f| f.sub('.rb', '') + '.js' }
-
+        paths = []
+        paths += css_sprockets_paths(compiled: false)
+        paths += js_sprockets_paths(compiled: false)
+        paths += rb_file_names # we don't compile Ruby via sprockets
         FileUtils.mkdir_p(public_assets_path)
-
-        assets = files.each_with_object({}) do |file, hash|
-          asset = sprockets[file]
-          trace __FILE__, __LINE__, self, __method__, " : asset.digest_path=#{asset.digest_path}"
-          puts "Compiling #{file}..."
-          source_file_name = file.split('/').last
-          compiled_file_name = asset.digest_path.split('/').last
-          hash[source_file_name] = compiled_file_name
-          compile_file(file, "#{public_assets_path}/#{compiled_file_name}")
+        paths.each do |path|
+          trace __FILE__, __LINE__, self, __method__, " path=#{path}"
+          puts "Compiling #{path}..."
+          asset_name = File.split(path).last.sub('.rb', '.js')
+          compile_file(path, asset_name)
           puts '...done'
         end
-
-        puts "#{__FILE__}[#{__LINE__}] : assets=#{assets}"
-        File.write('assets.yml', YAML.dump(assets))
+        @compiler_sprockets = nil
       end
 
-      def precompiled_path(file)
-        config_file = precompiled_config[file]
-        raise "'#{file}' not found in assets.yml: " unless config_file
-        "#{public_assets_path}/#{config_file}"
+      def public_assets_file_path(file_name, create_dir: false)
+        dir = File.join(public_assets_path, file_name.split('.').last)
+        FileUtils.mkdir_p(dir) if create_dir
+        File.join(dir, file_name)
       end
 
-      def precompiled_config
-        unless defined?(@precompiled_config)
-          @precompiled_config = YAML.load_file('assets.yml')
-          unless @precompiled_config
-            warn 'Precompiled assets config is broken'
-          end
-          # trace __FILE__, __LINE__, self, __method__, " : @precompiled_config => #{@precompiled_config}"
+      # sprockets expects the compiled file name...
+      # lots of magic happening in opal-sprockets when we get the compiled asset
+      # from sprockets[compiled_file_name] - this is where opal compiles everything
+      def compile_file(path, asset_name)
+        trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
+        compiled_contents = if path.end_with?('.rb')
+          compile_with_builder(path)
+        else
+          result = compiler_sprockets[path]
+          raise "could not find #{path} in sprockets" unless result
+          result
         end
-        @precompiled_config
-      end
-
-      def compile_file(source_file_name, output_filename)
-        opal_code = Opal::Sprockets.load_asset(source_file_name)
-        compiled = sprockets[source_file_name].to_s + opal_code
-        trace __FILE__, __LINE__, self, __method__, " : #{source_file_name} => writing #{compiled.size} bytes to #{output_filename}"
-        File.write(output_filename, compiled)
+        trace __FILE__, __LINE__, self, __method__, " : asset_name=#{asset_name}"
+        compiled_contents = compiled_contents.to_s
+        output_path = public_assets_file_path(asset_name, create_dir: true)
+        # trace __FILE__, __LINE__, self, __method__, " : #{compiled_file_name} => writing #{compiled_contents.size} bytes to #{output_path}"
+        File.write(output_path, compiled_contents)
         nil
       end
 
+      def compile_with_builder(sprockets_path)
+        sprockets_path = sprockets_path.sub('.js', '')
+        trace __FILE__, __LINE__, self, __method__, " : sprockets_path=#{sprockets_path}"
+        Opal.append_path('lib')
+        Opal::Builder.build(sprockets_path).to_s
+      end
     end
   end
 

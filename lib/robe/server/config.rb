@@ -146,11 +146,21 @@ module Robe
           @client_app_rb_path = n
         end
 
-        # Default is 'public/assets'
-        def public_assets_path
-          @public_assets_path ||= 'public/assets'
+        # Default is 'public'
+        def public_path
+          @public_path ||= 'public'
         end
 
+        def public_path=(path)
+          @public_path = path
+        end
+
+        # Default is 'assets' within public
+        def public_assets_path
+          @public_assets_path ||= 'assets'
+        end
+
+        # within public, e.g. 'assets'
         def public_assets_path=(path)
           @public_assets_path = path
         end
@@ -185,19 +195,16 @@ module Robe
           @html_literal_scripts = s
         end
 
-        def app_asset_paths
-          @app_asset_paths ||= {
-            css: 'assets/css',
-            js: 'assets/js',
-            images: 'assets/images',
-            fonts: 'assets/fonts',
-            keys: 'assets/keys',
-            rb: rb_path
+        def asset_paths
+          @asset_paths ||= {}.tap { |hash|
+            %i[css js images fonts keys].each { |type|
+              hash[type] = File.join(assets_path, type.to_s)
+            }
           }
         end
 
-        def app_asset_paths=(hash)
-          @app_asset_paths = hash
+        def asset_paths=(hash)
+          @asset_paths = hash
         end
 
         def opal_unaware_gems

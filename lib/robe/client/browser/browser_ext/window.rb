@@ -41,6 +41,13 @@ module Browser
       Location
     end
 
+    # on window 'hashchange' event call given block with
+    # window.location.hash as argument
+    def on_hash_change(&block)
+      listener = lambda { |_event| block.call(location.hash) }
+      `window.addEventListener("hashchange", listener, false)`
+    end
+
     module Location
       module_function
 

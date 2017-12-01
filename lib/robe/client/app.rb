@@ -38,11 +38,10 @@ module Robe
       end
 
       def initialize(component = nil)
-        # trace __FILE__, __LINE__, self, __method__, ' '
         self.class.instance = self
         @state = Robe::Client::App::State.new
         @component = component
-        @router = Robe::Client::Router.new
+        @router = Robe::Client::Router.new(document.URL)
         @on_render = []
         @watching_url = false
         document.on('visibilitychange') do
@@ -104,7 +103,7 @@ module Robe
       end
 
       def mount(&block)
-        # trace __FILE__, __LINE__, self, __method__
+        trace __FILE__, __LINE__, self, __method__
         self.class.instance = self
         render(&block)
         watch_url
@@ -121,6 +120,9 @@ module Robe
           window.on('popstate') do
             trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
             router.update
+          end
+          window.on_hash_change do |new_hash|
+            trace __FILE__, __LINE__, self, __method__, " : #{new_hash}"
           end
           @watching_url = true
         end

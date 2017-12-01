@@ -34,22 +34,15 @@ module Robe::Server
       #
       # NB channels can be associated with multiple (client) socket connections.
       #
+      # Assumes caller has confirmed websocket?(env).
       def call(env)
+        # trace __FILE__, __LINE__, self, __method__, "env=#{env}"
+        protocols = nil
+        options = { ping: 1 } # keep socket alive : Chrome seems to time out in about 10?
+        socket = Faye::WebSocket.new(env, protocols, options)
+        connect!(socket)
         # trace __FILE__, __LINE__, self, __method__
-        if Faye::WebSocket.websocket?(env)
-          # trace __FILE__, __LINE__, self, __method__, "env=#{env}"
-          protocols = nil
-          options = { ping: 1 } # keep socket alive : Chrome seems to time out in about 10?
-          socket = Faye::WebSocket.new(env, protocols, options)
-          connect!(socket)
-          # trace __FILE__, __LINE__, self, __method__
-          response = socket.rack_response
-          # trace __FILE__, __LINE__, self, __method__, " response = #{response}"
-          response
-        else
-          # trace __FILE__, __LINE__, self, __method__, ' : BAD WEB SOCKET REQUEST !!'
-          response_to_invalid_request
-        end
+        socket.rack_response
       end
 
       # Publish a message event and optional contents on redis

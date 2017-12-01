@@ -36,6 +36,8 @@ module Robe; module Client
     attr :params
 
     # parses path into path and params
+    # where given path has syntax
+    # '/page/name?p1=v1&p2=v2'
     def self.parse(path)
       # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
       parts = path.split('/').reject(&:empty?)
@@ -54,7 +56,28 @@ module Robe; module Client
       { path: path, params: params}
     end
 
-    def initialize
+    # Because we're a single page app, when the user hits reload button
+    # the current url/location will be sent as a get request to the server.
+    # The server can't deal with that, so it responds with a redirect
+    # to the root url with a hash which we look out for here. Anything
+    # after the # is treated as a the initial path and params for the
+    # router.
+    def initialize(url = '')
+      trace __FILE__, __LINE__, self, __method__, "url=#{url}"
+      hash = url.split('#').last
+      args = { path: '/', params: {}}
+      if hash
+        parts = hash.split('=')
+        if parts.first == 'route'
+          args = parse(parts.last)
+        end
+      end
+      super(**args) 
+      trace __FILE__, __LINE__, self, __method__, " self=#{self.to_h}"
+      navigate_to(path)
+    end
+
+    def initialize_deprecated
       super(**parse(location.path))
       # trace __FILE__, __LINE__, self, __method__, " self=#{self.to_h}"
       navigate_to('/')

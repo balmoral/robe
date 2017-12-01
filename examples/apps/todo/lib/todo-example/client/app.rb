@@ -28,4 +28,6 @@ class TodoApp < Robe::Client::App
 
 end
 
+`console.log("************ calling TodoApp.new.mount ***********")`
+
 TodoApp.new.mount

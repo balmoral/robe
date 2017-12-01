@@ -5,7 +5,7 @@ class App < Robe::Server::App
     config.rb_path = 'lib'
     config.client_app_rb_path = 'todo-example/client/app.rb'
     config.title = 'RoBE Todo Example'
-    # config.source_maps = false
+    config.source_maps = false
     config.html_literal_head = <<-HTML
       <meta charset="utf-8">
       <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
