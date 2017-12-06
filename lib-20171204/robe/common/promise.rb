@@ -471,10 +471,6 @@ class Object
     end
   end
 
-  def to_promise_when
-    [self].to_promise_when
-  end
-  
   def to_promise_on_client
     Robe.client? ? to_promise : self
   end
@@ -487,13 +483,6 @@ class Object
     Robe.client? ? to_promise_error : self
   end
 
-  def promise_or_not(&block)
-    if self.is_promise?
-      self.then(&block)
-    else
-      block.call(self)
-    end
-  end
 end
 
 class Array
@@ -504,5 +493,4 @@ class Array
   def to_promise_when_on_client
     Robe.client? ? to_promise_when : self
   end
-
 end
