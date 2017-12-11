@@ -60,13 +60,13 @@ module Robe::Server
       # If the client is given then only that client will be sent the message.
       #
       def redis_publish(channel:, event:, client: nil, content: nil)
-        trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
+        # trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
         json = { channel: channel, event: event, content: content }.compact
         channel_tag = channel.to_s.ljust(REDIS_HEAD_FIELD_LENGTH)
         client_tag = (client ? client.id : '').ljust(REDIS_HEAD_FIELD_LENGTH)
         json = JSON.generate(json)
         message = channel_tag + client_tag + json
-        trace __FILE__, __LINE__, self, __method__, " : #{message[0,80]}"
+        # trace __FILE__, __LINE__, self, __method__, " : #{message[0,80]}"
         redis.publish(REDIS_CHANNEL, message)
       end
 
@@ -93,7 +93,7 @@ module Robe::Server
 
       def client_event(socket, event_name, event = nil, &block)
         client = @sockets[socket]
-        trace __FILE__, __LINE__, self, __method__, " : #{event_name} : event.code=#{event_name == :close ? event.code : 'n/a'} : client=#{client} "
+        # trace __FILE__, __LINE__, self, __method__, " : #{event_name} : event.code=#{event_name == :close ? event.code : 'n/a'} : client=#{client} "
         if client
           block.call(client)
         else
@@ -116,7 +116,7 @@ module Robe::Server
       end
 
       def process_message(client, json)
-        trace __FILE__, __LINE__, self, __method__, " : client=#{client} json=#{json[0,60]}"
+        # trace __FILE__, __LINE__, self, __method__, " : client=#{client} json=#{json[0,60]}"
         begin
           message = JSON.parse(json).symbolize_keys
           channel = message[:channel].to_sym
@@ -136,21 +136,21 @@ module Robe::Server
       end
 
       def handle_message(channel, event, client, content)
-        trace __FILE__, __LINE__, self, __method__, " : client.id=#{client.id} channel=#{channel} event=#{event}"
+        # trace __FILE__, __LINE__, self, __method__, " : client.id=#{client.id} channel=#{channel} event=#{event}"
         channel_handlers(channel, event).each do |handler|
           handler.call(client: client, content: content)
         end
       end
       
       def subscribe_client(client, channel)
-        trace __FILE__, __LINE__, self, __method__, " : subscribe client.id=#{client.id} channel=#{channel}"
+        # trace __FILE__, __LINE__, self, __method__, " : subscribe client.id=#{client.id} channel=#{channel}"
         channel_subscribers(channel)[client.id] = client
         client.channels << channel
         client.redis_publish(channel: channel, event: :subscribed)
       end
 
       def unsubscribe_client(client, channel)
-        trace __FILE__, __LINE__, self, __method__, " : unsubscribe client.id=#{client.id} channel=#{channel}"
+        # trace __FILE__, __LINE__, self, __method__, " : unsubscribe client.id=#{client.id} channel=#{channel}"
         channel_subscribers(channel).delete(client.id)
         client.channels.delete(channel)
         client.redis_publish(channel: channel, event: :unsubscribed)
@@ -181,7 +181,7 @@ module Robe::Server
             channel = message[0, l].strip
             client_id = message[l, l].strip
             json = message[(l * 2)..-1]
-            trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
+            # trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
             if channel.empty?
               raise RuntimeError, 'missing channel name in redis socket packet'
             end

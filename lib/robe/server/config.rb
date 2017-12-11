@@ -99,6 +99,38 @@ module Robe
           @mongo_password = password
         end
 
+        def db_op_min_threads
+          @db_op_min_threads ||= 1
+        end
+        
+        def db_op_max_threads
+          @db_op_max_threads ||= 128
+        end
+        
+        def db_op_min_threads=(int)
+          @db_op_min_threads = int
+        end
+        
+        def db_op_max_threads=(int)
+          @db_op_max_threads = int
+        end
+
+        def min_task_threads
+          @min_task_threads ||= 0
+        end
+
+        def min_task_threads=(val)
+          @min_task_threads = val
+        end
+
+        def max_task_threads
+          @max_task_threads ||= 2_147_483_647
+        end
+
+        def max_task_threads=(val)
+          @max_task_threads = val
+        end
+
         # Directory structure is conventionally:
         # |-- .
         # |   |-- assets
@@ -247,22 +279,6 @@ module Robe
 
         def task_timeout=(seconds)
           @task_timeout = seconds
-        end
-
-        def min_task_threads
-          @min_task_threads ||= 1
-        end
-
-        def min_task_threads=(val)
-          @min_task_threads = val
-        end
-
-        def max_task_threads
-          @max_task_threads ||= 16
-        end
-
-        def max_task_threads=(val)
-          @max_task_threads = val
         end
 
         def sprockets_memory_cache?

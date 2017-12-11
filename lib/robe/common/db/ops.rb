@@ -127,6 +127,7 @@ module Robe; module Shared
         #
         # @return [Robe::Promise] The value of the promise is unspecified.
         def upsert_associates(collection, local_key_field, owner_key_value, associates)
+          trace __FILE__, __LINE__, self, __method__, " : associates.class=#{associates.class}"
           associates = associates.map(&:stringify_keys)
           local_key_field = local_key_field.to_s
           # check all associates have appropriate owner key

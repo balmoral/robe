@@ -233,6 +233,7 @@ module Robe; module DB;
 
       def save_associates(local_key_value, associates)
         # delete any associates which are not in given associates
+        trace __FILE__, __LINE__, self, __method__, " : associates.class=#{associates.class}"
         current_ids = associates.map(&:id)
         delete_filter = {'$and' => [{foreign_key.to_s => local_key_value}, {'_id' => {'$nin' => current_ids}}]}
         Robe::Promise.value(foreign_class.find(**delete_filter)).then do |expired|

@@ -4,17 +4,24 @@ module Robe; module DB
       include Robe::DB::Mongo::Util
 
       LOCAL_HOST = '127.0.0.1:27017'
-
+      DEFAULT_POOL_SIZE = 
       attr_reader :uri, :native, :database
 
       # hosts is array of strings with 'address:port'
       # - %w(127.0.0.1:27017)
       # - or multiple hosts for replica sets...
       # - e.g. %w(xy123456-a0.mongolab.com:49664 xy654321-a0.mongolab.com:49664)
-      def initialize(hosts:, database:, user:, password:, logger_level: nil)
+      def initialize(hosts:, database:, user:, password:, min_pool_size: 1, max_pool_size: 5, logger_level: nil)
         self.logger_level = logger_level if logger_level
         trace __FILE__, __LINE__, self, __method__, " @uri=#{@uri}"
-        ::Mongo::Client.new(hosts, database: database, user: user, password: password) do |native|
+        ::Mongo::Client.new(
+          hosts,
+          database: database,
+          user: user,
+          password: password,
+          min_pool_size: min_pool_size,
+          max_pool_size: max_pool_size
+        ) do |native|
           @native = native
           @database ||= Robe::DB::Mongo::Database.new(self, native.database)
           at_exit do

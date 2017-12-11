@@ -2,11 +2,14 @@ module Robe; module DB
   module Mongo
     class Database
 
-      attr_reader :client, :native
+      attr_reader :client, :native, :collections
 
       def initialize(client, native)
         @client = client
         @native = native
+        @get_collection_mutex = Mutex.new
+        @change_collections_mutex = Mutex.new
+        init_collections
       end
 
       def command(selector, **opts)
@@ -18,23 +21,14 @@ module Robe; module DB
         native.command('dbstats' => 1).documents.first
       end
 
-      # returns hash of Collection's keyed by collection name
-      def collections
-        unless @collections
-          @collections = {}
-          native.collections.each do |c|
-            @collections[c.name.to_s] = Robe::DB::Mongo::Collection.new(self, c)
-          end
-        end
-        @collections
-      end
-
       def collection(name, create: false)
-        collection = collections[name.to_s]
-        if collection.nil? && create
-          collection = create_collection(name)
+        @get_collection_mutex.synchronize do
+          collection = collections[name.to_s]
+          if collection.nil? && create
+            collection = create_collection(name)
+          end
+          collection
         end
-        collection
       end
 
       # Returns a Collection with given name, or nil
@@ -53,9 +47,11 @@ module Robe; module DB
 
       # Create a collection and return it.
       def create_collection(name)
-        collection= native.collection(name)
-        collection.create
-        collections[name] = Robe::DB::Mongo::Collection.new(self, collection)
+        @change_collections_mutex.synchronize do
+          collection = native.collection(name)
+          collection.create
+          collections[name] = Robe::DB::Mongo::Collection.new(self, collection)
+        end
       end
 
       def create_collections(*names)
@@ -65,9 +61,10 @@ module Robe; module DB
       end
       
       def drop_collection(collection_name)
-        # collection will remove itself from our collections
-        collection = self[collection_name]
-        collection.drop if collection
+        @change_collections_mutex.synchronize do
+          collection = collections.delete(collection_name)
+          collection.drop if collection
+        end
       end
 
       def drop_collections(*collection_names)
@@ -89,6 +86,19 @@ module Robe; module DB
       def collection_count(collection_name)
         self[collection_name].count
       end
+
+      private
+
+      def init_collections
+        @collections = {}
+        trace __FILE__, __LINE__, self, __method__, " getting native collections...."
+        native.collections.each do |c|
+          trace __FILE__, __LINE__, self, __method__, " native collection name = #{c.name.to_s}"
+          @collections[c.name.to_s] = Robe::DB::Mongo::Collection.new(self, c)
+        end
+        trace __FILE__, __LINE__, self, __method__, " got native collections...."
+      end
+
 
     end
   end

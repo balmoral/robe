@@ -65,27 +65,27 @@ module Robe; module DB; class Model
         # unless model_class.cache.nil?
         #   fail "#{model_class} is already using a cache of type #{model_class.cache.class}"
         # end
-        trace __FILE__, __LINE__, self, __method__, " : model_class = #{model_class}"
+        # trace __FILE__, __LINE__, self, __method__, " : model_class = #{model_class}"
         @prior_caches[model_class] = model_class.cache
         model_class.cache = nil # we want the class to go to db
         filter = {} if filter.nil? || filter == :all
-        trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} Robe.client?=#{Robe.client?} Robe.server?=#{Robe.server?}"
+        # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} Robe.client?=#{Robe.client?} Robe.server?=#{Robe.server?}"
         callback.call(loading: model_class) if callback
         results[model_class] = model_class.find(**filter.symbolize_keys)
         promises[model_class] = Robe::Promise.new if Robe.client?
       end
       results.each do |model_class, result|
         result.to_promise.then do |result|
-          trace __FILE__, __LINE__, self, __method__, " : result.class#{result.class}"
+          # trace __FILE__, __LINE__, self, __method__, " : result.class#{result.class}"
           result = result.to_a
-          trace __FILE__, __LINE__, self, __method__, " : #{model_class} : result.size = #{result.size}"
+          # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : result.size = #{result.size}"
           @models[model_class] = result
           callback.call(loaded: model_class) if callback
           promises[model_class].resolve(result) if Robe.client?
           model_class.cache = self # from now on we want the class to go through self
         end
       end
-      trace __FILE__, __LINE__, self, __method__, " : ALL #{results.size} CACHE CLASSES LOADED"
+      # trace __FILE__, __LINE__, self, __method__, " : ALL #{results.size} CACHE CLASSES LOADED"
       if Robe.client?
         promises.values.to_promise_when.then do
           self

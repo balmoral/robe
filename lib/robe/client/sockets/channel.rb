@@ -39,7 +39,7 @@ module Robe; module Client; class Sockets
     end
 
     def send_message(event:,  content: nil)
-      trace __FILE__, __LINE__, self, __method__, " : event=#{event} content=#{content}"
+      # trace __FILE__, __LINE__, self, __method__, " : event=#{event} content=#{content}"
       socket.send_message(channel: name, event: event, content: content)
     end
 

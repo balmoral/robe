@@ -30,7 +30,7 @@ module Robe; module Client; module Browser
     end
 
     def initialize(url, auto_reconnect: true)
-      trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
+      # trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
       @url = url
       @auto_reconnect = auto_reconnect
       init_handlers
@@ -64,7 +64,7 @@ module Robe; module Client; module Browser
     end
 
     def close(reason = `undefined`)
-      trace __FILE__, __LINE__, self, __method__, " reason => #{reason}"
+      # trace __FILE__, __LINE__, self, __method__, " reason => #{reason}"
       `#@native.close(reason)`
     end
 
@@ -74,11 +74,11 @@ module Robe; module Client; module Browser
     def init_handlers
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : opened "
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : opened "
         @connected = true
       end
       on(:close) do |event|
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : closed => #{event}"
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : closed => #{event}"
         @connected = false
 
         # RADICAL BUT EFFECTIVE!
@@ -126,8 +126,7 @@ module Robe; module Client; module Browser
               rb_event = event;
             }
             #{
-              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} "
-              trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} rb_event=#{`rb_event`} handlers=#{@handlers[event_name].map(&:class)}"
+              # trace __FILE__, __LINE__, self, __method__, " : event_name=#{event_name} rb_event=#{`rb_event`} handlers=#{@handlers[event_name].map(&:class)}"
               @handlers[event_name].each do |handler|
                 handler.call(`rb_event`)
               end

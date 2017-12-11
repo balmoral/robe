@@ -10,16 +10,15 @@ module Robe; module Server
       method = method.to_sym
       args.compact!
       trace __FILE__, __LINE__, self, __method__, "(#{target}, #{method}, #{args})" if method.to_sym == :insert_one
-      begin
+      Robe.db.op(target, method, *args).then do |result|
         {
           success: true,
-          data: Robe.db.op(target, method, *args)
+          data: result
         }
-      rescue DBError => e
-        Robe.logger.error(msg)
+      end.fail do |error|
         {
           success: false,
-          error: "Error performing task(target: #{target}, method: #{method}, args=#{args}) => e.to_s"
+          error: "Error performing task(target: #{target}, method: #{method}, args=#{args}) => #{error}"
         }
       end
     }

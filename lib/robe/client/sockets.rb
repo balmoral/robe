@@ -107,9 +107,9 @@ module Robe
 
       def send_message(channel:, event:, content: nil, attempt: 0)
         message = { channel: channel, event: event, content: content }.compact
-        trace __FILE__, __LINE__, self, __method__, " message = #{message}"
+        # trace __FILE__, __LINE__, self, __method__, " message = #{message}"
         if connected?
-          trace __FILE__, __LINE__, self, __method__, " : @websocket.send_message(#{message})"
+          # trace __FILE__, __LINE__, self, __method__, " : @websocket.send_message(#{message})"
           @websocket.send_message(message)
         else
           if attempt == 20
@@ -117,7 +117,7 @@ module Robe
             raise RuntimeError, "#{__FILE__}[#{__LINE__}] : unable to connect to websocket"
           end
           Robe::Client::Browser.delay(attempt * 100) do
-            trace __FILE__, __LINE__, self, __method__, " : not connected : message=#{message} attempt=#{attempt}"
+            # trace __FILE__, __LINE__, self, __method__, " : not connected : message=#{message} attempt=#{attempt}"
             message[:attempt] = attempt + 1
             send_message(**message)
           end
@@ -127,7 +127,7 @@ module Robe
       private
 
       def init_socket
-        trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
+        # trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
         @websocket = Robe::Client::Browser::WebSocket.instance(url, auto_reconnect: true)
         # @websocket.auto_reconnect!
         on_open do |event|

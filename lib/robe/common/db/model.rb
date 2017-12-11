@@ -254,9 +254,9 @@ module Robe; module DB
       self.class.db.delete_with_id(self.class.collection_name, id).to_promise_then do
         @deleted = true
         if cache && !cache.includes?(self.class, id)
-          msg = " : #{self.class.name} : expected model with id #{id} to be in cache - cannot delete"
-          trace __FILE__, __LINE__, self, __method__, msg
-          raise DBError, "#{__FILE__}[#{__LINE__}]#{msg}"
+          msg = "#{__FILE__}[#{__LINE__}] : #{self.class.name} : expected model with id #{id} to be in cache - cannot delete"
+          Robe.logger.error(msg)
+          raise DBError, msg
         end
         cache.delete(self) if cache
         results = []
@@ -303,11 +303,15 @@ module Robe; module DB
     # and referential integrity can be guaranteed.
     def insert(ignore_associations: false)
       unless new?
-        raise DBError, "#{__FILE__},  #{__LINE__} : #{self.class} : should be new (not loaded from db) - cannot insert"
+        msg = "#{__FILE__}[#{__LINE__}] : #{self.class} : should be new (not loaded from db) - cannot insert"
+        Robe.logger.error(msg)
+        raise DBError, msg
       end
       self.id = uuid unless id
       if cache && cache.includes?(self.class, id)
-        raise DBError, "#{__FILE__},  #{__LINE__} : #{self.class} : with id #{id} already in cache - cannot insert"
+        msg = "#{__FILE__}[#{__LINE__}] : #{self.class} : with id #{id} already in cache - cannot insert"
+        Robe.logger.error(msg)
+        raise DBError, msg
       else
         # TODO: unwind associations if insert fails
         result = (ignore_associations ? nil : save_associations).to_promise_on_client
@@ -328,7 +332,9 @@ module Robe; module DB
       if exists?
         if id
           if cache && !cache.includes?(self.class, id)
-            raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : expected model with id #{id} to be in cache - cannot update"
+            msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : expected model with id #{id} to be in cache - cannot update"
+            Robe.logger.error(msg)
+            raise DBError, msg
           else
             # TODO: unwind associations if update fails
             save_associations.to_promise_then do
@@ -338,10 +344,14 @@ module Robe; module DB
             end
           end
         else
-          raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : expected model from db to have id set - cannot update"
+          msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : expected model from db to have id set - cannot update"
+          Robe.logger.error(msg)
+          raise DBError, msg
         end
       else
-        raise DBError, "#{__FILE__},  #{__LINE__} : #{model.class} : cannot update model not loaded from db - it should be inserted"
+        msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : cannot update model not loaded from db - it should be inserted"
+        Robe.logger.error(msg)
+        raise DBError, msg
       end
     end
 

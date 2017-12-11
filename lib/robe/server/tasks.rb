@@ -62,7 +62,7 @@ module Robe
       end
 
       def init_threads
-        @thread_pool = Concurrent::ThreadPoolExecutor.new(
+        @thread_pool = Concurrent::CachedThreadPool.new(
           min_threads: Robe.config.min_task_threads,
           max_threads: Robe.config.max_task_threads
         )
@@ -77,9 +77,8 @@ module Robe
         request = request.symbolize_keys
         # trace __FILE__, __LINE__, self, __method__, "(#{request})"
         # dispatch the task in the thread pool, along with meta data.
-        @thread_pool.post do
-          # begin
-          # trace __FILE__, __LINE__, self, __method__, "(#{request})"
+        begin
+          @thread_pool.post do
             perform_task(
               client: client,
               name: request[:task],
@@ -88,13 +87,11 @@ module Robe
               meta_data: request[:meta_data],
               # session: session
             )
-          # rescue => e
-          #   err = "Task thread exception for #{message}\n"
-          #  err += e.inspect
-          #  err += e.backtrace.join("\n") if e.respond_to?(:backtrace)
-          #  trace __FILE__, __LINE__, self, __method__, ' ' + error
-          #   Robe.logger.error(err)
-          # end
+          end
+        rescue Exception => e
+          msg = "#{__FILE__}[#{__LINE__}] : #{e}"
+          Robe.logger.error(msg)
+          raise e
         end
       end
 
@@ -107,14 +104,11 @@ module Robe
           run_time = ((Time.now.to_f - start_time) * 1000).round(3)
           Tasks::Logger.performed(name, run_time, kwargs)
         end.fail do |error|
-          trace __FILE__, __LINE__, self, __method__, " error=#{error}"
-          if error.is_a?(Timeout::Error)
-            error = Timeout::Error.new("Task timed out after #{@timeout} seconds: #{message}")
-          end
           begin
             trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, promise_id: #{promise_id}, error: #{error})"
             send_response(task: name, promise_id: promise_id, error: error)
           rescue JSON::GeneratorError => e
+            trace __FILE__, __LINE__, self, __method__, "  #{e}"
             # Convert the error into a string so it can be serialized to something.
             error = "#{error.class.to_s}: #{error.to_s}"
             send_response(task: name, promise_id: promise_id, error: error)
@@ -129,7 +123,7 @@ module Robe
         if task
           lambda = task[:lambda]
           kwargs = kwargs.dup.symbolize_keys
-          kwargs[:user] = 
+          # TODO:? kwargs[:user]
           # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
           Timeout.timeout(@timeout, Robe::TimeoutError) do
             # trace __FILE__, __LINE__, self, __method__
@@ -141,25 +135,25 @@ module Robe
               result.to_promise.then do |result|
                 # trace __FILE__, __LINE__, self, __method__, " result=#{result.class}"
                 cookies = nil # TODO: @task_class.fetch_cookies
-                Robe::Promise.value([result, cookies])
+                [result, cookies].to_promise
               end
             rescue Robe::TimeoutError => e
-              msg = "task `#{task_name}` timed out after #{@timeout} seconds"
-              trace __FILE__, __LINE__, self, __method__, " : #{msg}"
-              Robe::Promise.error(msg)
+              msg = "#{__FILE__}[#{__LINE__}] : task `#{task_name}` timed out after #{@timeout} seconds"
+              Robe.logger.error(msg)
+              msg.to_promise_error
             ensure
               Thread.current['meta'] = nil
             end
           end
         else
-          msg = "Unregistered task: #{task_name}"
-          # trace __FILE__, __LINE__, self, __method__, " error #{msg}"
-          Robe::Promise.error(msg)
+          msg = "#{__FILE__}[#{__LINE__}] : unregistered task: #{task_name}"
+          Robe.logger.error(msg)
+          msg.to_promise_error
         end
       end
 
       def send_response(client:, task:, promise_id:, result: nil, error: nil, cookies: nil)
-        trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
+        # trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
         client.redis_publish(
           channel: task_channel,
           event: :response,
