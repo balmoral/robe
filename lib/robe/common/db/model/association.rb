@@ -215,7 +215,9 @@ module Robe; module DB;
               check_associate(model, associated, local_key_value, true)
               associated = [associated]
             else
-              fail "#{model.class} association #{type} : expected #{local_attr} to be set"
+              msg = " : #{model.class} association #{type} : expected #{local_attr} to be set"
+              trace __FILE__, __LINE__, self, __method__, msg
+              # fail msg
             end
           end
           # is model is the owner, then do the database save of associations here

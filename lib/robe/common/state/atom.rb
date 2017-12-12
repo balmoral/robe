@@ -203,8 +203,33 @@ module Robe; module State
       @observers = []
     end
 
+    # Temporarily set the state to mutable for the purpose of initializing.
+    # WARNING - it is up to the caller to observe this convention.
+    #
+    # `values`, if given, should be kwargs of attr=>value pairs
+    # and state attributes will be set to these values.
+    #
+    # `block`, if given, may call any methods on the store (self)
+    # which has mutable state while inside a initialize! call.
+    #
+    def initialize!(**values, &block)
+      #trace __FILE__, __LINE__, self, __method__, "(#{attrs}, #{block.class})"
+      prior_mutable = @state.mutable?
+      @state.to_mutable_in_situ
+      values.each do |attr, value|
+        @state.send(:"#{attr}=", value)
+      end
+      block.call if block
+      @state = @state.to_immutable unless prior_mutable
+      self
+    end
+
     def to_h
       @state.to_h
+    end
+
+    def mutable?
+      @state.mutable?
     end
 
     def mutation_count
@@ -254,33 +279,12 @@ module Robe; module State
     # If a method name is given the method is called on the duplicate with any given args.
     # If a block is given, the block is called with the duplicate as the argument.
     # Then the atom's attribute is mutated/set to the altered duplicate value.
-    # TODO: safe way to ensure non-scalars are not mutated inadvertently
+    # TODO: a completely safe way to ensure non-scalars are not mutated inadvertently
     def mutate_dup!(attr, method = nil, *args, &block)
       dup = send(attr).dup
       dup.send(method, *args) if method
       block.call(dup) if block
       self.send(:"#{attr}=", dup)
-    end
-
-    # Temporarily set the state to mutable for the purpose of initializing.
-    # WARNING - it is up to the caller to observe this convention.
-    #
-    # `values`, if given, should be kwargs of attr=>value pairs
-    # and state attributes will be set to these values.
-    #
-    # `block`, if given, may call any methods on the store (self)
-    # which has mutable state while inside a initialize! call.
-    #
-    def initialize!(**values, &block)
-      #trace __FILE__, __LINE__, self, __method__, "(#{attrs}, #{block.class})"
-      prior_mutable = @state.mutable?
-      @state.to_mutable_in_situ
-      values.each do |attr, value|
-        @state.send(:"#{attr}=", value)
-      end
-      block.call if block
-      @state = @state.to_immutable unless prior_mutable
-      self
     end
 
     # `#mutate!` is re-entrant: state is mutable within a mutate! block
@@ -337,7 +341,6 @@ module Robe; module State
     end
 
     def unobserve(id)
-      # trace __FILE__, __LINE__, self, __method__, "(#{id})"
       i = @observers.index { |e| e[:id] == id }
       @observers.delete_at(i)[:terminated] = true if i
     end
@@ -376,10 +379,9 @@ module Robe; module State
     def broadcast(prior)
       # trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
       inc_mutation_count
-      # important that we dup observers before iterating
-      # as subscribers they may delete other subscribers
-      # (for instance through bindings)
-      @observers.each do |observer|
+      # important that we dup observers before iterating as subscribers
+      # may delete other subscribers (for instance through bindings)
+      @observers.dup.each do |observer|
         # a observer can be terminated/unsubscribed by another earlier interested subscriber
         unless observer[:terminated]
           attrs = observer[:attrs]

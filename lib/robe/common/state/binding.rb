@@ -34,11 +34,13 @@ module Robe; module State
       end
       # trace __FILE__, __LINE__, self, __method__, " : BIND : store=#{store.class} : where=#{where}"
       @subscription_id = store.observe(who: where) do | prior |
-        # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior_store} changed?=#{changed?(prior_store)}  | calling #{bound_block.class}"
+        # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} changed?=#{changed?(prior)}"
         if changed?(prior)
-          # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store=#{store.class} store=#{store.state} prior_store=#{prior} changed?=true | calling #{bound_block.class}"
+          # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store.class=#{store.class} changed?=true | calling #{bound_block.class}"
           callback.call(prior)
+          # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store.class=#{store.class} called #{bound_block.class}"
         end
+        # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} changed?=#{changed?(prior)}"
       end
     end
 
