@@ -18,11 +18,11 @@ end
 
 class Hash
   def deep_dup
-    c = {}
-    each do |key, value|
-      c[key] = value.deep_dup
+    {}.tap do |d|
+      each do |key, value|
+        d[key] = value.deep_dup
+      end
     end
-    c
   end
 end
 
@@ -382,7 +382,7 @@ module Robe; module State
       # important that we dup observers before iterating as subscribers
       # may delete other subscribers (for instance through bindings)
       @observers.dup.each do |observer|
-        # a observer can be terminated/unsubscribed by another earlier interested subscriber
+        # an observer can be terminated/unsubscribed by another earlier interested subscriber
         unless observer[:terminated]
           attrs = observer[:attrs]
           eval = observer[:eval]

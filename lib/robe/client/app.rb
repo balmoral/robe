@@ -94,7 +94,6 @@ module Robe
       end
 
       def perform_task(name, **kwargs)
-        trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs})"
         server.perform_task(name, **kwargs)
       end
 
