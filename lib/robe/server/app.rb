@@ -8,8 +8,6 @@ require 'robe/server/tasks'
 require 'robe/common/model'
 require 'robe/server/db'
 
-# require 'bcrypt'
-
 # TODO: auth support
 # TODO: security/protection/csrf
 
@@ -32,6 +30,8 @@ module Robe; module Server
     end
 
     def self.call(env)
+      # req = Rack::Request.new(env)
+      # trace __FILE__, __LINE__, self, __method__, " : req.cookies=#{req.cookies}"
       if Faye::WebSocket.websocket?(env)
         sockets.call(env)
       else

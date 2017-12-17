@@ -46,7 +46,9 @@ require 'robe/client/dom/tag'
 module Robe; module Client; module DOM
   class PDF
 
-    # bytes should be string of space separated byte values, or array of integers
+    # bytes be either:
+    # - a string of space separated byte values
+    # - an array of integers
     def initialize(bytes)
       bytes = bytes.is_a?(String) ? bytes.split(' ').map(&:to_i) : bytes.to_a
       @bytes = `new Uint8Array(bytes)` # don't use Uint8Array.from - fails in Safari

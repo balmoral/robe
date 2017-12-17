@@ -152,6 +152,7 @@ module Robe; module Client
         },
         data: ->(element, attribute, value) {
           resolve_data(value).each do |data_key, data_value|
+            trace __FILE__, __LINE__, self, __method__, " data_key=#{data_key} data_value=#{data_value}"
             element[data_key] = resolve_attribute(element, data_key, data_value)
           end
         :aria

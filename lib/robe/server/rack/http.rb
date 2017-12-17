@@ -81,8 +81,10 @@ module Robe
 
           use Rack::Session::Cookie,
             key: 'rack.session',
+            path: '/',
             expire_after: _config.session_expiry,
             secret: _config.app_secret
+
           use Rack::Protection
 
           # ASSETS
