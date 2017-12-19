@@ -61,7 +61,7 @@ module Robe
           [200, { 'Content-Type' => 'text/html' }, [index_html]]
         else
           # trace __FILE__, __LINE__, self, __method__
-          @rack_app.call env
+          @rack_app.call(env)
         end
       end
 
@@ -128,7 +128,8 @@ module Robe
         lambda do |env|
           path = env['PATH_INFO'][1..-1]
           trace __FILE__, __LINE__, self, __method__, " : #{path}"
-          [302, {'location' => "/#route=/#{path}" }, [] ]
+          # [302, {'location' => "/#route=/#{path}" }, [] ]
+          [302, {'location' => '/' }, [] ]
         end
       end
 
