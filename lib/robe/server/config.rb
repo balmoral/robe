@@ -104,7 +104,7 @@ module Robe
         end
         
         def db_op_max_threads
-          @db_op_max_threads ||= 128
+          @db_op_max_threads ||= 16
         end
         
         def db_op_min_threads=(int)
@@ -124,7 +124,7 @@ module Robe
         end
 
         def max_task_threads
-          @max_task_threads ||= 2_147_483_647
+          @max_task_threads ||= 16
         end
 
         def max_task_threads=(val)
