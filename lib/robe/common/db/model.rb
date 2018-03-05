@@ -75,6 +75,17 @@ module Robe; module DB
       find
     end
 
+    # Returns a promise whose value is csv string of all db instances of model.
+    def self.all_to_csv
+      all.then do |all|
+        result = StringIO.new
+        all.each do |each|
+          result << each.to_csv << "\n"
+        end
+        result
+      end
+    end
+
     def self.normalize_attrs(hash_from_db)
       {}.tap do |result|
         hash_from_db.each do |attr, value|
