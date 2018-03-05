@@ -101,6 +101,22 @@ module Robe; module Client
       Robe.app
     end
 
+    def body
+      app.body
+    end
+    
+    def dom
+      Robe.dom
+    end
+
+    def document
+      Robe.document
+    end
+
+    def window
+      Robe.window
+    end
+    
     def router
       app.router
     end

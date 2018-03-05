@@ -24,9 +24,11 @@ module Robe; module Client
     HTML_TAGS = ::Robe::Client::Render::HTML::TAGS + ['link']
 
     HTML_TAGS.each do |tag|
-      define_method tag do |*args|
+      define_method tag do |*args, &block|
         # puts "#{__FILE__}[#{__LINE__}] : #{self.class.name}##{tag}(#{args})"
-        TAG_CLASS.new(tag, *args)
+        result = TAG_CLASS.new(tag, *args, &block)
+        block.yield(result) if block
+        result
       end
     end
 
@@ -38,6 +40,10 @@ module Robe; module Client
       @document ||= Robe::Client::Browser.document
     end
 
+    def [](id)
+      document[id]
+    end
+    
     def clear(element)
       if element
         trace __FILE__, __LINE__, self, __method__, " element=#{element}"
@@ -97,6 +103,7 @@ module Robe; module Client
         element = document.create_element(name, namespace)
         id = attributes[:id] # || "#{name}_#{Robe::Util.hex_id(6)}"
         element.id = id if id
+        # trace __FILE__, __LINE__, self, __method__, " : element.id=#{element.id}"
         attributes.each do |attribute, value|
           unless attributes == :css || attributes == :content # already dealt with
             ## trace __FILE__, __LINE__, self, __method__, " : attribute=#{attribute} value=#{value}) set"
@@ -152,7 +159,7 @@ module Robe; module Client
         },
         data: ->(element, attribute, value) {
           resolve_data(value).each do |data_key, data_value|
-            trace __FILE__, __LINE__, self, __method__, " data_key=#{data_key} data_value=#{data_value}"
+            # trace __FILE__, __LINE__, self, __method__, " data_key=#{data_key} data_value=#{data_value}"
             element[data_key] = resolve_attribute(element, data_key, data_value)
           end
         :aria

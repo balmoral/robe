@@ -3,6 +3,7 @@ require 'opal'
 require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
 require 'rack-protection'
 require 'uglifier'
+require 'robe/server/compile/tree_shake'
 
 MIN_OPAL_VERSION = '0.10.5' # 0.11'
 
@@ -367,7 +368,7 @@ module Robe
       def js_suffixes
         unless @js_suffixes
           @js_suffixes = http_sprockets.compressors['application/javascript'].keys.map { |s| ".#{s}" }
-          @js_suffixes << '.js' unless @css_suffixes.include?('.js')
+          @js_suffixes << '.js' unless @js_suffixes.include?('.js')
         end
         @js_suffixes
       end
@@ -392,7 +393,7 @@ module Robe
           puts "#{__FILE__}[#{__LINE__}] #{self.class}##{__method__}: Cannot find asset: #{rb_path}" if asset.nil?
           raise "Cannot find asset: #{rb_path}" if asset.nil?
           asset.to_a.map do |dependency|
-            trace __FILE__, __LINE__, self, __method__, " "
+            # trace __FILE__, __LINE__, self, __method__, " "
             tags << %{<script src="#{prefix_opal(dependency.logical_path)}?body=1"></script>}
           end
         else
@@ -462,6 +463,13 @@ module Robe
         compiled_contents = compiled_contents.to_s
         output_path = public_assets_file_path(asset_name, create_dir: true)
         # trace __FILE__, __LINE__, self, __method__, " : #{compiled_file_name} => writing #{compiled_contents.size} bytes to #{output_path}"
+        # if path.end_with?('.rb')
+          # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
+          # compiled_contents = ::Uglifier.compile(compiled_contents)
+          # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
+          # compiled_contents = Compile::TreeShake.compile(compiled_contents)
+          # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
+        # end
         File.write(output_path, compiled_contents)
         nil
       end

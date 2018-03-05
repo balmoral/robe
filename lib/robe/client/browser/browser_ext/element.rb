@@ -24,6 +24,14 @@ module Browser
         `#@native.checked = bool`
       end
 
+      def offset_width
+        `#@native.offsetWidth`
+      end
+
+      def client_width
+        `#@native.clientWidth`
+      end
+
       class Attributes
         attr_reader :namespace
 

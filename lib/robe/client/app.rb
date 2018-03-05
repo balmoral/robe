@@ -23,7 +23,7 @@ module Robe
     class App
       include Robe::Client::Browser
 
-      attr_reader :state, :router, :component, :root, :on_render, :cookies
+      attr_reader :state, :router, :component, :root, :on_rendered, :cookies
 
       def self.instance
         @@instance
@@ -43,6 +43,7 @@ module Robe
         @component = component
         @router = Robe::Client::Router.new(document.URL)
         @on_render = []
+        @on_rendered = []
         @watching_url = false
         document.on('visibilitychange') do
           if @render_on_visibility_change
@@ -50,6 +51,22 @@ module Robe
             render
           end
         end
+      end
+
+      def on_rendered(&block)
+        @on_rendered << block
+      end
+
+      def dom
+        Robe.dom
+      end
+
+      def document
+        Robe.document
+      end
+
+      def window
+        Robe.window
       end
 
       %i(user server_errors sign_in_invalid_user sign_in_invalid_password).each do |method|
@@ -105,6 +122,7 @@ module Robe
         trace __FILE__, __LINE__, self, __method__
         self.class.instance = self
         render(&block)
+        window.on(:resize) { when_resized }
         watch_url
         on_mount
       end
@@ -133,7 +151,7 @@ module Robe
         @will_render = true
 
         # If the app isn't being shown, wait to render until it is.
-        trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name}"
+        trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name} document.hidden?=#{document.hidden?}"
         if document.hidden?
           @render_on_visibility_change = true
           return
@@ -141,6 +159,10 @@ module Robe
 
         window.animation_frame do
           perform_render
+          when_rendered
+          @on_rendered.each do |block|
+            block.call
+          end
         end
 
         nil
@@ -157,8 +179,8 @@ module Robe
 
       alias_method :element, :[]
 
-      def root
-        @root ||= document.body ? document.body : nil
+      def body
+        @body ||= document.body
       end
 
       def cookies
@@ -167,24 +189,32 @@ module Robe
 
       def perform_render
         trace __FILE__, __LINE__, self, __method__, " root=#{root}"
-        if root.nil?
-          raise TypeError, 'Cannot render to a non-existent root element. Make sure the document ready event has been triggered before invoking the application.'
+        if body.nil?
+          raise TypeError, 'Cannot render to a non-existent document body. Make sure the document ready event has been triggered before invoking the application.'
         end
         component.clear
-        root << component.root
+        body << component.root
         @will_render = false
         run_callbacks
         nil
       end
 
       def root_element
-        root.child
+        body.child
       end
 
       def run_callbacks
         trace __FILE__, __LINE__, self, __method__, ' : on_render=#{on_render}'
-        on_render.each(&:render)
-        on_render.clear
+        @on_render.each(&:render)
+        @on_render.clear
+      end
+
+      # stub - subclasses may override
+      def when_rendered
+      end
+
+      # stub - subclasses may override
+      def when_resized
       end
 
     end

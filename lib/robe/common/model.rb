@@ -58,6 +58,10 @@ module Robe
       @write_attrs ||= mutable? ? attrs.map{|attr| :"#{attr}="} : []
     end
 
+    # TODO: refactor read:, write:, coerce, etc
+    # if there are write coercions does validation happen before or after coercion?
+    #
+    # TODO: update these docs to ensure accuracy!
     # DSL method, e.g.
     #
     #   class User < Robe::Model
@@ -216,7 +220,7 @@ module Robe
             # writer #attr
             if arg_spec
               define_method(:"#{attr}=") do |value|
-                @hash[attr] = __attr_read_value(attr, value)
+                @hash[attr] = __attr_write_value(attr, value)
               end
             else
               define_method(:"#{attr}=") do |value|
@@ -352,7 +356,7 @@ module Robe
       must_be_mutable!
       attr = attr.to_sym
       must_be_attr!(attr)
-      @hash[attr] = __attr_read_value(attr, value)
+      @hash[attr] = __attr_write_value(attr, value)
     end
 
     def values(*attr_names)
@@ -362,7 +366,7 @@ module Robe
     def to_csv
       [].tap { |result|
         @hash.each do |attr, value|
-          result << write_value(attr, value)
+          result << __attr_write_value(attr, value)
         end
       }.join(',')
     end
@@ -394,7 +398,7 @@ module Robe
       result = to_h
       args.each do |arg|
         arg.to_h.each do |attr, value|
-          result[key] = if spec
+          result[attr] = if spec
             must_be_attr!(attr)
             __attr_read_value(attr, value)
           else
@@ -449,16 +453,22 @@ module Robe
     end
 
 
-    def write_value(attr, value)
+    protected
+
+    def __attr_write_value(attr, value)
       attr_spec = self.class.attr_spec(attr)
+      if attr_spec.empty?
+        return value
+      end
       if (coerce = attr_spec[ATTR_SPEC_WRITE])
-        coerce.call(value)
+        # NB [] works for Hash and Proc
+        result = coerce[value]
+        trace __FILE__, __LINE__, self, __method__, " : >>>>>>>>>>>>>>>>>>>>>>>>>> coerce[#{value}]=#{result} "
+        result
       else
         value
       end
     end
-
-    protected
 
     def __attr_read_value(attr, value)
       attr_spec = self.class.attr_spec(attr)
@@ -469,7 +479,8 @@ module Robe
         value = default
       end
       if (coerce = attr_spec[ATTR_SPEC_READ])
-        value = coerce.call(value)
+        # NB [] works for Hash and Proc
+        value = coerce[value]
       end
       unless (nil_spec = attr_spec[ATTR_SPEC_NIL]).nil?
         if nil_spec == false && value.nil?

@@ -74,6 +74,11 @@ module Robe; module Server
       tasks.register(name, lambda, auth: auth, &block)
     end
 
+    # #api is an alias for #task
+    def self.api(name, lambda = nil, auth: true, &block)
+      task(name, lambda, auth: auth, &block)
+    end
+
     task :sign_in do |id:, password:|
       raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end

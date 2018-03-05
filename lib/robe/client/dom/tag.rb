@@ -58,9 +58,6 @@ module Robe; module Client
         else
           define_method(attr) do | *args |
             params[attr] = args.first
-            if attr == :data
-              trace __FILE__, __LINE__, self, __method__, " data : params[attr]=#{params[attr]}"
-            end
             self
           end
         end

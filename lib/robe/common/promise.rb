@@ -506,3 +506,4 @@ class Array
   end
 
 end
+

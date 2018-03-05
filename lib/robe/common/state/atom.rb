@@ -224,6 +224,14 @@ module Robe; module State
       self
     end
 
+    def get(attr)
+      send(attr)
+    end
+    
+    def set(attr, value)
+      send(:"#{attr}=", value)
+    end
+
     def to_h
       @state.to_h
     end
@@ -382,7 +390,7 @@ module Robe; module State
       # important that we dup observers before iterating as subscribers
       # may delete other subscribers (for instance through bindings)
       @observers.dup.each do |observer|
-        # an observer can be terminated/unsubscribed by another earlier interested subscriber
+        # a observer can be terminated/unsubscribed by another earlier interested subscriber
         unless observer[:terminated]
           attrs = observer[:attrs]
           eval = observer[:eval]
@@ -394,12 +402,7 @@ module Robe; module State
               false
             end
             if !changed && attrs
-              attrs.each do |attr|
-                if prior.send(attr) != self.send(attr)
-                  changed = true
-                  break
-                end
-              end
+              changed = changed?(prior, attrs)
             end
           else
             changed = true
@@ -413,6 +416,15 @@ module Robe; module State
 
     def inc_mutation_count
       self.mutation_count += 1
+    end
+
+    def changed?(prior, attrs)
+      attrs.each do |attr|
+        if prior.send(attr) != self.send(attr)
+          return true
+        end
+      end
+      false
     end
 
   end
