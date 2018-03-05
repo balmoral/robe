@@ -9,7 +9,7 @@ module Robe; module Client;
 
     class Link < Robe::Client::Component
 
-      attr_reader :args
+      attr_reader :args 
 
       # a nil href is allowed (for dropdowns, etc)
       def initialize(**args)
