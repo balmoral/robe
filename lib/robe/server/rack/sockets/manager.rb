@@ -38,7 +38,7 @@ module Robe::Server
       def call(env)
         # trace __FILE__, __LINE__, self, __method__, "env=#{env}"
         protocols = nil
-        options = { ping: 1 } # keep socket alive : Chrome seems to time out in about 10?
+        options = { ping: 5 } # keep socket alive : Chrome seems to time out in about 10?
         socket = Faye::WebSocket.new(env, protocols, options)
         connect!(socket)
         # trace __FILE__, __LINE__, self, __method__

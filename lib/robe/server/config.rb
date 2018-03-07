@@ -35,6 +35,15 @@ module Robe
           @favicon
         end
 
+        def log_tasks?
+          @log_tasks = true if @log_tasks.nil?
+          @log_tasks
+        end
+
+        def log_tasks=(bool)
+          @log_tasks = bool
+        end
+        
         def source_maps?
           if @source_maps.nil?
             @source_maps = ENV['RACK_ENV'] == 'development'
@@ -104,7 +113,7 @@ module Robe
         end
         
         def db_op_max_threads
-          @db_op_max_threads ||= 16
+          @db_op_max_threads ||= 4
         end
         
         def db_op_min_threads=(int)
@@ -124,7 +133,7 @@ module Robe
         end
 
         def max_task_threads
-          @max_task_threads ||= 16
+          @max_task_threads ||= 4
         end
 
         def max_task_threads=(val)

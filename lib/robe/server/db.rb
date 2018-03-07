@@ -16,6 +16,7 @@ module Robe
         def start
           init_ops
           init_mongo_client
+          init_mongo_collections
         end
 
         def config
@@ -94,6 +95,15 @@ module Robe
           unless @mongo_client.database
             raise Robe::DBError, "#{__FILE__}[#{__LINE__}] : mongo client does not host database named '#{config.mongo_database}'"
           end
+        end
+
+        def init_mongo_collections
+          required = []
+          required << Robe::DB::Models::TaskLog if Robe.config.log_tasks?
+          unless required.empty?
+            names = required.map(&:collection_name)
+            op(:database, :create_collections, *names)
+          end  
         end
 
         def init_ops

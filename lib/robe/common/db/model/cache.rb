@@ -56,7 +56,8 @@ module Robe; module DB; class Model
       init_methods
     end
 
-    # Returns promise with self as value when all scoped classes loaded.
+    # On client returns promise with self as value when all scoped classes loaded.
+    # On server returns self when all scoped classes loaded.
     def load(&callback)
       results = {}
       promises = {}

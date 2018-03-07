@@ -2,6 +2,7 @@
 
 require 'robe/server/config'
 require 'robe/server/logger'
+require 'robe/common/db/models/task_log'
 
 module Robe
   module Server
@@ -11,6 +12,16 @@ module Robe
         module_function
 
         def performing(name, kwargs)
+          trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs}) name.class=#{name.class}"
+          kwargs = (kwargs || {}).symbolize_keys
+          kwargs[:password] = '********' if kwargs[:password]
+          if Robe.config.log_tasks?
+            unless name == 'ping' || (name == 'dbop' && kwargs[:target] == 'task_logs')
+              trace __FILE__, __LINE__, self, __method__, ' saving task to task log'
+              Robe::DB::Models::TaskLog.new(time: Time.now.to_s, task: name, args: kwargs.to_s).save
+              trace __FILE__, __LINE__, self, __method__, ' saved task to task log'
+            end
+          end
           text = "#{prefix} : #{colorize('performing', :green)} : #{name_s(name)}#{args_s(kwargs)}"
           Robe.logger.info(text)
         end
