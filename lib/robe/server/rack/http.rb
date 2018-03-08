@@ -461,13 +461,13 @@ module Robe
         compiled_contents = compiled_contents.to_s
         output_path = public_assets_file_path(asset_name, create_dir: true)
         # trace __FILE__, __LINE__, self, __method__, " : #{compiled_file_name} => writing #{compiled_contents.size} bytes to #{output_path}"
-        # if path.end_with?('.rb')
-          # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
-          # compiled_contents = ::Uglifier.compile(compiled_contents)
-          # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
+        if asset_name.end_with?('.js')
+          trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
+          compiled_contents = ::Uglifier.compile(compiled_contents)
+          trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
           # compiled_contents = Compile::TreeShake.compile(compiled_contents)
           # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
-        # end
+        end
         File.write(output_path, compiled_contents)
         nil
       end
