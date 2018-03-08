@@ -5,8 +5,52 @@ module Robe
   module Server
     class Config
 
+      RACK_ENV_OPTIONS = %w(production development)
+      HOST_OPTIONS = %w(LOCAL HEROKU)
+
       class << self
 
+        def host
+          unless @host
+            @host = (ENV['HOST'] || 'LOCAL').upcase
+            unless HOST_OPTIONS.include?(@host)
+              raise Robe::ConfigError, "HOST environment variable must be set to one of #{HOST_OPTIONS}"
+            end
+          end
+          @host
+        end
+
+        def local_host?
+          host == 'LOCAL'
+        end
+
+        # expects config var HOST to be set on Heroku to 'HEROKU'
+        def heroku?
+          host == 'HEROKU'
+        end
+        
+        def rack_env
+          unless @rack_env
+            @rack_env = ENV['RACK_ENV'].to_s.downcase
+            unless RACK_ENV_OPTIONS.include?(@rack_env)
+              raise Robe::ConfigError, "RACK_ENV environment variable must be set to one of #{RACK_ENV_OPTIONS}"
+            end
+          end
+          @rack_env
+        end
+
+        def production?
+          rack_env == 'production'
+        end
+
+        def development?
+          rack_env == 'development'
+        end
+
+        def precompile?
+          production? && local_host?
+        end
+        
         def app_secret
           @app_secret ||= (
             ENV['APP_SECRET'] ||

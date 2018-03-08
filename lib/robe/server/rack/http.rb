@@ -47,11 +47,9 @@ module Robe
         unless Opal::VERSION >= MIN_OPAL_VERSION
           raise "Opal version must be >= #{MIN_OPAL_VERSION}"
         end
-        @rack_env = (ENV['RACK_ENV'] || :development).to_sym
         @config = Robe::Server::Config
-        # trace __FILE__, __LINE__, self, __method__, " : @rack_env=#{@rack_env} @config=#{@config}"
         build_rack_app
-        precompile if production?
+        precompile if config.precompile?
       end
 
       def call(env)
@@ -138,20 +136,20 @@ module Robe
         [404, {}, []]
       end
 
-      def rack_env
-        @rack_env
-      end
-
       def config
         @config
       end
 
+      def precompile?
+        config.precompile?
+      end
+
       def production?
-        rack_env == :production
+        config.production?
       end
 
       def development?
-        !production? # rack_env == :development
+        config.development?
       end
 
       def index_html
