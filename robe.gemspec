@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   # s.add_dependency 'sprockets-sass' # , '2.0.0.beta1'
   s.add_dependency 'json', '~> 2.1'
   s.add_dependency 'sass', '~> 3.5'
-  s.add_dependency 'uglifier', '~> 3.2'
+  s.add_dependency 'uglifier', '~> 4.1'
   s.add_dependency 'logger', '~> 1.2'
   s.add_dependency 'mongo', '~> 2.4'
   s.add_dependency 'bcrypt', '~> 3.1'
@@ -28,4 +28,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'concurrent-ruby', '~> 1.0', '>= 1.0.5'
   s.add_dependency 'faye-websocket', '~> 0.10.4'
   s.add_dependency 'redis', '~> 4.0'
+  s.add_dependency 'opal', '~> 0.11.0'
+  s.add_dependency 'opal-sprockets', '~> 0.4.1.0.11.0'
 end

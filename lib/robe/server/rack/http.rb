@@ -428,6 +428,7 @@ module Robe
         paths += css_sprockets_paths(compiled: false)
         paths += js_sprockets_paths(compiled: false)
         paths += rb_file_names # we don't compile Ruby via sprockets
+        FileUtils.remove_dir(public_assets_path, true)
         FileUtils.mkdir_p(public_assets_path)
         paths.each do |path|
           trace __FILE__, __LINE__, self, __method__, " path=#{path}"
@@ -441,7 +442,10 @@ module Robe
 
       def public_assets_file_path(file_name, create_dir: false)
         dir = File.join(public_assets_path, file_name.split('.').last)
-        FileUtils.mkdir_p(dir) if create_dir
+        if create_dir
+          trace __FILE__, __LINE__, self, __method__, " : FileUtils.mkdir_p(#{dir})"
+          FileUtils.mkdir_p(dir)
+        end
         File.join(dir, file_name)
       end
 
@@ -462,9 +466,9 @@ module Robe
         output_path = public_assets_file_path(asset_name, create_dir: true)
         # trace __FILE__, __LINE__, self, __method__, " : #{compiled_file_name} => writing #{compiled_contents.size} bytes to #{output_path}"
         if asset_name.end_with?('.js')
-          trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
-          compiled_contents = ::Uglifier.compile(compiled_contents)
-          trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
+          trace __FILE__, __LINE__, self, __method__, " : BEFORE UGLIFIER : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
+          compiled_contents = ::Uglifier.compile(compiled_contents, compress: {passes: 1})
+          trace __FILE__, __LINE__, self, __method__, " : AFTER UGLIFIER : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
           # compiled_contents = Compile::TreeShake.compile(compiled_contents)
           # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
         end

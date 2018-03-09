@@ -1,5 +1,3 @@
-puts "#{__FILE__}[#{__LINE__}] : require logger"
-
 require 'singleton'
 require 'logger'
 

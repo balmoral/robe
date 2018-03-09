@@ -4,7 +4,7 @@ module Robe
     [:fatal, :info, :warn, :debug, :error].each do |method_name|
       define_method(method_name) do |text, &block|
         text = block.call if block
-        `console[method_name](text);`
+        `console[method_name](text)`
       end
     end
   end
