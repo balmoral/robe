@@ -1,6 +1,30 @@
 # Robe::Server::User provides methods for accessing/managing
 # user in a session, socket channel, or task thread context
 # on the server. Inspired and derived from Volt.
+#
+
+# EXAMPLE USAGE
+=begin
+ def sign_in(id:, password:)
+  trace __FILE__, __LINE__, self, __method__, " id=#{id} password=#{password}"
+  _testing = true
+  password = Password.find_one(user_id: id)
+  if password
+    if password.hash == Robe::Server::User.password_hash(password)
+      user = User.find_one(user_id: id)
+      if user
+        sign_in_success_response(id, data: user.to_h)
+      else
+        sign_in_error_response(id, "unexpected error: user #{id} not found in users database")
+      end
+    else
+      sign_in_invalid_password_response(user_id)
+    end
+  else
+    sign_in_invalid_user_response(user_id)
+  end
+end
+=end
 
 require 'digest'
 require 'bcrypt'
@@ -79,6 +103,8 @@ module Robe
       def current_user_id
         user_id_signature = self.user_id_signature
         if user_id_signature.nil?
+          nil
+        else
           index = user_id_signature.index(SIGNATURE_HOOK)
           # if no index, the meta_data/cookie is invalid
           if index

@@ -8,9 +8,13 @@ module Robe
     def initialize
       super(STDOUT)
       # self.datetime_format = '%H%M%S'
-      self.formatter = proc do |severity, time, progname, msg |
-        "<#{severity[0..0]}:#{time.strftime('%y%m%d:%H%M%S')}> #{msg}\n"
-      end
+      self.formatter = ->(severity, _time, _progname, msg) {
+        "<#{severity[0..0]}:#{timestamp}> #{msg}\n"
+      }
+    end
+
+    def timestamp
+      Time.now.getgm.strftime('%Y%m%d:%H%M%S:%Z')
     end
 
   end
@@ -20,6 +24,7 @@ module Robe
   def logger
     @logger ||= Robe::Logger.instance
   end
+
 
 end
 

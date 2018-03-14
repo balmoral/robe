@@ -1,7 +1,10 @@
 require 'redis'
 
 module Robe
-  def self.redis
+  module_function
+
+  def redis
     @redis ||= ::Redis.new
   end
+
 end

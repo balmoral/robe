@@ -96,6 +96,15 @@ module Robe; module DB; class Model
       end
     end
 
+    def reload(&callback)
+      prior_caches = @prior_caches
+      init_vars
+      load(&callback).to_promise.then do |result|
+        @prior_caches = prior_caches
+        result
+      end
+    end
+
     def stop
       model_classes.each do |model_class|
         if model_class.cache == self
@@ -160,7 +169,6 @@ module Robe; module DB; class Model
     def init_vars
       @models = {}
       @prior_caches = {}
-      @use_block = nil
     end
 
     def init_scope(*classes_and_filters)

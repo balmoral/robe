@@ -18,7 +18,7 @@ module Robe
           if Robe.config.log_tasks?
             unless name == 'ping' || (name == 'dbop' && kwargs[:target] == 'task_logs')
               trace __FILE__, __LINE__, self, __method__, ' saving task to task log'
-              Robe::DB::Models::TaskLog.new(time: Time.now.to_s, task: name, args: kwargs.to_s).save
+              Robe::DB::Models::TaskLog.new(time: timestamp, task: name, args: kwargs.to_s).save
               trace __FILE__, __LINE__, self, __method__, ' saved task to task log'
             end
           end
@@ -42,6 +42,10 @@ module Robe
           end
         end
 
+        def timestamp
+          Robe.logger.timestamp
+        end
+
         # private
 
         def runtime_s(t)
@@ -63,10 +67,6 @@ module Robe
 
         def prefix
           colorize('Tasks::Logger', :purple)
-        end
-
-        def timestamp
-          colorize(Time.now.strftime('%y/%m/%d %H:%M:%S'), :green)
         end
 
         def colorize(string, color)
