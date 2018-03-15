@@ -30,9 +30,12 @@ module Robe
           end
 
           def redis_publish(channel:, event:, content: nil)
+            # trace __FILE__, __LINE__, self, __method__, "(channel: #{channel}, event: #{event}, content: #{content.class})"
             unless channels.include?(channel)
+              trace __FILE__, __LINE__, self, __method__, " client not subscribed to channel #{channel}"
               raise RuntimeError, "#{self.class.name}##{__method__} : client not subscribed to channel #{channel}"
             end
+            # trace __FILE__, __LINE__, self, __method__, " calling redis publish"
             Robe.sockets.redis_publish(channel: channel, event: event, client: self, content: content)
           end
 

@@ -11,7 +11,10 @@ module Robe
 
         module_function
 
+        IGNORE = %w(ping)
+
         def performing(name, kwargs)
+          return if IGNORE.include?(name)
           trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs}) name.class=#{name.class}"
           kwargs = (kwargs || {}).symbolize_keys
           kwargs[:password] = '********' if kwargs[:password]
@@ -27,6 +30,7 @@ module Robe
         end
 
         def performed(name, runtime, kwargs, error = nil)
+          return if IGNORE.include?(name)
           text = "#{prefix} : #{runtime_s(runtime)} #{colorize('to perform', :green)} : #{name_s(name)}#{args_s(kwargs)}"
           if error
             text += "\n" + colorize(error.to_s, :red)

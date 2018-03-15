@@ -15,20 +15,6 @@ module Browser
       end
     end
 
-    def delay(duration, &block)
-      `setTimeout(block, duration * 1000)`
-      self
-    end
-
-    alias_method :timeout, :delay
-
-    def interval(duration, &block)
-      `setInterval(block, duration * 1000)`
-      self
-    end
-
-    alias_method :every, :interval
-
     def scroll(x, y)
       `window.scrollTo(x, y)`
     end

@@ -2,11 +2,11 @@
 module Robe; module Client; class Sockets
   class Channel
 
-    attr_reader :name, :socket
+    attr_reader :name, :sockets
 
-    def initialize(name, socket)
+    def initialize(name, sockets)
       @name = name
-      @socket = socket
+      @sockets = sockets
       @handlers = {}
     end
 
@@ -27,11 +27,11 @@ module Robe; module Client; class Sockets
     # Close permanently - this instance no longer usable
     def close
       # trace __FILE__, __LINE__, self, __method__, " CLOSE CHANNEL #{name}"
-      socket.close_channel(name)
+      sockets.close_channel(name)
     end
 
     def open?
-      socket.channel?(name)
+      sockets.channel?(name)
     end
 
     def closed?
@@ -40,7 +40,7 @@ module Robe; module Client; class Sockets
 
     def send_message(event:,  content: nil)
       # trace __FILE__, __LINE__, self, __method__, " : event=#{event} content=#{content}"
-      socket.send_message(channel: name, event: event, content: content)
+      sockets.send_message(channel: name, event: event, content: content)
     end
 
   end

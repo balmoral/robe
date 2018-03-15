@@ -193,6 +193,7 @@ module Robe
                 else
                   client = @clients[client_id]
                   if client
+                    # trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
                     client.socket_send(json)
                   else
                     Robe.logger.error("#{__FILE__}[##{__LINE__}] : #{self.class}##{__method__} : unregistered client id #{client_id}")

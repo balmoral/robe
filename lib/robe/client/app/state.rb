@@ -6,13 +6,14 @@ module Robe
     class App
       class State < Robe::State::Atom
 
-        WEBSOCKET_CLOSED = 1001
-        ERRORS = {
-          WEBSOCKET_CLOSED => 'Web socket closed by server.'
-        }
+        WEBSOCKET_OPEN = 1001
+        WEBSOCKET_CLOSED = 1002
+        WEBSOCKET_RECONNECTING = 1003
+        WEBSOCKET_ERROR = 1004
 
         attr :user
         attr :server_errors
+        attr :websocket_status
         attr :sign_in_invalid_user
         attr :sign_in_invalid_password
 
@@ -32,27 +33,60 @@ module Robe
           !signed_in?
         end
 
-        def error_message(error_code)
-          ERRORS[error_code]
-        end
-
         def server_errors?
           server_errors.size > 0
         end
 
-        def add_server_error(error_code, message = nil)
-          message ||= error_message(error_code)
-          mutate!(server_errors: server_errors.merge({error_code => message}))
+        def add_server_error(code, message = nil)
+          message ||= code.to_s
+          mutate!(server_errors: server_errors.merge({code => message}))
         end
 
-        def notify_web_socket_error
-          add_server_error(WEBSOCKET_CLOSED)
+        def websocket_status?
+          !!websocket_status
         end
 
-        def websocket_closed?
-          server_errors.keys.include?(WEBSOCKET_CLOSED)
+        def set_socket_status(code, message = nil)
+          message ||= code.to_s
+          mutate!(websocket_status: { code => message })
+        end
+
+        def notify_websocket_open
+          set_socket_status(WEBSOCKET_OPEN, 'Web socket open.')
+        end
+
+        def notify_websocket_closed
+          set_socket_status(WEBSOCKET_CLOSED, 'Web socket closed.')
+        end
+
+        def notify_websocket_reconnect(attempt:)
+          set_socket_status(WEBSOCKET_RECONNECTING, "reconnecting socket: attempt ##{attempt}." )
+        end
+
+        def notify_websocket_error(error)
+          set_socket_status(WEBSOCKET_ERROR, "socket error: #{error}")
+        end
+
+        def websocket_open?
+          websocket_status? && websocket_status[WEBSOCKET_OPEN]
         end
         
+        def websocket_closed?
+          websocket_status? && websocket_status[WEBSOCKET_CLOSED]
+        end
+
+        def websocket_reconnecting?
+          websocket_status? && websocket_status[WEBSOCKET_RECONNECTING]
+        end
+
+        def websocket_error?
+          websocket_status? && websocket_status[WEBSOCKET_ERROR]
+        end
+
+        def websocket_status_message
+          websocket_status? ? websocket_status.values.first : 'unknown websocket status'
+        end
+
         def clear_server_errors
           mutate!(server_errors: {})
         end

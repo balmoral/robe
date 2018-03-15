@@ -17,9 +17,9 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__
         if Robe.app.user?
           user = Robe.app.user
-          meta_data[:user] = {}.tap do |hash|
+          meta_data[:user] = {}.tap do |meta_data|
             %i(id signature).each do |attr|
-              hash[attr] = user.send(attr) if user.respond_to?(attr)
+              meta_data[attr] = user.send(attr) if user.respond_to?(attr)
             end
           end
         end

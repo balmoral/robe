@@ -36,18 +36,24 @@ module Robe
         @dom_root = DOM(element)
       end
 
-      def set_interval(milliseconds, &callback)
-        `setInterval(callback, milliseconds)`
-      end
-
-      alias_method :every, :set_interval
-
       def set_timeout(milliseconds, &callback)
         `setTimeout(callback, milliseconds)`
       end
 
       alias_method :delay, :set_timeout
 
+      # timeout should be return value #set_timeout or #delay
+      def clear_timeout(timeout)
+        `clearTimeout(timeout)` if timeout
+      end
+
+      def set_interval(milliseconds, &callback)
+        `setInterval(callback, milliseconds)`
+      end
+
+      alias_method :every, :set_interval
+
+      # interval should be return value #set_interval or #every
       def clear_interval(interval)
         `clearInterval(interval)` if interval
       end

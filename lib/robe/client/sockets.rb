@@ -42,11 +42,11 @@ module Robe
         @url
       end
 
-      def open_channel_names
+      def opened_channel_names
         @channels.keys
       end
 
-      def open_channels
+      def opened_channels
         @channels.values
       end
 
@@ -68,7 +68,7 @@ module Robe
         raise RuntimeError, "channel #{channel} already open" if channel
         channel = Channel.new(name, self)
         @channels[name] = channel
-        channel.send_message(event: :subscribe)
+        subscribe_channel(name)
         channel
       end
 
@@ -114,9 +114,9 @@ module Robe
         else
           if attempt == 20
             trace __FILE__, __LINE__, self, __method__, ' : unable to connect to websocket'
-            raise RuntimeError, "#{__FILE__}[#{__LINE__}] : unable to connect to websocket"
+            # raise RuntimeError, "#{__FILE__}[#{__LINE__}] : unable to connect to websocket"
           end
-          Robe::Client::Browser.delay(attempt * 100) do
+          Robe.browser.delay((attempt ** 1.5).to_i) do
             # trace __FILE__, __LINE__, self, __method__, " : not connected : message=#{message} attempt=#{attempt}"
             message[:attempt] = attempt + 1
             send_message(**message)
@@ -126,21 +126,31 @@ module Robe
 
       private
 
+      def subscribe_channel(name)
+        send_message(channel: name, event: :subscribe)
+      end
+
       def init_socket
         # trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
         @websocket = Robe::Client::Browser::WebSocket.instance(url, auto_reconnect: true)
-        # @websocket.auto_reconnect!
         on_open do |event|
-          # trace __FILE__, __LINE__, self, __method__, " : open event = #{event}"
+          # if the socket was closed we need to re-subscribe affected channels
+          if @resubcribe_channels
+            @resubcribe_channels.each do |each|
+              subscribe_channel(each.name)
+            end
+            @resubcribe_channels = nil
+          end
         end
         on_close do  |event|
-          # trace __FILE__, __LINE__, self, __method__, " : close event = #{event} code=#{event.code} reason=##{event.reason}}"
+          # if the socket closes we'll need to re-subscribe channels when it's re-opened
+          @resubcribe_channels = @channels.values.dup
         end
         on_error do  |event|
           # trace __FILE__, __LINE__, self, __method__, " : error event = #{event}"
         end
         on_message do |message|
-          # trace __FILE__, __LINE__, self, __method__, " : message event = #{message}"
+          # trace __FILE__, __LINE__, self, __method__, " : message event #{message} : #{message.data}"
           receive_message(message)
         end
       end
