@@ -21,27 +21,25 @@ module Robe
         # Returns a promise with current User if successful.
         # See Robe::Server::User for response structures.
         def self.sign_in(id, password)
-          trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
+          # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
           if Robe.app.user?
             raise Robe::UserError, 'previous user must be signed out before sign in of new user'
           end
-          trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
+          # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
           Robe.app.perform_task(:sign_in, id: id, password: password).then do |result|
-            trace __FILE__, __LINE__, self, __method__, " result=#{result}"
+            # trace __FILE__, __LINE__, self, __method__, " result=#{result}"
             result = result.symbolize_keys
             case result[:status]
               when 'success'
                 # construct new instance with response from task
                 # (expects :id, :name, :signature and optional :data)
                 user = new(**result[:user])
-                trace __FILE__, __LINE__, self, __method__, " user=#{user.to_h}"
+                # trace __FILE__, __LINE__, self, __method__, " user=#{user.to_h}"
                 Robe.app.state.set_user(user)
-                trace __FILE__, __LINE__, self, __method__
                 Robe.app.cookies[:user_id] = user.id, {
                   expires: user.expiry,
                   secure: true
                 }
-                trace __FILE__, __LINE__, self, __method__
                 user.to_promise
               when 'server_error'
                 Robe.app.state.mutate!(user: nil) do
