@@ -17,7 +17,7 @@ module Robe
             @clients = {}     # client id => a Client
             @sockets = {}     # socket object id => a Client
             @subscribers = {} # channel name => a Hash of client_id => Client
-            Thread.new { monitor_redis }
+            ::Thread.new { monitor_redis }
           end
 
           def redis

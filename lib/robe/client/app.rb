@@ -23,7 +23,7 @@ module Robe
     class App
       include Robe::Client::Browser
 
-      attr_reader :state, :router, :component, :root, :on_rendered, :cookies
+      attr_reader :state, :router, :component, :on_rendered, :cookies
 
       def self.instance
         @@instance
@@ -45,8 +45,11 @@ module Robe
         @on_render = []
         @on_rendered = []
         @watching_url = false
-        document.on('visibilitychange') do
-          if @render_on_visibility_change
+        @render_on_visibility_change = true
+        document.on_visibility_change do
+          trace __FILE__, __LINE__, self, __method__, " : document.hidden?=#{document.hidden?} @render_on_visibility_change=#{@render_on_visibility_change}"
+          if !document.hidden? && @render_on_visibility_change
+            trace __FILE__, __LINE__, self, __method__
             @render_on_visibility_change = false
             render
           end
@@ -69,6 +72,7 @@ module Robe
         Robe.window
       end
 
+      # delegations to user state
       %i(user server_errors sign_in_invalid_user sign_in_invalid_password).each do |method|
         define_method(method) { state.send(method) }
         define_method(:"#{method}?") { state.send(:"#{method}?") }
@@ -147,16 +151,18 @@ module Robe
 
       def render(&block)
         on_render << block if block
+        trace __FILE__, __LINE__, self, __method__, " : @will_render=#{@will_render}"
         return if @will_render
-        @will_render = true
 
         # If the app isn't being shown, wait to render until it is.
+        # visibilitychanged event is observed in #intialize
         trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name} document.hidden?=#{document.hidden?}"
         if document.hidden?
           @render_on_visibility_change = true
           return
         end
 
+        @will_render = true
         window.animation_frame do
           perform_render
           when_rendered
@@ -188,7 +194,7 @@ module Robe
       end
 
       def perform_render
-        trace __FILE__, __LINE__, self, __method__, " root=#{root}"
+        trace __FILE__, __LINE__, self, __method__
         if body.nil?
           raise TypeError, 'Cannot render to a non-existent document body. Make sure the document ready event has been triggered before invoking the application.'
         end

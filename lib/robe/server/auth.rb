@@ -1,7 +1,10 @@
-# Robe::Server::User provides methods for accessing/managing
+# Robe::Server::Auth provides methods for accessing/managing
 # user in a session, socket channel, or task thread context
-# on the server. Inspired and derived from Volt.
+# on the server. Derived from Volt.
 #
+
+# TODO: add authentication and sessions per: http://mrcook.uk/simple-roda-blog-tutorial
+# TODO: app features (actions, authentication, persistence) as plugins (like Roda)
 
 # EXAMPLE USAGE
 =begin
@@ -28,15 +31,20 @@ end
 
 require 'digest'
 require 'bcrypt'
+require 'robe/server/thread'
 
 module Robe
   module Server
-    module User
+    module Auth
 
-      SIGNATURE_HOOK = '~~~'
+      SIGNATURE_HOOK = '~-~-~'
 
       module_function
 
+      def valid_user_signature?(user_id, given_user_signature)
+        given_user_signature == user_signature(user_id)
+      end
+      
       def sign_in_success_response(user_id, data: nil)
         trace __FILE__, __LINE__, self, __method__
         result = {
@@ -94,17 +102,15 @@ module Robe
       end
 
       def current_thread
-        Thread.current
+        Robe.thread.current
       end
 
       # Returns the current user id from current thread.
       # Returns nil if no current user id.
-      # Will throw a Robe::UserError if
+      # Will throw a Robe::UserError if user_id is incorrectly signed
       def current_user_id
         user_id_signature = self.user_id_signature
-        if user_id_signature.nil?
-          nil
-        else
+        if user_id_signature
           index = user_id_signature.index(SIGNATURE_HOOK)
           # if no index, the meta_data/cookie is invalid
           if index
@@ -121,51 +127,32 @@ module Robe
       end
 
       def thread_user_id
-        current_thread['user_id']
+        current_thread.user_id
       end
 
-      # Returns current thread meta data as a hash or nil.
-      def thread_meta
-        current_thread['meta']
-      end
-
-      # Sets current thread meta data to a hash or nil.
-      # Returns previous value if any.
-      def thread_meta=(hash)
-        prev = thread_meta
-        current_thread['meta'] = hash
-        prev
-      end
-
-      # Sets current thread user id.
-      # Returns previous id if any.
       def thread_user_id=(id)
-        prev = current_thread['user_id']
-        current_thread['user_id'] = id
-        prev
+        current_thread.user_id = id
       end
 
       # Returns signature as stored in thread metadata.
       # Returns nil if non meta data or no signature found.
       def user_id_signature
-        meta = thread_meta
+        meta = current_thread.meta
         meta && meta['user_id_signature']
       end
 
       # Sets user id signature in current thread meta data.
-      # Returns previous value if any.
-      # Will raise error if current thread has no meta data.
+      # Will create new meta data if current thread has none.
       def user_id_signature=(signature)
-        prev = user_id_signature
-        meta = thread_meta
-        raise RuntimeError, "#{self}###{__method__} : no meta data set for current thread" unless meta
+        meta = current_thread.meta
+        current_thread.meta = meta = {} unless meta
         meta['user_id_signature'] = signature
-        prev
       end
 
       # Returns a SHA256 digest token generated from salted user id.
       def tokenize_user_id(user_id)
-        Digest::SHA256.hexdigest salted_user_id(user_id)
+        salted_id = salted_user_id(user_id)
+        Digest::SHA256.hexdigest(salted_id)
       end
 
       # Returns a salted user id - prefixed with app secret.
@@ -173,5 +160,11 @@ module Robe
         "#{Robe.config.app_secret}::#{user_id}"
       end
     end
+  end
+
+  module_function
+
+  def auth
+    @auth ||= Robe::Server::Auth
   end
 end

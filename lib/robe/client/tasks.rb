@@ -11,19 +11,16 @@ module Robe
       def perform(task_name, **kwargs)
         # trace __FILE__, __LINE__, self, __method__, "(#{task_name}, {kwargs})"
         # Meta data is passed from the browser to the server so the server can know things like who's logged in.
-        # We pass meta_data[:user] as hash with user id and user token if available.
+        # We pass meta_data[:user] as hash with user id and user tokenised signature if available.
         # TODO: consider allowing task to specify required meta data, and caller to be responsible
         meta_data = {}
-        # trace __FILE__, __LINE__, self, __method__
         if Robe.app.user?
           user = Robe.app.user
-          meta_data[:user] = {}.tap do |meta_data|
-            %i(id signature).each do |attr|
-              meta_data[attr] = user.send(attr) if user.respond_to?(attr)
-            end
+          meta_data[:user] = {}
+          %i(id signature).each do |attr|
+            meta_data[:user][attr] = user.send(attr) if user.respond_to?(attr)
           end
         end
-        # trace __FILE__, __LINE__, self, __method__, " meta_data=#{meta_data}"
         send_request(task_name, meta_data, **kwargs)
       end
 

@@ -5,6 +5,8 @@ require 'robe/server/logger'
 require 'robe/server/config'
 require 'robe/server/rack'
 require 'robe/server/tasks'
+require 'robe/server/thread'
+require 'robe/server/auth'
 require 'robe/common/model'
 require 'robe/server/db'
 
@@ -16,6 +18,7 @@ module Robe; module Server
 
     def self.instance
       unless @started
+        ::Thread.abort_on_exception = true
         configure
         trace __FILE__, __LINE__, self, __method__, ' : calling http'
         http
@@ -59,6 +62,14 @@ module Robe; module Server
       Robe.db
     end
 
+    def self.thread
+      Robe.thread
+    end
+
+    def self.auth
+      Robe.auth
+    end
+
     def self.configure
       raise Robe::ConfigError, "#configure method must be implemented in your subclass of #{self.name}"
     end
@@ -66,7 +77,7 @@ module Robe; module Server
     # Register a server task.
     #
     # @param [ Symbol ] name Symbol identifying the task.
-    # @param [ Boolean ] auth Whether to provide session user cookie to task. Defaults to true.
+    # @param [ Boolean ] auth Whether to verify user signature in task metadata. Defaults to true.
     # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
     #
     # @yieldparam [ Hash ] Keyword args from client over socket.
@@ -79,7 +90,7 @@ module Robe; module Server
       task(name, lambda, auth: auth, &block)
     end
 
-    task :sign_in do |id:, password:|
+    task :sign_in, auth: false do |id:, password:|
       raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 
@@ -96,8 +107,6 @@ require 'robe/server/app/tasks/db'
 require 'robe/server/app/state/user'
 require 'robe/server/app/state/session'
 
-# TODO: add authentication and sessions per: http://mrcook.uk/simple-roda-blog-tutorial
-# TODO: app features (actions, authentication, persistence) as plugins (like Roda)
 
 
 

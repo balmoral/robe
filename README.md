@@ -1,34 +1,36 @@
-# RoBE
+# ROBE
 
-**R**uby **o**n **B**oth **E**nds!
+#### Ruby on both ends.
 
-An easily learned, easily deployed full stack Ruby application framework for server and client.  
+Robe is a full stack, single page application framework for server and client.  
 
 Highlights are:
 
-- a readable, concise, adaptable, re-usable, object-oriented DOM interface
+- **isomorphic** when you want it 
+- share Ruby code on server and client when it makes sense 
 - **no HTML** (almost) - do it all in Ruby
-- **isomorphic** where you want it
+- a readable, concise, adaptable, re-usable, object-oriented DOM interface
 - bring-your-own CSS and JavaScript as required  
 - simple yet powerful **state** management
 - simple explicit fine-grained **binding** of DOM to state  
-- **tasks** defined and performed on the server, requests made from the client
+- **tasks** (api) defined and performed on the server, requests made from the client
 - built-in **Mongo** support - Sequel/ROM/AR to come
 - database models with built-in validation and associations 
 - easy write-through database caching on the client 
-- integrated **websocket** support with **Redis** pub/sub  
+- integrated **websocket** support with **Redis**  
 - simple one-stop server configuration
 - a minimum of convention to master 
 - no mandated JavaScript libraries (except jquery), but...
 - inline JavaScript and access to any JavaScript library via **Opal** 
 - **source maps** to view and debug Ruby code on the client
 - small footprint on server and client
+- easily learned, easily deployed
 - an aversion to opaque magic
 - an embrace of **productive happiness**  
 
 ## Acknowledgements
 
-RoBE has been inspired by the work of many dedicated, enthusiastic and talented
+**Robe** has been inspired by the work of many dedicated, enthusiastic and talented
 people who have already provided great client-side Ruby libraries and frameworks. 
 
 Special appreciation and acknowledgement goes to these sources of inspiration and learning:
@@ -55,7 +57,7 @@ Or install it yourself as:
 
 ## Example
 
-This mini-app demonstrates RoBE's
+This mini-app demonstrates Robe's
 
 - concise DOM DSL
 - reusable DOM components
@@ -125,7 +127,7 @@ class App < Robe::Client::App
     def render
       div.style(font_family: 'Helvetica')[
         h1[
-          'RoBE => Ruby on Both Ends.'
+          'Robe => Ruby on Both Ends.'
         ],
         h5.style(color: :orangered)[
           'the time has come for Ruby on the server and the client...'.upcase
@@ -158,7 +160,7 @@ class App < Robe::Server::App
   
   def self.configure
     config.client_app_path = 'client/app.rb'
-    config.title = 'RoBE Clock Example'
+    config.title = 'Robe Clock Example'
   end
 end
 ```

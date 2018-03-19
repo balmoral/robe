@@ -9,6 +9,7 @@ require 'robe/common/sockets'
 require 'robe/server/tasks/logger'
 require 'robe/common/promise'
 require 'robe/server/config'
+require 'robe/server/auth'
 
 
 # The tasks module takes incoming messages from the
@@ -29,7 +30,7 @@ module Robe
       # Register a server task.
       #
       # @param [ Symbol ] name Symbol identifying the task.
-      # @param [ Boolean ] auth Whether to provide session user cookie to task. Defaults to true.
+      # @param [ Boolean ] auth Whether to verify user signature in task metadata. Defaults to true.
       # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
       #
       # @yieldparam [ Hash ] Keyword args from client over socket.
@@ -99,11 +100,12 @@ module Robe
       def perform_task(client:, name:, kwargs:, promise_id:, meta_data:)
         Tasks::Logger.performing(name, kwargs)
         start_time = Time.now.to_f
-        resolve_task(name, kwargs, meta_data).then do |result, cookies|
-          send_response(client: client, task: name, promise_id: promise_id, result: result, error: nil, cookies: cookies)
+        resolve_task(name, kwargs, meta_data).then do |result, meta_data|
+          send_response(client: client, task: name, promise_id: promise_id, result: result, error: nil, meta_data: meta_data)
           run_time = ((Time.now.to_f - start_time) * 1000).round(3)
           Tasks::Logger.performed(name, run_time, kwargs)
         end.fail do |error|
+          Tasks::Logger.failed(name, kwargs, metadata)
           begin
             trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, promise_id: #{promise_id}, error: #{error})"
             send_response(task: name, promise_id: promise_id, error: error)
@@ -118,41 +120,49 @@ module Robe
 
       # Returns a promise.
       def resolve_task(task_name, kwargs, meta_data)
-        # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} kwargs=#{kwargs}"
+        # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} kwargs=#{kwargs} meta_data=#{meta_data}"
         task = tasks[task_name.to_sym]
+        # trace __FILE__, __LINE__, self, __method__, " : #{task_name} => #{task}"
         if task
+          meta_data = meta_data.to_h
+          user = meta_data['user'].to_h
+          user_id = user['id']
+          if task[:auth]
+            error_stub = "Unauthorized #{task_name} request"
+            return "#{error_stub}: missing user data.".to_promise_error if user.empty?
+            return "#{error_stub}: missing user id.".to_promise_error unless user_id
+            user_signature = user['signature']
+            return "#{error_stub}: missing user signature.".to_promise_error unless user_signature
+            return "#{error_stub}: invalid user signature.".to_promise_error unless Robe.auth.valid_user_signature?(user_id, user_signature)
+          end
           lambda = task[:lambda]
           kwargs = kwargs.dup.symbolize_keys
-          # TODO:? kwargs[:user]
           # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
           Timeout.timeout(@timeout, Robe::TimeoutError) do
-            # trace __FILE__, __LINE__, self, __method__
-            Thread.current['meta'] = meta_data
-            # trace __FILE__, __LINE__, self, __method__
+            Robe.thread.user_id = user_id
+            Robe.thread.meta = meta_data
             begin
               # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{lambda} with #{kwargs}"
               result = kwargs.empty? ? lambda.call : lambda.call(**kwargs)
               result.to_promise.then do |result|
                 # trace __FILE__, __LINE__, self, __method__, " result=#{result.class}"
-                cookies = nil # TODO: @task_class.fetch_cookies
-                [result, cookies].to_promise
+                [result, Robe.thread.meta].to_promise
               end
             rescue Robe::TimeoutError => e
               msg = "#{__FILE__}[#{__LINE__}] : task `#{task_name}` timed out after #{@timeout} seconds"
-              Robe.logger.error(msg)
               msg.to_promise_error
             ensure
-              Thread.current['meta'] = nil
+              Robe.thread.user_id = nil
+              Robe.thread.meta = nil
             end
           end
         else
-          msg = "#{__FILE__}[#{__LINE__}] : unregistered task: #{task_name}"
-          Robe.logger.error(msg)
+          msg = "#{__FILE__}[#{__LINE__}] : invalid server task: #{task_name}"
           msg.to_promise_error
         end
       end
 
-      def send_response(client:, task:, promise_id:, result: nil, error: nil, cookies: nil)
+      def send_response(client:, task:, promise_id:, result: nil, error: nil, meta_data: nil)
         # trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
         client.redis_publish(
           channel: task_channel,
@@ -162,7 +172,7 @@ module Robe
             promise_id: promise_id,
             result: result,
             error: error,
-            cookies: cookies
+            meta_data: meta_data
           }
         )
       end
