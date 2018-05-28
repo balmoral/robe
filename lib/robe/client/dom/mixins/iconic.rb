@@ -105,6 +105,26 @@ module Robe; module Client
         )
       end
 
+      def transfer_icon(callback: nil, attributes: nil, tooltip: nil, popover: nil)
+        icon(
+          :transfer,
+          callback: callback,
+          attributes: attributes,
+          tooltip: tooltip,
+          popover: popover
+        )
+      end
+
+      def flash_icon(callback: nil, attributes: nil, tooltip: nil, popover: nil)
+        icon(
+          :flash,
+          callback: callback,
+          attributes: attributes,
+          tooltip: tooltip,
+          popover: popover
+        )
+      end
+
       def download_icon(callback: nil, attributes: nil, tooltip: nil, popover: nil)
         icon(
           :download,

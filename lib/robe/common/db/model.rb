@@ -46,6 +46,7 @@ module Robe; module DB
     end
 
     def self.cache=(cache)
+      # trace __FILE__,  __LINE__, self, __method__, "(#{cache})"
       @cache = cache
     end
 
@@ -119,14 +120,14 @@ module Robe; module DB
       if cache
         cache.find(self, filter).first
       else
-        trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
+        # trace __FILE__,  __LINE__, self, __method, "(filter: #{filter}) #{collection_name}"
         db.find_one(collection_name, filter.stringify_keys).to_promise_then do |raw|
           # trace __FILE__,  __LINE__, self, __method, "(#{collection_name}, filter: #{filter}) : raw.class=#{raw.class} raw => #{raw}"
           if raw.is_a?(Hash)
             raw[:__from_db__] = true
             new(**normalize_attrs(raw)) # keyword arg keys must be symbols
           elsif raw.nil?
-            trace __FILE__,  __LINE__, self, __method, " : resolved model = NIL"
+            # trace __FILE__,  __LINE__, self, __method, " : resolved model = NIL"
             nil
           else
             msg = " : unexpected value returned from find #{raw.class}"
@@ -275,7 +276,7 @@ module Robe; module DB
             assoc_results = []
             results << send(assoc.local_attr).to_promise.to_promise_then do |many|
               many.each do |one|
-                trace __FILE__, __LINE__, self, __method__, " deleting associated : #{one}"
+                # trace __FILE__, __LINE__, self, __method__, " deleting associated : #{one}"
                 assoc_results << one.delete
               end
               assoc_results.to_promise_when_on_client

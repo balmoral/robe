@@ -357,6 +357,11 @@ module Robe; module State
       (observer = @observers.detect { |e| e[:id] == id }) && !observer[:terminated]
     end
 
+    # use cautiously
+    def clear_observers
+      @observers = []
+    end
+
     # compatibility with Store
     alias_method :subscribe, :observe
     alias_method :unsubscribe, :unobserve

@@ -4,7 +4,6 @@ module Robe; module DB; class Model
   class Cache
 
     attr_reader :scope
-    attr_reader :loaded
 
     # A cache is transient - it  is only active within a 'use' block.
     #
@@ -49,6 +48,10 @@ module Robe; module DB; class Model
     # if the model class is not cached. If the model class is cached then the
     # result of find's will be not be wrapped in a promise.
     #
+    # TODO: all filters/scope to specify which associations are automatically loaded
+    # into cache, e.g. { Product => { action_code: BAKE, recipe: :all, ... }}
+    # TODO: how to handle product->recipe->ingredients
+
     def initialize(*classes_and_filters)
       # trace __FILE__, __LINE__, self, __method__, " : classes_and_filters=#{classes_and_filters}"
       init_vars
@@ -56,49 +59,53 @@ module Robe; module DB; class Model
       init_methods
     end
 
-    # On client returns promise with self as value when all scoped classes loaded.
-    # On server returns self when all scoped classes loaded.
+    # Returns promise with self as value when all scoped classes loaded.
     def load(&callback)
+      @models = {}
       results = {}
       promises = {}
-      trace __FILE__, __LINE__, self, __method__
-      scope.each do |model_class, filter|
-        # unless model_class.cache.nil?
-        #   fail "#{model_class} is already using a cache of type #{model_class.cache.class}"
-        # end
-        # trace __FILE__, __LINE__, self, __method__, " : model_class = #{model_class}"
+      # trace __FILE__, __LINE__, self, __method__
+      # Nil all classes current cache to force them back to database.
+      scope.each do |model_class, _filter|
         @prior_caches[model_class] = model_class.cache
-        model_class.cache = nil # we want the class to go to db
+        model_class.cache = nil
+        @models[model_class] = []
+        promises[model_class] = Robe::Promise.new
+      end
+      # Do database finds with promised results.
+      scope.each do |model_class, filter|
         filter = {} if filter.nil? || filter == :all
         # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} Robe.client?=#{Robe.client?} Robe.server?=#{Robe.server?}"
         callback.call(loading: model_class) if callback
         results[model_class] = model_class.find(**filter.symbolize_keys)
-        promises[model_class] = Robe::Promise.new if Robe.client?
       end
+      # Now resolve all promises.
       results.each do |model_class, result|
+        # trace __FILE__, __LINE__, self, __method__, " : #{model_class}"
         result.to_promise.then do |result|
           # trace __FILE__, __LINE__, self, __method__, " : result.class#{result.class}"
           result = result.to_a
           # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : result.size = #{result.size}"
           @models[model_class] = result
-          callback.call(loaded: model_class) if callback
-          promises[model_class].resolve(result) if Robe.client?
           model_class.cache = self # from now on we want the class to go through self
+          callback.call(loaded: model_class) if callback
+          # resolving the promise MUST be last
+          promises[model_class].resolve(result)
+        end.fail do |error|
+          # trace __FILE__, __LINE__, self, __method__, " : ##{model_class} : error : #{error}"
         end
       end
-      # trace __FILE__, __LINE__, self, __method__, " : ALL #{results.size} CACHE CLASSES LOADED"
-      if Robe.client?
-        promises.values.to_promise_when.then do
-          self
-        end
-      else
+      promises.values.to_promise_when.then do
+        # trace __FILE__, __LINE__, self, __method__, " : ALL #{results.size} CACHE CLASSES LOADED"
         self
+      end.fail do |error|
+        trace __FILE__, __LINE__, self, __method__, " : ERROR : #{error}"
       end
     end
 
     def reload(&callback)
       prior_caches = @prior_caches
-      init_vars
+      init_vars # nils @prior_caches
       load(&callback).to_promise.then do |result|
         @prior_caches = prior_caches
         result
