@@ -169,6 +169,10 @@ module Robe; module State
         @state_class ||= Class.new(State)
       end
 
+      def attrs
+        state_class.attrs
+      end
+
       def attr(*args)
         state_class.attr(*args)
 
@@ -201,6 +205,11 @@ module Robe; module State
       @state = self.class.state_class.new(seed)
       @observer_id = 0
       @observers = []
+    end
+
+    def attrs
+      self.
+        class.attrs
     end
 
     # Temporarily set the state to mutable for the purpose of initializing.
