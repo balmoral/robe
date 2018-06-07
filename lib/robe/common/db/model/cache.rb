@@ -62,7 +62,6 @@ module Robe; module DB; class Model
     # Returns promise with self as value when all scoped classes loaded.
     def load(&callback)
       @models = {}
-      results = {}
       promises = {}
       # trace __FILE__, __LINE__, self, __method__
       # Nil all classes current cache to force them back to database.
@@ -72,34 +71,26 @@ module Robe; module DB; class Model
         @models[model_class] = []
         promises[model_class] = Robe::Promise.new
       end
-      # Do database finds with promised results.
+      # get promises for each model
       scope.each do |model_class, filter|
         filter = {} if filter.nil? || filter == :all
         # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} Robe.client?=#{Robe.client?} Robe.server?=#{Robe.server?}"
         callback.call(loading: model_class) if callback
-        results[model_class] = model_class.find(**filter.symbolize_keys)
+        promises[model_class] = model_class.find(**filter.symbolize_keys)
       end
-      # Now resolve all promises.
-      results.each do |model_class, result|
-        # trace __FILE__, __LINE__, self, __method__, " : #{model_class}"
-        result.to_promise.then do |result|
-          # trace __FILE__, __LINE__, self, __method__, " : result.class#{result.class}"
-          result = result.to_a
+      # wait for all to resolve before setting model caches, etc
+      promises.values.to_promise_when.then do
+        promises.each do |model_class, promise|
+          result = promise.value.to_a
           # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : result.size = #{result.size}"
           @models[model_class] = result
           model_class.cache = self # from now on we want the class to go through self
           callback.call(loaded: model_class) if callback
-          # resolving the promise MUST be last
-          promises[model_class].resolve(result)
-        end.fail do |error|
-          # trace __FILE__, __LINE__, self, __method__, " : ##{model_class} : error : #{error}"
         end
-      end
-      promises.values.to_promise_when.then do
-        # trace __FILE__, __LINE__, self, __method__, " : ALL #{results.size} CACHE CLASSES LOADED"
         self
       end.fail do |error|
         trace __FILE__, __LINE__, self, __method__, " : ERROR : #{error}"
+        error
       end
     end
 
