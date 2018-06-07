@@ -50,7 +50,7 @@ module Robe
         # Returns a promise.
         def op(arg_target, method, *args)
           promise = Robe::Promise.new
-          @op_thread_pool.post do
+          __perform_op do
             target = case arg_target.to_s
               when 'database'
                 mongo_db
@@ -73,8 +73,18 @@ module Robe
               end
             end
           end
-          trace __FILE__, __LINE__, self, __method__, " : arg_target=#{arg_target} : promise.class=#{promise.class}"
+          # trace __FILE__, __LINE__, self, __method__, " : arg_target=#{arg_target} : promise.class=#{promise.class}"
           promise
+        end
+
+        def __perform_op(&block)
+          if @op_thread_pool
+            @op_thread_pool.post do
+              block.call
+            end
+          else
+            block.call
+          end
         end
 
         def init_mongo_client
@@ -84,8 +94,8 @@ module Robe
             database: config.mongo_database,
             user: config.mongo_user,
             password: config.mongo_password,
-            min_pool_size: config.db_op_min_threads,
-            max_pool_size: config.db_op_max_threads
+            min_pool_size: [1, config.db_op_min_threads].max,
+            max_pool_size: [1, config.db_op_max_threads].max
           )
           if @mongo_client
             trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
@@ -109,10 +119,12 @@ module Robe
         def init_ops
           @op_mutex = Mutex.new
           # limit threads to mongo connection pool size
-          @op_thread_pool = Concurrent::CachedThreadPool.new(
-            min_threads: Robe.config.db_op_min_threads,
-            max_threads: Robe.config.db_op_max_threads
-          )
+          @op_thread_pool = if Robe.config.db_op_max_threads > 0
+            Concurrent::CachedThreadPool.new(
+              min_threads: Robe.config.db_op_min_threads,
+              max_threads: Robe.config.db_op_max_threads
+            )
+          end
         end
 
       end

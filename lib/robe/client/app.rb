@@ -118,6 +118,11 @@ module Robe
         server.perform_task(name, **kwargs)
       end
 
+      # alias for #perform_tasl
+      def server_api(name, **kwargs)
+        server.perform_task(name, **kwargs)
+      end
+
       def db
         @db ||= Robe.db
       end

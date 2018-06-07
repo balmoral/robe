@@ -1,9 +1,14 @@
 require 'stringio'
+require 'robe/common/promise'
+require 'robe/common/trace'
+require 'robe/common/errors'
 
 module Robe; module DB;
   class Model
     module CSV_IO_Methods
 
+      COMMA_SUB = '~%~'
+      
       # Loads all records in the given csv string to the
       # model class's collection/table.
       # Assumes first line in csv is field names.
@@ -11,6 +16,7 @@ module Robe; module DB;
       # `csv` may be a single csv with lines separated by "\n" or an array of csv strings.
       def load_csv(csv, field_procs: nil, map_attrs: {}, ignore_attrs: [], ignore_associations: false)
         lines = csv.is_a?(Array) ? csv : csv.split("\n")
+        promises = []
         if lines.size > 1
           attrs = self.attrs
           csv_fields = lines[0].split(',').map(&:to_sym)
@@ -32,10 +38,10 @@ module Robe; module DB;
             # separated field to be returned as empty strings
             # turn empty strings back to nil
             values = line.split(',', -1).map { |s|
-              s.present? ? s.gsub('~;', ',') : nil
+              s.present? ? s.gsub(COMMA_SUB, ',') : nil
             }
             unless values.size == csv_fields.size
-              raise Robe::DBError "#{self.name}###{__method__} : values.size #{values.size} != field_names.size #{attrs.size} => '#{line}'"
+              raise Robe::DBError, "#{self.name}###{__method__} : values.size #{values.size} != field_names.size #{attrs.size} => '#{line}'"
             end
             hash = {}
             values.each_with_index do |value, index|
@@ -46,8 +52,12 @@ module Robe; module DB;
               end
             end
             instance = self.new(**hash)
-            instance.insert(ignore_associations: ignore_associations)
+            promises << instance.insert(ignore_associations: ignore_associations)
           end
+        end
+        promises.to_promise_when.then do |r|
+          trace __FILE__, __LINE__, self, __method__, " r.size=#{r.size}"
+          r
         end
       end
 
@@ -57,13 +67,13 @@ module Robe; module DB;
         self.all.to_promise.then do |all|
           io = StringIO.new
           io << (attrs.join(',') + "\n")
-          # puts attrs.join(',')
           all.each do |model|
-            values = attrs.map{|attr| model.send(attr)}
-            # puts values.join(',')
+            values = attrs.map{ |attr|
+              model.send(attr).to_s.value.gsub(',', COMMA_SUB)
+            }
             io << (values.join(',') + "\n")
           end
-          Robe::Promise.value(io.string)
+          io.string.to_promise
         end
       end
 

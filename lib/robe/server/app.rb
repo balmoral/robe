@@ -4,7 +4,8 @@ require 'robe/common/trace'
 require 'robe/server/logger'
 require 'robe/server/config'
 require 'robe/server/rack'
-require 'robe/server/tasks'
+require 'robe/server/api'
+require 'robe/server/task/manager'
 require 'robe/server/thread'
 require 'robe/server/auth'
 require 'robe/common/model'
@@ -24,6 +25,8 @@ module Robe; module Server
         http
         trace __FILE__, __LINE__, self, __method__, ' : calling sockets'
         sockets
+        trace __FILE__, __LINE__, self, __method__, ' : calling task_manager'
+        task_manager
         trace __FILE__, __LINE__, self, __method__, ' : calling db.start'
         db.start if config.use_mongo?
         trace __FILE__, __LINE__, self, __method__
@@ -54,8 +57,8 @@ module Robe; module Server
       Robe.sockets
     end
 
-    def self.tasks
-      Robe.tasks
+    def self.task_manager
+      Robe.task_manager
     end
 
     def self.db
@@ -82,12 +85,12 @@ module Robe; module Server
     #
     # @yieldparam [ Hash ] Keyword args from client over socket.
     def self.task(name, lambda = nil, auth: true, &block)
-      tasks.register(name, lambda, auth: auth, &block)
+      Robe::Server::Api.task(name, lambda, auth: auth, &block)
     end
 
     # #api is an alias for #task
     def self.api(name, lambda = nil, auth: true, &block)
-      task(name, lambda, auth: auth, &block)
+      Robe::Server::Api.api(name, lambda, auth: auth, &block)
     end
 
     task :sign_in, auth: false do |id:, password:|
