@@ -69,7 +69,7 @@ module Robe; module DB;
           io << (attrs.join(',') + "\n")
           all.each do |model|
             values = attrs.map{ |attr|
-              model.send(attr).to_s.value.gsub(',', COMMA_SUB)
+              model.send(attr).to_s.gsub(',', COMMA_SUB)
             }
             io << (values.join(',') + "\n")
           end
