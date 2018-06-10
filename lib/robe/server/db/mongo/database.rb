@@ -91,12 +91,12 @@ module Robe; module DB
 
       def init_collections
         @collections = {}
-        trace __FILE__, __LINE__, self, __method__, " getting native collections...."
+        # trace __FILE__, __LINE__, self, __method__, " getting native collections...."
         native.collections.each do |c|
-          trace __FILE__, __LINE__, self, __method__, " native collection name = #{c.name.to_s}"
+          # trace __FILE__, __LINE__, self, __method__, " native collection name = #{c.name.to_s}"
           @collections[c.name.to_s] = Robe::DB::Mongo::Collection.new(self, c)
         end
-        trace __FILE__, __LINE__, self, __method__, " got native collections...."
+        # trace __FILE__, __LINE__, self, __method__, " got native collections...."
       end
 
 

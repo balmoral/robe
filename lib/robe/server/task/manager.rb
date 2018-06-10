@@ -91,12 +91,12 @@ module Robe
 
         # Perform the task, running inside of a worker thread.
         def perform_task(client:, name:, kwargs:, promise_id:, meta_data:)
-          logger.performing(name, kwargs)
+          logger.performing(name, kwargs) if Robe.config.log_tasks?
           start_time = Time.now.to_f
           resolve_task(name, kwargs, meta_data).then do |result, meta_data|
             send_response(client: client, task: name, promise_id: promise_id, result: result, error: nil, meta_data: meta_data)
             run_time = ((Time.now.to_f - start_time) * 1000).round(3)
-            logger.performed(name, run_time, kwargs)
+            logger.performed(name, run_time, kwargs) if Robe.config.log_tasks?
           end.fail do |error|
             logger.failed(name, kwargs, metadata)
             begin

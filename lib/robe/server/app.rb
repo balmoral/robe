@@ -21,15 +21,15 @@ module Robe; module Server
       unless @started
         ::Thread.abort_on_exception = true
         configure
-        trace __FILE__, __LINE__, self, __method__, ' : calling http'
+        # trace __FILE__, __LINE__, self, __method__, ' : calling http'
         http
-        trace __FILE__, __LINE__, self, __method__, ' : calling sockets'
+        # trace __FILE__, __LINE__, self, __method__, ' : calling sockets'
         sockets
-        trace __FILE__, __LINE__, self, __method__, ' : calling task_manager'
+        # trace __FILE__, __LINE__, self, __method__, ' : calling task_manager'
         task_manager
-        trace __FILE__, __LINE__, self, __method__, ' : calling db.start'
+        # trace __FILE__, __LINE__, self, __method__, ' : calling db.start'
         db.start if config.use_mongo?
-        trace __FILE__, __LINE__, self, __method__
+        # trace __FILE__, __LINE__, self, __method__
         @started = true
       end
       self

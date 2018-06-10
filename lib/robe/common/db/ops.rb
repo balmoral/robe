@@ -30,6 +30,14 @@ module Robe; module Shared
           op(collection, :drop)
         end
 
+        def create_collection(name)
+          create(name)
+        end
+
+        def drop_collection(name)
+          drop(name)
+        end
+
         # Returns a promise.
         # e.g. find(:customers, { code: 'TBD' })
         # e.g. find(:customers, { }code: { '$in' => %w(X Y Z) } } )
@@ -188,9 +196,6 @@ module Robe; module Shared
           op(collection, :bulk_write, ops)
         end
 
-        def drop_collection(name)
-          op
-        end
       end
 
       def self.included(base)

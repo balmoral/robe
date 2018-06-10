@@ -80,7 +80,7 @@ module Robe
         end
 
         def log_tasks?
-          @log_tasks = true if @log_tasks.nil?
+          @log_tasks = false if @log_tasks.nil?
           @log_tasks
         end
 

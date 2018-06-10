@@ -88,7 +88,7 @@ module Robe
         end
 
         def init_mongo_client
-          trace __FILE__, __LINE__, self, __method__, " : creating mongo client for hosts=#{config.mongo_hosts} database=#{config.mongo_database}"
+          # trace __FILE__, __LINE__, self, __method__, " : creating mongo client for hosts=#{config.mongo_hosts} database=#{config.mongo_database}"
           @mongo_client = Robe::DB::Mongo::Client.new(
             hosts: config.mongo_hosts,
             database: config.mongo_database,
@@ -98,7 +98,7 @@ module Robe
             max_pool_size: [1, config.db_op_max_threads].max
           )
           if @mongo_client
-            trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
+            # trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
           else
             raise Robe::DBError, "#{__FILE__}[#{__LINE__}] : could not create mongo client for host=#{config.mongo_hosts} database='#{config.mongo_database}'"
           end
