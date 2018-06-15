@@ -1,11 +1,11 @@
 require 'opal'
 require 'robe/common/trace'
-require 'robe/client/router'
-require 'robe/client/component'
-require 'robe/client/sockets'
+require 'robe/client/app/router'
+require 'robe/client/browser/dom/component'
+require 'robe/client/server/sockets'
+require 'robe/client/browser/data/cookies'
 require 'robe/client/server'
 require 'robe/client/db'
-require 'robe/client/browser/data/cookies'
 require 'robe/client/app/state'
 
 module Robe
@@ -41,7 +41,7 @@ module Robe
         self.class.instance = self
         @state = Robe::Client::App::State.new
         @component = component
-        @router = Robe::Client::Router.new(document.URL)
+        @router = Robe::Client::App::Router.new(document.URL)
         @on_render = []
         @on_rendered = []
         @watching_url = false

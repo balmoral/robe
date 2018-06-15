@@ -1,4 +1,4 @@
-require 'robe/client/tasks'
+require 'robe/client/server/tasks'
 
 # interface between client and server
 module Robe

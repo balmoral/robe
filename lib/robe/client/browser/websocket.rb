@@ -1,5 +1,6 @@
 require 'json'
 require 'robe/common/sockets'
+require 'robe/client/util/logger'
 require 'robe/client/browser/websocket/incoming_message'
 require 'robe/client/browser/websocket/close_event'
 

@@ -4,7 +4,6 @@ require 'opal'
 require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
 require 'rack-protection'
 require 'uglifier'
-require 'robe/server/compile/tree_shake'
 require 'robe/server/rack/keep_alive'
 
 MIN_OPAL_VERSION = '0.10.5' # 0.11'
@@ -175,24 +174,21 @@ module Robe
         end
 
         def http_sprockets_lambda
-          unless @http_sprockets_lambda
-            @http_sprockets_lambda = if production?
-              # no thread locking
-              lambda do |env|
-                trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
+          @http_sprockets_lambda ||= if production?
+            # no thread locking
+            lambda do |env|
+              trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
+              http_sprockets.call(env)
+            end
+          else
+            # thread locking to stop sprockets concurrency issues in development
+            lambda do |env|
+              trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
+              http_sprockets_sync do
                 http_sprockets.call(env)
-              end
-            else
-              # thread locking to stop sprockets concurrency issues in development
-              lambda do |env|
-                trace __FILE__, __LINE__, self, __method__, " PATH_INFO=#{env['PATH_INFO']}"
-                http_sprockets_sync do
-                  http_sprockets.call(env)
-                end
               end
             end
           end
-          @http_sprockets_lambda
         end
 
         # ref: https://github.com/rails/sprockets/blob/master/guides/how_sprockets_works.md

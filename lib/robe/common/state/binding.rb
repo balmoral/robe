@@ -1,3 +1,4 @@
+
 module Robe; module State
 
   # A binding associates a change in a store due to an action

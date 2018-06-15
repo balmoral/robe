@@ -26,6 +26,8 @@ class Hash
   end
 end
 
+require 'robe/common/state/binding'
+
 module Robe; module State
   class Atom 
 
@@ -391,6 +393,48 @@ module Robe; module State
 
     def state_to_json
       @state.to_json
+    end
+
+    # Returns a Binding.
+    #
+    # If a block is given, to resolve the binding
+    # the block will be called with the value of
+    # the attribute if attribute is specified, or the
+    # block will be called with the atom instance if no
+    # attribute is specified.
+    #
+    # If a block is not given, the binding will resolve
+    # to value of the attribute if attribute is specified,
+    # or the atom if no attribute is specified.
+    #
+    # Example of usage in Robe component:
+    #
+    # class Clock < Atom
+    #   attr :time
+    #   ...
+    # end
+    #
+    # @clock = Clock.new # Clock is subclass of Atom
+    # ...
+    #
+    # def render
+    #   div[
+    #     @clock.bind(:time)
+    #   ]
+    # end
+    #
+    #
+    def bind(attr = nil, &block)
+      if attr
+        Robe::State::Binding.new(self, attr) {
+          value = self.send(attr)
+          block ? block.call(value) : value
+        }
+      else
+        Robe::State::Binding.new(self) {
+          block ? block.call(self) : self
+        }
+      end
     end
 
     protected

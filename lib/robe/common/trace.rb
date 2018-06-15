@@ -1,9 +1,9 @@
 if RUBY_PLATFORM == 'opal'
   # puts "#{__FILE__}[#{__LINE__}] : require 'robe/client/logger'"
-  require 'robe/client/logger'
+  require 'robe/client/util/logger'
 else
   # puts "#{__FILE__}[#{__LINE__}] : require 'robe/server/logger'"
-  require 'robe/server/logger'
+  require 'robe/server/util/logger'
 end
 
 class Object

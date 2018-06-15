@@ -18,6 +18,7 @@ module Robe
         $window # from opal-browser
       end
 
+=begin ##DEPRECATED:
       # TODO: should this be here? Only for Volt?
       def dom_root
         unless @dom_root
@@ -35,6 +36,7 @@ module Robe
       def dom_root=(element)
         @dom_root = DOM(element)
       end
+=end
 
       def set_timeout(milliseconds, &callback)
         `setTimeout(callback, milliseconds)`
@@ -100,19 +102,6 @@ module Robe
   def document
     browser.document
   end
+
 end
 
-class Object
-  def to_html
-    to_s
-  end
-end
-
-class Numeric
-  def px;   "#{self}px"  end
-  def em;   "#{self}em"  end
-  def rem;  "#{self}rem" end
-  def pc;   "#{self}%"   end
-  def vh;   "#{self}vh"  end
-  def hex;  "#%X" % self end
-end

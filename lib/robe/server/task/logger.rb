@@ -1,7 +1,7 @@
 # adapted from Volt
 
 require 'robe/server/config'
-require 'robe/server/logger'
+require 'robe/server/util/logger'
 require 'robe/common/db/models/task_log'
 
 module Robe

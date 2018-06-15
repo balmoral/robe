@@ -1,7 +1,7 @@
 require 'opal-sprockets'
 require 'robe/common/errors'
 require 'robe/common/trace'
-require 'robe/server/logger'
+require 'robe/server/util/logger'
 require 'robe/server/config'
 require 'robe/server/rack'
 require 'robe/server/api'

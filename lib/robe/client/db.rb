@@ -1,5 +1,6 @@
 require 'json'
 require 'robe/client/server'
+require 'robe/client/util/logger'
 require 'robe/common/db/ops'
 
 # isomorphic of Robe::Server::DB
@@ -41,6 +42,6 @@ module Robe
   module_function
 
   def db
-    Robe::Client::DB
+    @db ||= Robe::Client::DB
   end
 end
