@@ -4,6 +4,7 @@ module Browser
   class Cookies
 
     # callback should expect kwargs cause:, removed:, and cookie:
+    # TODO: get it working
     def on_change(&callback)
       fail "#{self.class.name}##{__method__} not implemented yet - not sure how to..."
       handler = ->(event) {

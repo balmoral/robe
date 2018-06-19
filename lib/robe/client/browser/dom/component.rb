@@ -4,8 +4,6 @@ module Robe; module Client; module Browser; module DOM; class Component
 end end end end end
 
 require 'robe/common/trace'
-require 'robe/client/browser'
-require 'robe/client/browser/dom'
 require 'robe/common/state'
 
 # GLOBAL ATTRIBUTES
@@ -83,13 +81,11 @@ require 'robe/common/state'
 
 module Robe; module Client; module Browser; module DOM
   class Component
-
     include Robe::Client::Browser
     include Robe::Client::Browser::DOM
     include Robe::Client::Browser::DOM::HTML::Colors
     
     def initialize
-      # trace __FILE__, __LINE__, self, __method__, " : "
     end
 
     # Returns the root Browser::DOM::Element
@@ -120,7 +116,7 @@ module Robe; module Client; module Browser; module DOM
     # when document is ready. 
     def append_to_body
       document.ready do
-        document.body << root.as_native
+        document.body << root.to_n
       end
     end
 

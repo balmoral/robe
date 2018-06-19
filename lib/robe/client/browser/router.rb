@@ -1,6 +1,6 @@
-require 'robe/client/browser/browser_ext'
 require 'robe/common/trace'
 require 'robe/common/state/atom'
+require 'robe/client/browser/window'
 
 # Router is a State::State::Atom which keeps
 # the browser location and history in sync
@@ -29,7 +29,7 @@ require 'robe/common/state/atom'
 
 # REF: https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_is_a_URL
 
-module Robe; module Client; class App
+module Robe; module Client; module Browser
   class Router < Robe::State::Atom
 
     attr :path
@@ -92,7 +92,7 @@ module Robe; module Client; class App
     end
 
     def window
-      ::Browser.window
+      Robe.window
     end
 
     def location
@@ -111,7 +111,7 @@ module Robe; module Client; class App
     # called by app following `onpopstate` event (user pressed back or forward)
     def update
       # trace __FILE__, __LINE__, self, __method__, " : location.href=#{location.href} location.path=#{location.path} location.search=#{location.search}"
-      mutate!(**parse("#{location.path}#{location.search}"))
+      mutate!(**parse("#{location.path}#{location.query}"))
     end
 
     def navigate_to(path)

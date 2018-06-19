@@ -1,9 +1,6 @@
 
-require 'robe/client/browser'
-require 'robe/client/browser/dom'
 require 'robe/common/util'
 require 'robe/common/state/binding'
-require 'robe/client/browser/dom/html/tags'
 
 module Robe; module Client; module Browser; module DOM
 
@@ -87,11 +84,11 @@ module Robe; module Client; module Browser; module DOM
 
     # Returns a Browser::DOM::Element
     def to_element
-      $dom.tag(tag_name, params)
+      Robe.dom.tag(tag_name, params)
     end
 
     def append_to_body
-      Robe.document.body << self.to_element.as_native
+      Robe.document.body << self.to_element.to_n
     end
   end
 

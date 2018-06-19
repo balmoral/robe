@@ -16,9 +16,42 @@ module Robe; module Client; module Browser
     DEFAULT_MAX_RECONNECT_INTERVAL = 30000 # milliseconds
     DEFAULT_RECONNECT_DECAY = 1.5
 
-    def self.instance(url)
-      @instance ||= new(url)
+    # TODO: determine ws or wss get from server/document - see Volt for how
+    # TODO: allow apps to override or configure ?
+    # TODO: in production this should be wss ?
+    def self.default_url
+      unless @url
+        # The websocket url can be overridden by config.public.websocket_url
+        url = "#{`document.location.host`}/socket"
+        if url !~ /^wss?[:]\/\//
+          if url !~ /^[:]\/\//
+            # Add :// to the front
+            url = "://#{url}"
+          end
+          ws_proto = (`document.location.protocol` == 'https:') ? 'wss' : 'ws'
+          # Add wss? to the front
+          url = "#{ws_proto}#{url}"
+        end
+        trace __FILE__, __LINE__, self, __method__, " web socket url = #{url}"
+        @url = url
+      end
+      @url
     end
+
+    def self.instance(url = nil)
+      if @instance
+        unless url == @instance.url
+          fail "web socket instance already with other url '#{@instance.url}' not '#{url}'"
+        end
+      else
+        @instance = new(url || self.default_url)
+      end
+      @instance
+    end
+
+    attr_reader :url
+    attr_reader :auto_reconnect, :timeout_interval
+    attr_reader :max_reconnect_attempts, :reconnect_interval, :reconnect_decay
 
     def initialize(url,
       auto_reconnect: nil,
@@ -85,7 +118,7 @@ module Robe; module Client; module Browser
       @native = `new WebSocket(#{@url})`
       trace __FILE__, __LINE__, self, __method__, " : native => #{@native}"
       @timeout = Robe.browser.set_timeout(@timeout_interval) do
-        trace __FILE__, __LINE__, self, __method__, " : connection-timeout after #{@timeout_interval} seconds: #{@url}"
+        # trace __FILE__, __LINE__, self, __method__, " : connection-timeout after #{@timeout_interval} seconds: #{@url}"
         @timed_out = true
         `#{@native}.close()` if @native
         @native = nil

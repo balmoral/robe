@@ -1,0 +1,1 @@
+require 'robe/client/browser/data/cookies'

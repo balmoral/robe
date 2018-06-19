@@ -1,9 +1,6 @@
-require 'robe/client/browser/dom/component'
-require 'robe/client/app/router'
-
 # Link is a replacement for standard dom/html anchors
-# to use the Robe::Client::Router and by-pass routing
-# back to the server.
+# to use the Robe::Client::Browser::Router and by-pass
+# routing back to the server.
 
 module Robe; module Client; module Browser; module DOM
   class Link < Robe::Client::Browser::DOM::Component

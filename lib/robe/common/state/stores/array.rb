@@ -7,7 +7,7 @@ module Robe; module State
     # Read-only methods which are delegated to the state.
     # If the corresponding Array method would return
     # a new Array then so will the method here.
-    read_state(*%w(
+    read_state(*%i[
       [] & | * + - <=> ==
       any? assoc at
       bsearch bsearch_index
@@ -27,13 +27,13 @@ module Robe; module State
       take take_while transpose
       to_a to_ary to_h to_s
       uniq values_at zip
-    ).map(&:to_sym))
+    ])
 
     # Reduce methods / actions which change state
     # requiring a duplicate of the state to be made in
     # the reducer before calling the mutate method
     # on the new state.
-    reduce_dup(*%w(
+    reduce_dup(*%i[
       << []=
       clear compact! concat collect!
       delete delete_at delete_if drop drop_while
@@ -46,7 +46,7 @@ module Robe; module State
       sort! sort_by! sum
       take take_while
       uniq! unshift
-    ).map(&:to_sym))
+    ])
 
     def initialize(initial_array = [], &block)
       super(initial_array, &block)

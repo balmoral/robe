@@ -1,4 +1,4 @@
-module Robe; module Client
+module Robe; module Client; module Browser; module Wrap
   module HTTP
     class FormData
       def initialize
@@ -7,12 +7,12 @@ module Robe; module Client
 
       def append(key, value)
         data = if `!!value.native`
-         `value.native`
-        else
-          value
-        end
+           `value.native`
+         else
+           value
+         end
         `#@native.append(key, data)`
       end
     end
   end
-end end
+end end end end

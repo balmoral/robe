@@ -6,13 +6,13 @@ end
 
 class Array
   def deep_dup
-    map {|e| e.deep_dup}
+    map { |e| e.deep_dup}
   end
 end
 
 class Set
   def deep_dup
-    map {|e| e.deep_dup}
+    map { |e| e.deep_dup}
   end
 end
 
@@ -28,6 +28,10 @@ end
 
 require 'robe/common/state/binding'
 
+# Atom implements an all in one store + state
+# with supporting methods for mutation and observation.
+# TODO: add history support
+#
 module Robe; module State
   class Atom 
 
@@ -309,7 +313,8 @@ module Robe; module State
     # `#mutate!` is re-entrant: state is mutable within a mutate! block
     # and remains so if mutate! calls are nested.
     #
-    # During a mutate! the state is deeply duplicated and becomes mutable.
+    # In the outer mutate! the state is duplicated and memoized
+    # to be later passed to observers as the prior state.
     #
     # `values`, if given, should be kwargs of attr=>value pairs
     # and state attributes will be set to these values.
@@ -344,9 +349,8 @@ module Robe; module State
       self
     end
 
-    # Register an observer callback for any mutation.
-    # Callback proc or block should expect prior state as argument
-    # It will called after any mutation.
+    # Register an observer block to be called after mutation.
+    # The block should expect prior state as its argument.
     # Returns a observer id for later unobserve if required.
     def observe(attr: nil, attrs: nil, eval: nil, who: nil, &block)
       (attrs ||= []) << attr if attr

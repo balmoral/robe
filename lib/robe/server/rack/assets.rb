@@ -37,7 +37,7 @@ end
 module Robe
   module Server
     module Rack
-      class Http
+      class Assets
         include Singleton
 
         OPAL_PREFIX_PATH = '/__OPAL__'
@@ -488,8 +488,8 @@ module Robe
 
   module_function
 
-  def http
-    @http ||= Robe::Server::Rack::Http.instance
+  def assets
+    @assets ||= Robe::Server::Rack::Assets.instance
   end
 end
 

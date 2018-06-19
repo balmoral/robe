@@ -10,35 +10,14 @@ module Robe; module Client; module Server
   class Sockets
     include Robe::Sockets
 
-    def self.instance
-      @instance ||= new
+    def self.instance(url = nil)
+      @instance ||= new(url)
     end
 
-    def initialize
+    def initialize(url = nil)
+      @url = url
       @channels = {}
       init_socket
-    end
-
-    # TODO: determine ws or wss get from server/document - see Volt for how
-    # TODO: allow apps to override or configure ?
-    # TODO: in production this should be wss ?
-    def url
-      unless @url
-        # The websocket url can be overridden by config.public.websocket_url
-        url = "#{`document.location.host`}/socket"
-        if url !~ /^wss?[:]\/\//
-          if url !~ /^[:]\/\//
-            # Add :// to the front
-            url = "://#{url}"
-          end
-          ws_proto = (`document.location.protocol` == 'https:') ? 'wss' : 'ws'
-          # Add wss? to the front
-          url = "#{ws_proto}#{url}"
-        end
-        trace __FILE__, __LINE__, self, __method__, " sockets url = #{url}"
-        @url = url
-      end
-      @url
     end
 
     def opened_channel_names
@@ -130,8 +109,8 @@ module Robe; module Client; module Server
     end
 
     def init_socket
-      # trace __FILE__, __LINE__, self, __method__, " url='#{url}'"
-      @websocket = Robe::Client::Browser::WebSocket.instance(url, auto_reconnect: true)
+      # trace __FILE__, __LINE__, self, __method__, " @url='#{@url}'"
+      @websocket = Robe::Client::Browser::WebSocket.instance(@url, auto_reconnect: true)
       on_open do |event|
         # if the socket was closed we need to re-subscribe affected channels
         if @resubcribe_channels

@@ -113,5 +113,11 @@ module Robe
       end
     end
   end
+
+  module_function
+
+  def task_logger
+    @task_logger ||= Robe::Server::Task::Logger
+  end
 end
 

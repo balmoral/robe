@@ -1,42 +1,24 @@
-require 'robe/client/browser/browser_ext'
+
+require 'robe/client/browser/wrap'
+require 'robe/client/browser/window'
+require 'robe/client/browser/document'
 require 'robe/client/browser/websocket'
+require 'robe/client/browser/data'
+require 'robe/client/browser/dom'
+require 'robe/client/browser/router'
 
 module Robe
   module Client
     module Browser
       module_function
 
-      def browser
-        self
-      end
-      
       def document
-        $document # from opal-browser
+        @document ||= Robe::Client::Browser::Document
       end
 
       def window
-        $window # from opal-browser
+        @window ||= Robe::Client::Browser::Window
       end
-
-=begin ##DEPRECATED:
-      # TODO: should this be here? Only for Volt?
-      def dom_root
-        unless @dom_root
-          if respond_to? :first_element # or container, Volt methods
-            self.dom_root = first_element
-          else
-            # in a separate model?
-            fail "#{self.class.name}##{__method__}:#{__LINE_} : dom_root= must be called first"
-          end
-        end
-        @dom_root
-      end
-
-      # TODO: should this be here?  Only for Volt?
-      def dom_root=(element)
-        @dom_root = DOM(element)
-      end
-=end
 
       def set_timeout(milliseconds, &callback)
         `setTimeout(callback, milliseconds)`
@@ -61,11 +43,11 @@ module Robe
       end
 
       def cursor(which, &block)
-        current = $document.body.style.cursor
+        current = document.body.style.cursor
         $document.body.style.cursor = which
         if block
           yield
-          $document.body.style.cursor = current
+          document.body.style.cursor = current
         end
       end
 

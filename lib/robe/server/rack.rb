@@ -1,2 +1,2 @@
-require 'robe/server/rack/http.rb'
+require 'robe/server/rack/assets.rb'
 require 'robe/server/rack/sockets.rb'

@@ -1,4 +1,5 @@
 require 'opal-sprockets'
+require 'robe/common/globals'
 require 'robe/common/errors'
 require 'robe/common/trace'
 require 'robe/server/util/logger'
@@ -21,8 +22,8 @@ module Robe; module Server
       unless @started
         ::Thread.abort_on_exception = true
         configure
-        # trace __FILE__, __LINE__, self, __method__, ' : calling http'
-        http
+        # trace __FILE__, __LINE__, self, __method__, ' : calling assets'
+        assets
         # trace __FILE__, __LINE__, self, __method__, ' : calling sockets'
         sockets
         # trace __FILE__, __LINE__, self, __method__, ' : calling task_manager'
@@ -41,7 +42,7 @@ module Robe; module Server
       if Faye::WebSocket.websocket?(env)
         sockets.call(env)
       else
-        http.call(env)
+        assets.call(env)
       end
     end
 
@@ -49,8 +50,8 @@ module Robe; module Server
       Robe.config
     end
 
-    def self.http
-      Robe.http
+    def self.assets
+      Robe.assets
     end
 
     def self.sockets
@@ -102,8 +103,13 @@ module Robe; module Server
       raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 
+  end end
+
+  module_function
+  def app
+    Robe::Server::App.instance
   end
-end end
+end
 
 # these all add methods to App
 require 'robe/server/app/tasks/db'

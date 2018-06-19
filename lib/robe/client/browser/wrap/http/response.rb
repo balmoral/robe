@@ -1,6 +1,4 @@
-require 'json'
-
-module Robe; module Client;
+module Robe; module Client; module Browser; module Wrap
   module HTTP
     class Response
       def initialize(xhr)
@@ -20,7 +18,7 @@ module Robe; module Client;
       end
 
       def success?
-        (200...400).cover?(code)
+        (200...400).cover? code
       end
 
       def fail?
@@ -28,4 +26,4 @@ module Robe; module Client;
       end
     end
   end
-end end
+end end end end

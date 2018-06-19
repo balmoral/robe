@@ -1,13 +1,9 @@
-require 'json'
-require 'robe/client/http/response'
-require 'robe/client/browser/event_target'
-
-module Robe; module Client
+module Robe; module Client; module Browser; module Wrap
   module HTTP
     class Request
-      include Robe::Client::Browser::EventTarget
+      include EventTarget
 
-      attr_reader :method, :url, :data, :headers
+      attr_reader :method, :url, :data, :headers, :promise
       attr_accessor :response
 
       UNSENT           = 0
@@ -30,7 +26,7 @@ module Robe; module Client
 
         if method == :get || method == :delete
           `#@native.send()`
-        elsif data.is_a?(Hash)
+        elsif Hash === data
           `#@native.send(#{JSON.generate data})`
         elsif `!!data.native`
           `#@native.send(data.native)`
@@ -41,7 +37,7 @@ module Robe; module Client
         self
       end
 
-      def headers= headers
+      def headers=(headers)
         @headers = headers
         headers.each do |attr, value|
           `#@native.setRequestHeader(attr, value)`
@@ -77,4 +73,4 @@ module Robe; module Client
       end
     end
   end
-end end
+end end end end

@@ -2,6 +2,38 @@ module Browser
   module DOM
     class Element < Node
 
+      # Patch to improve performance of element creation.
+      # Original does slow array searches and const_get's.
+      # TODO: ensure we have covered all specially wrapped elements.
+      # Worst that can happen is that we create an element
+      # and will have methods missing when expecting special interface.
+      def self.new(node)
+        # puts "#{__FILE__}[#{__LINE__}] : self=#{self.name} node=#{`node.nodeName`}"
+        if self == Element
+          name = `node.nodeName`
+          special = specials[name]
+          if special
+            # puts "#{__FILE__}[#{__LINE__}] : self=#{self.name} name=#{name}"
+            special.new(node)
+          else
+            # puts "#{__FILE__}[#{__LINE__}] : self=#{self.name} name=#{name}"
+            super
+          end
+        else
+          super
+        end
+      end
+
+      def self.specials
+        @specials ||= {
+          'INPUT'     => ::Browser::DOM::Element::Input,
+          'IMAGE'     => ::Browser::DOM::Element::Image,
+          'IMG'       => ::Browser::DOM::Element::Image,
+          'TEMPLATE'  => ::Browser::DOM::Element::Template,
+          'TEXTAREA'  => ::Browser::DOM::Element::Textarea
+        }
+      end
+      
       def hidden?
         !!`#@native.hidden`
       end
@@ -30,6 +62,59 @@ module Browser
 
       def client_width
         `#@native.clientWidth`
+      end
+
+      # return node data with given key/name
+      def get_data(key)
+        if value = self["data-#{key}"]
+          value
+        else
+          %x{
+            var data = #@native.$data;
+
+            if (data === undefined) {
+              return nil;
+            }
+            else {
+              var value = #@native.$data[key];
+
+              if (value === undefined) {
+                return nil;
+              }
+              else {
+                return value;
+              }
+            }
+          }
+        end
+      end
+
+      # node data[key] = value
+      def set_data(key, value)
+        unless defined?(`#@native.$data`)
+          `#@native.$data = {}`
+        end
+        `#@native.$data[key] = value`
+      end
+      
+      def get_style(name)
+        %x{
+          var result = #@native.style.getPropertyValue(#{name});
+
+          if (result == null || result === "") {
+            return nil;
+          }
+
+          return result;
+        }
+      end
+
+      def set_style(name, value)
+        `#@native.style.setProperty(#{name}, #{value.to_s}, "")`
+      end
+
+      def remove_style(name)
+        `#@native.style.removeProperty(#{name})`
       end
 
       class Attributes
@@ -138,4 +223,6 @@ module Browser
 
     end
   end
+
 end
+

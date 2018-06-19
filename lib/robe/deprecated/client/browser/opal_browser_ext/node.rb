@@ -3,8 +3,9 @@ module Browser
   module DOM
     class Node
 
-      def as_native
-        @native
+      # nodes don't have data - only elements
+      def get_data(_key)
+        nil
       end
 
       # requires jquery and bootstrap.js - will fail otherwise
@@ -57,14 +58,12 @@ module Browser
       end
 
       def replace_child(new_child, old_child)
-        parent = as_native
-        new_child = new_child.as_native
-        old_child = old_child.as_native
+        parent = to_n
+        new_child = new_child.to_n
+        old_child = old_child.to_n
         `parent.replaceChild(new_child, old_child)`
         self
       end
-
-
 
     end
   end
