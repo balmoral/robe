@@ -60,13 +60,13 @@ module Robe; module DB; class Model
     end
 
     # Returns promise with self as value when all scoped classes loaded.
-    def load(&callback)
+    def load
       @models = {}
       promises = {}
       # trace __FILE__, __LINE__, self, __method__
       # Nil all classes current cache to force them back to database.
       scope.each do |model_class, _filter|
-        @prior_caches[model_class] = model_class.cache
+        # @prior_caches[model_class] = model_class.cache
         model_class.cache = nil
         @models[model_class] = []
         promises[model_class] = Robe::Promise.new
@@ -75,7 +75,6 @@ module Robe; module DB; class Model
       scope.each do |model_class, filter|
         filter = {} if filter.nil? || filter == :all
         # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : filter = #{filter} Robe.client?=#{Robe.client?} Robe.server?=#{Robe.server?}"
-        callback.call(loading: model_class) if callback
         promises[model_class] = model_class.find(**filter.symbolize_keys)
       end
       # wait for all to resolve before setting model caches, etc
@@ -85,7 +84,6 @@ module Robe; module DB; class Model
           # trace __FILE__, __LINE__, self, __method__, " : #{model_class} : result.size = #{result.size}"
           @models[model_class] = result
           model_class.cache = self # from now on we want the class to go through self
-          callback.call(loaded: model_class) if callback
         end
         self
       end.fail do |error|
@@ -94,11 +92,11 @@ module Robe; module DB; class Model
       end
     end
 
-    def reload(&callback)
-      prior_caches = @prior_caches
+    def reload
+      # prior_caches = @prior_caches
       init_vars # nils @prior_caches
-      load(&callback).to_promise.then do |result|
-        @prior_caches = prior_caches
+      load.to_promise.then do |result|
+        # @prior_caches = prior_caches
         result
       end
     end
@@ -106,7 +104,7 @@ module Robe; module DB; class Model
     def stop
       model_classes.each do |model_class|
         if model_class.cache == self
-          model_class.cache = @prior_caches[model_class]
+          model_class.cache = nil # @prior_caches[model_class]
         end
       end
       init_vars
@@ -166,7 +164,7 @@ module Robe; module DB; class Model
 
     def init_vars
       @models = {}
-      @prior_caches = {}
+      # @prior_caches = {}
     end
 
     def init_scope(*classes_and_filters)

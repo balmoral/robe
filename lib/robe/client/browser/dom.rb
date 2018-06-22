@@ -1,5 +1,6 @@
 require 'robe/common/util'
 require 'robe/common/trace'
+require 'robe/client/browser/dom/types'
 require 'robe/client/browser/dom/aux/tag'
 require 'robe/client/browser/dom/html/core_ext'
 require 'robe/client/browser/dom/html/colors'
@@ -8,114 +9,8 @@ require 'robe/client/browser/dom/component'
 require 'robe/client/browser/dom/aux/link'
 require 'robe/client/browser/dom/aux/pdf'
 
-module Robe
-  module Client; module Browser
-    module DOM
-      DEFAULT_TYPE = 0
-      NIL_TYPE = 1
-      STRING_TYPE = 2 # also for Symbol
-      ARRAY_TYPE = 3
-      HASH_TYPE = 4
-      WRAP_TYPE = 5 # ::Browser::DOM::Node or ::Bowser::Element
-      BINDING_TYPE = 6
-      TAG_TYPE = 7
-      COMPONENT_TYPE = 8
-    end
-  end end
-
-  module_function
-
-  @dom = Robe::Client::Browser::DOM
-
-  def dom
-    @dom
-  end
-end
-
-# Some kludgy but effective monkey patching
-# to speed up resolving and sanitizing dom
-# content and attributes. 
-# Each possible content/attribute class
-# specifies it's class as an integer value.
-# This let's us avoid much slower is_a? calls
-# and/or class-based case statements.
-
-class Object
-  def robe_dom_type
-    Robe.dom::DEFAULT_TYPE
-  end
-end
-
-class NilClass
-  def robe_dom_type
-    Robe.dom::NIL_TYPE
-  end
-end
-
-class String
-  def robe_dom_type
-    Robe.dom::STRING_TYPE
-  end
-end
-
-class Symbol
-  def robe_dom_type
-    Robe.dom::STRING_TYPE
-  end
-end
-
-module Enumerable
-  def robe_dom_type
-    Robe.dom::ARRAY_TYPE
-  end
-end
-
-class Array
-  def robe_dom_type
-    Robe.dom::ARRAY_TYPE
-  end
-end
-
-class Hash
-  def robe_dom_type
-    Robe.dom::HASH_TYPE
-  end
-end
-
-module Robe; module Client; module Browser; module Wrap; class Element
-  def robe_dom_type
-    Robe.dom::WRAP_TYPE
-  end
-end end end end end
-
-module Robe; module State; class Binding
-  def robe_dom_type
-    Robe.dom::BINDING_TYPE
-  end
-end end end
-
-module Robe; module Client; module Browser; module DOM; class Tag
-  def robe_dom_type
-    Robe.dom::TAG_TYPE
-  end
-end end end end end
-
-module Robe; module Client; module Browser; module DOM; class Component
-  def robe_dom_type
-    Robe.dom::COMPONENT_TYPE
-  end
-end end end end end
-
-# end of monkey patches
-
 module Robe; module Client; module Browser
   module DOM
-
-    BINDING_CLASS   = Robe::State::Binding
-    ELEMENT_CLASS   = Robe::Client::Browser::Wrap::Element
-    TAG_CLASS       = Robe::Client::Browser::DOM::Tag
-    LINK_CLASS      = Robe::Client::Browser::DOM::Link
-    HTML_TAGS       = Robe::Client::Browser::DOM::HTML::TAGS + ['link']
 
     module_function
 
@@ -142,11 +37,7 @@ module Robe; module Client; module Browser
     end
     
     def clear(element)
-      if element
-        # trace __FILE__, __LINE__, self, __method__, " element=#{element}"
-        unbind_descendant_bindings(element)
-        element.clear
-      end
+      element.clear if element
       nil
     end
 
@@ -256,8 +147,8 @@ module Robe; module Client; module Browser
           element[attribute] = value
         },
         on: ->(element, _attribute, value) {
-          resolve_events(value).each do |event, action|
-            element.on(event, &action)
+          resolve_events(value).each do |event, callback|
+            element.on(event, &callback)
           end
         },
         data: ->(element, _attribute, value) {
@@ -335,7 +226,7 @@ module Robe; module Client; module Browser
     # the resolved binding will become an attribute of the element
     def resolve_attribute_binding(element, attr, binding)
       # trace __FILE__, __LINE__, self, __method__, " binding=#{binding}"
-      element_bindings(element, init: true) << binding
+      element.bindings(element, init: true) << binding
       binding.bind do |prior_state|
         update_element_attribute(binding, prior_state, element, attr)
       end
@@ -415,25 +306,14 @@ module Robe; module Client; module Browser
     # the resolved binding will become a child of the element
     def resolve_bound_content(element, binding)
       # trace __FILE__, __LINE__, self, __method__, " binding=#{binding}"
-      element_bindings(element, init: true) << binding
+      element.bindings(init: true) << binding
       current_content = sanitize_content(binding.initial, element, coerce_to_element: true)
       binding.bind do |prior_state|
-        # trace __FILE__, __LINE__, self, __method__, " : STARTING BINDING FOR #{binding.store.class} : #{binding.store.state}"
         old_content = current_content
-        # trace __FILE__, __LINE__, self, __method__, " : UNBINDING OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
-        unbind_descendant_bindings(old_content)
-        # trace __FILE__, __LINE__, self, __method__, " : UNBOUND OLD BINDINGS FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : RESOLVING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = binding.resolve(prior_state)
-        # trace __FILE__, __LINE__, self, __method__, " : RESOLVED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : SANITIZING NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         new_content = sanitize_content(new_content, element, coerce_to_element: true)
-        # trace __FILE__, __LINE__, self, __method__, " : SANITIZED NEW CONTENT FOR #{binding.store.class} : #{binding.store.state}"
-        # trace __FILE__, __LINE__, self, __method__, " : REPLACING BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         replace_bound_content(element, new_content, old_content)
-        # trace __FILE__, __LINE__, self, __method__, " : REPLACED BOUND CONTENT FOR #{binding.store.class} : #{binding.store.state}"
         current_content = new_content
-        # trace __FILE__, __LINE__, self, __method__, " : FINISHED BINDING FOR #{binding.store.class} : "
       end
       current_content
     end
@@ -450,9 +330,7 @@ module Robe; module Client; module Browser
           end
         else
           # trace __FILE__, __LINE__, self, __method__, " no old child!"
-          if new_content
-             element << new_content
-          end
+          element << new_content if new_content
         end
       end
       # trace __FILE__, __LINE__, self, __method__, ' ************** END WINDOW ANIMATION ON BINDING **************'
@@ -476,9 +354,13 @@ module Robe; module Client; module Browser
     #
     def resolve_events(hash)
       result = {}
-      hash.each do |k, v|
-        k = strip_underscores(k)
-        result[k] = v.robe_dom_type == STRING_TYPE ? method(v) : v
+      hash.each do |event, callback|
+        event = strip_underscores(event)
+        result[event] = if callback.robe_dom_type == STRING_TYPE
+          method(callback.to_sym)
+        else
+          callback
+        end
       end
       result
     end
@@ -532,56 +414,6 @@ module Robe; module Client; module Browser
       # s.include?('_') ? s.to_s.gsub(/_/, '-') : s
       # `s.indexOf('_') == -1` ? s : `s.replace(/_/g, '-')`
       `s.replace(/_/g, '-')`
-    end
-
-    # unbind all bindings in the element and in all its descendants
-    def unbind_descendant_bindings(element)
-      if element && element.robe_dom_type == WRAP_TYPE
-        # trace __FILE__, __LINE__, self, __method__, " : element=#{element}"
-        descend(element) do |descendant|
-          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} descendant=#{descendant}"
-          unbind_element_bindings(descendant)
-        end
-      else
-        # trace __FILE__, __LINE__, self, __method__, " : cannot unbind descendants for #{element.class}"
-      end
-    end
-
-    # unbind all bindings in the element
-    def unbind_element_bindings(element)
-      bindings = element_bindings(element)
-      # trace __FILE__, __LINE__, self, __method__, " : element=#{element} bindings=#{bindings}"
-      if bindings
-        bindings.each do |binding|
-          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} binding=#{binding || 'NIL'}"
-          binding.unbind
-        end
-        clear_bindings(element)
-      end
-    end
-
-    # calling given block for node and all its descendants
-    def descend(node, level: 0, &block)
-      block.call(node)
-      node.children.each do |child|
-        descend(child, level: level + 1, &block)
-      end
-    end
-
-    BINDINGS_DATA_KEY = 'robe::bindings'
-
-    # get the bindings for an element
-    # if init is true then initialize bindings to empty array none yet
-    def element_bindings(element, init: false)
-      bindings = element.get_data(BINDINGS_DATA_KEY)
-      if init && bindings.nil?
-        element.set_data(BINDINGS_DATA_KEY, bindings = [])
-      end
-      bindings
-    end
-
-    def clear_bindings(element)
-      element.set_data(BINDINGS_DATA_KEY, [])
     end
 
   end end end

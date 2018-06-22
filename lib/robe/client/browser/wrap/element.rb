@@ -3,8 +3,64 @@ module Robe; module Client; module Browser; module Wrap
     include EventTarget
     include NativeFallback
 
+    SPECIAL_EVENTS = %i(removing)
+
     def initialize(native)
       @native = native
+    end
+
+    def on(event, &callback)
+      if SPECIAL_EVENTS.include?(event)
+        observers = get_data(OBSERVERS_DATA_KEY)
+        set_data(OBSERVERS_DATA_KEY, observers = {}) unless observers
+        (observers[event.to_sym] ||= []) << callback
+      else
+        super # EventTarget
+      end
+    end
+    
+    OBSERVERS_DATA_KEY = 'robe::event::observers'
+
+    def notify_special_event(event, element = nil)
+      observers = (element || self).get_data(OBSERVERS_DATA_KEY)
+      if observers
+        observers = observers[event.to_sym]
+        if observers
+          observers.each do |observer|
+            observer.call
+          end
+        end
+      end
+    end
+
+    def clear_special_event_observers(element = nil)
+      (element || self).set_data(OBSERVERS_DATA_KEY, nil)
+    end
+
+    BINDINGS_DATA_KEY = 'robe::bindings'
+
+    # get the bindings for an element
+    # if init is true then initialize bindings to empty array none yet
+    def bindings(element = nil, init: false)
+      element ||= self
+      bindings = element.get_data(BINDINGS_DATA_KEY)
+      if init && bindings.nil?
+        element.set_data(BINDINGS_DATA_KEY, bindings = [])
+      end
+      bindings
+    end
+
+    def clear_bindings(element = nil)
+      element ||= self
+      bindings = bindings(element)
+      # trace __FILE__, __LINE__, self, __method__, " : element=#{element} bindings=#{bindings}"
+      if bindings
+        bindings.each do |binding|
+          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} binding=#{binding || 'NIL'}"
+          binding.unbind
+        end
+      end
+      (element || self).set_data(BINDINGS_DATA_KEY, [])
     end
 
     # @!attribute id
@@ -41,14 +97,12 @@ module Robe; module Client; module Browser; module Wrap
 
     def children
       elements = []
-
       %x{
         var children = #@native.children;
         for(var i = 0; i < children.length; i++) {
           elements[i] = #{Element.new(`children[i]`)};
         }
       }
-
       elements
     end
 
@@ -266,12 +320,39 @@ module Robe; module Client; module Browser; module Wrap
           remove_child(child)
         end
       end
-
       self
     end
 
+    # Call given block for node and all its descendants.
+    # Deepest descendants called first.
+    def descend(element, level: 0, &block)
+      element.children.each do |child|
+        descend(child, level: level + 1, &block)
+      end
+      block.call(element)
+    end
+
+    def about_to_remove_child(child)
+      child = self.class.new(child) if native?(child)
+      descend(child) do |descendant|
+        clear_bindings(descendant)
+        notify_special_event(:removing, descendant)
+        clear_special_event_observers(descendant)
+      end
+    end
+
     def remove_child(child)
+      about_to_remove_child(child)
       `#@native.removeChild(child.native ? child.native : child)`
+    end
+
+    def replace_child(new_child, old_child)
+      about_to_remove_child(old_child)
+      parent = to_n
+      new_child = new_child.to_n
+      old_child = old_child.to_n
+      `parent.replaceChild(new_child, old_child)`
+      self
     end
 
     def type
@@ -370,14 +451,6 @@ module Robe; module Client; module Browser; module Wrap
       end
       check_bootstrap
       `$(#@native).popover(#{arg.to_n})`
-    end
-
-    def replace_child(new_child, old_child)
-      parent = to_n
-      new_child = new_child.to_n
-      old_child = old_child.to_n
-      `parent.replaceChild(new_child, old_child)`
-      self
     end
 
     private

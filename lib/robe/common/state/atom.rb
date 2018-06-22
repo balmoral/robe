@@ -350,6 +350,7 @@ module Robe; module State
     end
 
     # Register an observer block to be called after mutation.
+    # who: is a string or any identifier to help with debugging only.
     # The block should expect prior state as its argument.
     # Returns a observer id for later unobserve if required.
     def observe(attr: nil, attrs: nil, eval: nil, who: nil, &block)
@@ -375,6 +376,10 @@ module Robe; module State
     # use cautiously
     def clear_observers
       @observers = []
+    end
+
+    def observer_ids
+      @observers.map { |e| e[:id] }
     end
 
     # compatibility with Store

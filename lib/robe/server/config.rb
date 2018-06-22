@@ -84,6 +84,15 @@ module Robe
           @log_tasks
         end
 
+        def force_ssl?
+          @force_ssl = false if @force_sll.nil?
+          @force_ssl
+        end
+
+        def force_ssl=(bool)
+          @force_ssl = bool
+        end
+
         def log_tasks=(bool)
           @log_tasks = bool
         end

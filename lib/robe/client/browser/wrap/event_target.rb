@@ -1,8 +1,8 @@
 
 module Robe; module Client; module Browser; module Wrap
   module EventTarget
-    def on(event_name, &block)
-      wrapper = proc { |event| block.call Event.new(event) }
+    def on(event_name, &callback)
+      wrapper = proc { |event| callback.call Event.new(event) }
       if `#@native.addEventListener !== undefined`
         `#@native.addEventListener(event_name, wrapper)`
       elsif `#@native.addListener !== undefined`
@@ -13,11 +13,11 @@ module Robe; module Client; module Browser; module Wrap
       wrapper
     end
 
-    def off(event_name, &block)
+    def off(event_name, &callback)
       if `#@native.removeEventListener !== undefined`
-        `#@native.removeEventListener(event_name, block)`
+        `#@native.removeEventListener(event_name, callback)`
       elsif `#@native.removeListener !== undefined`
-        `#@native.removeListener(event_name, block)`
+        `#@native.removeListener(event_name, callback)`
       else
         warn "#{__FILE__}[#{__LINE__}] : #{self} not entirely sure how to remove an event listener"
       end

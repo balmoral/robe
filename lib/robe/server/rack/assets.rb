@@ -3,6 +3,7 @@ require 'yaml'
 require 'opal'
 require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
 require 'rack-protection'
+require 'rack/request'
 require 'uglifier'
 require 'robe/server/rack/keep_alive'
 
@@ -54,9 +55,8 @@ module Robe
 
         def call(env)
           path = env['PATH_INFO']
-          # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
+          trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
           if %w[/ /index.html].include?(path)
-            # trace __FILE__, __LINE__, self, __method__
             [200, { 'Content-Type' => 'text/html' }, [index_html]]
           else
             # trace __FILE__, __LINE__, self, __method__
@@ -65,6 +65,35 @@ module Robe
         end
 
         private
+
+        # from https://github.com/josh/rack-ssl/blob/master/lib/rack/ssl.rb
+        def scheme(env)
+          if env['HTTPS'] == 'on'
+            'https'
+          elsif env['HTTP_X_FORWARDED_PROTO']
+            env['HTTP_X_FORWARDED_PROTO'].split(',')[0]
+          else
+            env['rack.url_scheme']
+          end
+        end
+
+          # from https://github.com/josh/rack-ssl/blob/master/lib/rack/ssl.rb
+        def redirect_to_https(env)
+          trace __FILE__, __LINE__, self, __method__
+          req = ::Rack::Request.new(env)
+          # trace __FILE__, __LINE__, self, __method__, " : req = #{req}"
+          path, host, port = req.fullpath, req.host, req.port
+          trace __FILE__, __LINE__, self, __method__, " : path=#{path} host=#{host} port=#{port}"
+          if port
+            port = ":#{port}"
+            path = path.chop if path.end_with?('/')
+          end
+          location = "https://#{host}#{path}#{port}"
+          trace __FILE__, __LINE__, self, __method__, " : location=#{location}"
+          status  = %w[GET HEAD].include?(req.request_method) ? 301 : 307
+          headers = { 'Content-Type' => 'text/html', 'Location' => location }
+          [status, headers, []]
+        end
 
         def build_rack_app
           # use local variables because of instance_eval in Rack blocks
