@@ -16,8 +16,8 @@ module Robe; module DB;
       # `csv` may be a single csv with lines separated by "\n" or an array of csv strings.
       def load_csv(csv, field_procs: nil, map_attrs: {}, ignore_attrs: [], ignore_associations: false)
         lines = csv.is_a?(Array) ? csv : csv.split("\n")
-        promises = []
         if lines.size > 1
+          count = 0
           attrs = self.attrs
           csv_fields = lines[0].split(',').map(&:to_sym)
           csv_fields = csv_fields.map{|f| f == :id ? :_id : f}
@@ -33,7 +33,7 @@ module Robe; module DB;
             field_procs.nil? ? nil : field_procs[name]
           }
           lines = lines[1..-1]
-          lines.each do |line|
+          promise_chain(lines) do |line|
             # -1 to split forces trailing empty comma
             # separated field to be returned as empty strings
             # turn empty strings back to nil
@@ -52,12 +52,12 @@ module Robe; module DB;
               end
             end
             instance = self.new(**hash)
-            promises << instance.insert(ignore_associations: ignore_associations)
+            instance.insert(ignore_associations: ignore_associations).then do
+              count += 1
+            end
           end
-        end
-        promises.to_promise_when.then do |r|
-          trace __FILE__, __LINE__, self, __method__, " r.size=#{r.size}"
-          r
+        else
+          0.to_promise
         end
       end
 

@@ -1,12 +1,13 @@
 module Robe; module Client; module Browser; module Wrap
   class Element
+    include Native
     include EventTarget
     include NativeFallback
 
     SPECIAL_EVENTS = %i(removing)
 
     def initialize(native)
-      @native = native
+      super
     end
 
     def on(event, &callback)
@@ -18,49 +19,12 @@ module Robe; module Client; module Browser; module Wrap
         super # EventTarget
       end
     end
-    
-    OBSERVERS_DATA_KEY = 'robe::event::observers'
 
-    def notify_special_event(event, element = nil)
-      observers = (element || self).get_data(OBSERVERS_DATA_KEY)
-      if observers
-        observers = observers[event.to_sym]
-        if observers
-          observers.each do |observer|
-            observer.call
-          end
-        end
-      end
-    end
-
-    def clear_special_event_observers(element = nil)
-      (element || self).set_data(OBSERVERS_DATA_KEY, nil)
-    end
-
-    BINDINGS_DATA_KEY = 'robe::bindings'
 
     # get the bindings for an element
     # if init is true then initialize bindings to empty array none yet
-    def bindings(element = nil, init: false)
-      element ||= self
-      bindings = element.get_data(BINDINGS_DATA_KEY)
-      if init && bindings.nil?
-        element.set_data(BINDINGS_DATA_KEY, bindings = [])
-      end
-      bindings
-    end
-
-    def clear_bindings(element = nil)
-      element ||= self
-      bindings = bindings(element)
-      # trace __FILE__, __LINE__, self, __method__, " : element=#{element} bindings=#{bindings}"
-      if bindings
-        bindings.each do |binding|
-          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} binding=#{binding || 'NIL'}"
-          binding.unbind
-        end
-      end
-      (element || self).set_data(BINDINGS_DATA_KEY, [])
+    def bindings(init: false)
+      private_bindings(init: init)
     end
 
     # @!attribute id
@@ -95,15 +59,30 @@ module Robe; module Client; module Browser; module Wrap
       `#@native.innerHTML = html`
     end
 
-    def children
-      elements = []
+    # enumerates each native child
+    def each_native_child(target = nil, &block)
+      target ||= self
+      target = native?(target) ? target : target.to_n
       %x{
-        var children = #@native.children;
+        var children = target.children;
         for(var i = 0; i < children.length; i++) {
-          elements[i] = #{Element.new(`children[i]`)};
+          #{block.call(`children[i]`)};
         }
       }
-      elements
+    end
+
+    # enumerates each child as a Wrap::Element
+    def each_child(&block)
+      each_native_child do |e|
+        block.call(self.class.new(e))
+      end
+    end
+
+    # returns an array of Wrap::Element's my children
+    def children
+      [].tap { |result|
+        each_child { |e| result << e }
+      }
     end
 
     # from opal-browser Browser::DOM::Element:Attributes
@@ -214,18 +193,19 @@ module Robe; module Client; module Browser; module Wrap
     end
 
     # return element data with given key/name
-    def get_data(key)
+    def get_data(key, native_target = nil)
+      target = native_target || @native
       if value = self["data-#{key}"]
         value
       else
         %x{
-          var data = #@native.$data;
+          var data = target.$data;
 
           if (data === undefined) {
             return nil;
           }
           else {
-            var value = #@native.$data[key];
+            var value = target.$data[key];
 
             if (value === undefined) {
               return nil;
@@ -239,19 +219,12 @@ module Robe; module Client; module Browser; module Wrap
     end
 
     # element data[key] = value
-    def set_data(key, value)
-      unless defined?(`#@native.$data`)
-        `#@native.$data = {}`
+    def set_data(key, value, native_target = nil)
+      target = native_target || @native
+      unless defined?(`target.$data`)
+        `target.$data = {}`
       end
-      `#@native.$data[key] = value`
-    end
-
-    # node data[key] = value
-    def set_data(key, value)
-      unless defined?(`#@native.$data`)
-        `#@native.$data = {}`
-      end
-      `#@native.$data[key] = value`
+      `target.$data[key] = value`
     end
 
     def get_style(name)
@@ -316,34 +289,16 @@ module Robe; module Client; module Browser; module Wrap
       if %w(input textarea).include?(type)
         `#@native.value = null`
       else
-        children.each do |child|
+        each_native_child.each do |child|
           remove_child(child)
         end
       end
       self
     end
 
-    # Call given block for node and all its descendants.
-    # Deepest descendants called first.
-    def descend(element, level: 0, &block)
-      element.children.each do |child|
-        descend(child, level: level + 1, &block)
-      end
-      block.call(element)
-    end
-
-    def about_to_remove_child(child)
-      child = self.class.new(child) if native?(child)
-      descend(child) do |descendant|
-        clear_bindings(descendant)
-        notify_special_event(:removing, descendant)
-        clear_special_event_observers(descendant)
-      end
-    end
-
     def remove_child(child)
       about_to_remove_child(child)
-      `#@native.removeChild(child.native ? child.native : child)`
+      `#@native.removeChild(#{native?(child) ? child : child.to_n})`
     end
 
     def replace_child(new_child, old_child)
@@ -400,10 +355,6 @@ module Robe; module Client; module Browser; module Wrap
       super # NativeFallback
     end
 
-    def to_n
-      @native
-    end
-
     # requires jquery and bootstrap.js - will fail otherwise
     def check_jquery
       %x(
@@ -454,6 +405,71 @@ module Robe; module Client; module Browser; module Wrap
     end
 
     private
+
+    # Call given block for native element and all its
+    # native descendants. Deepest descendants called first.
+    def descend(target, level: 0, &block)
+      each_native_child(target) do |native_child|
+        descend(native_child, level: level + 1, &block)
+      end
+      block.call(target)
+    end
+
+    def about_to_remove_child(child)
+      descend(child) do |native_descendant|
+        clear_bindings(native_descendant)
+        notify_special_event(:removing, native_descendant)
+        clear_special_event_observers(native_descendant)
+      end
+    end
+
+    OBSERVERS_DATA_KEY = 'robe::event::observers'
+
+    def notify_special_event(event, native_target = nil)
+      observers = get_data(OBSERVERS_DATA_KEY, native_target)
+      if observers
+        observers = observers[event.to_sym]
+        if observers
+          observers.each do |observer|
+            observer.call
+          end
+        end
+      end
+    end
+
+    def clear_special_event_observers(native_target = nil)
+      set_data(OBSERVERS_DATA_KEY, nil, native_target)
+    end
+
+    BINDINGS_DATA_KEY = 'robe::bindings'
+
+    # get the bindings for an element
+    # if init is true then initialize bindings to empty array none yet
+    def private_bindings(native_target: nil, init: false)
+      native_target ||= @native
+      bindings = get_data(BINDINGS_DATA_KEY, native_target)
+      if init && bindings.nil?
+        set_data(BINDINGS_DATA_KEY, bindings = [], native_target)
+      end
+      bindings
+    end
+
+    def clear_bindings(native_target = nil)
+      bindings = private_bindings(native_target: native_target)
+      # trace __FILE__, __LINE__, self, __method__, " : element=#{element} bindings=#{bindings}"
+      if bindings
+        bindings.each do |binding|
+          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} binding=#{binding || 'NIL'}"
+          binding.unbind
+        end
+      end
+      set_data(BINDINGS_DATA_KEY, [], native_target)
+    end
+
+    # might be slow
+    def nativize(target)
+      native?(target) ? target : target.to_n
+    end
 
     def map_element_set(ary)
       ary.flatten.map { |x| Element.new(Native.convert(x)) }.uniq

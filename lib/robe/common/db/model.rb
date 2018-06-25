@@ -113,6 +113,26 @@ module Robe; module DB
       end
     end
 
+    # If the class is cache'd returns an array of models.
+    # If the class is not cache'd returns a promise whose value is an array of models.
+    def self.find_eq(**filter)
+      if cache
+        cache.find_eq(self, filter)
+      else
+        find(**filter)
+      end
+    end
+
+    # If on server or the class is cache'd returns a model or nil.
+    # If on client and the class is not cache'd returns a promise whose value is nil or a model.
+    def self.find_one_eq(**filter)
+      if cache
+        cache.find_eq(self, filter).first
+      else
+        find_one(**filter)
+      end
+    end
+
     # If on server or the class is cache'd returns a model or nil.
     # If on client and the class is not cache'd returns a promise whose value is nil or a model.
     def self.find_one(**filter)
@@ -336,13 +356,13 @@ module Robe; module DB
             msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : expected model with id #{id} to be in cache - cannot update"
             Robe.logger.error(msg)
             raise DBError, msg
-          else
-            # TODO: unwind associations if update fails
-            save_associations.to_promise_then do
-              self.class.db.update_document_by_id(self.class.collection_name, to_db_hash)
-            end.to_promise_then do
-              self.to_promise_on_client
-            end
+          end
+          # TODO: unwind associations if update fails
+          save_associations.to_promise_then do
+            self.class.db.update_document_by_id(self.class.collection_name, to_db_hash)
+          end.to_promise_then do
+            cache.update(self) if cache
+            self.to_promise_on_client
           end
         else
           msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : expected model from db to have id set - cannot update"

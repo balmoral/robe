@@ -132,8 +132,7 @@ module Robe
               index = case key
                 when :type
                   if value == :boolean
-                    value = [TrueClass, FalseClass]
-                    ATTR_SPEC_MULTI_TYPE
+                    ATTR_SPEC_SINGLE_TYPE
                   elsif  value.is_a?(Class)
                     ATTR_SPEC_SINGLE_TYPE
                   elsif value.is_a?(Enumerable)
@@ -201,8 +200,10 @@ module Robe
             end
             if (type = spec[ATTR_SPEC_SINGLE_TYPE])
               spec[ATTR_SPEC_READ] ||= case
+                when type == :boolean
+                  ->(value) { value.to_s[0].upcase == 'T' }
                 when type == String
-                  ->(value) { value.respond_to?(:to_s) ? value.to_s : value }
+                  ->(value) { value.to_s }
                 when type == Integer
                   ->(value) { value.respond_to?(:to_i) ? value.to_i : value }
                 when type == Float
@@ -211,6 +212,12 @@ module Robe
                   ->(value) { value.is_a?(String) ? Time.parse(value) : value }
                 when type == Date
                   ->(value) { value.is_a?(String) ? Date.parse(value) : value }
+                else
+                  nil
+              end
+              spec[ATTR_SPEC_WRITE] ||= case
+                when type == :boolean
+                  ->(value) { value.to_s[0].upcase }
                 else
                   nil
               end
@@ -489,8 +496,14 @@ module Robe
       end
       unless value.nil?
         if (type = attr_spec[ATTR_SPEC_SINGLE_TYPE])
-          unless value.is_a?(type)
-            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be type #{type} not #{value.class}"
+          if type == :boolean
+            unless value.is_a?(TrueClass) || value.is_a?(FalseClass)
+              raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be TrueClass or FalseClass not #{value.class}"
+            end
+          else
+            unless value.is_a?(type)
+              raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be type #{type} not #{value.class}"
+            end
           end
         elsif (types = attr_spec[ATTR_SPEC_MULTI_TYPE])
           unless types.include?(value.class)

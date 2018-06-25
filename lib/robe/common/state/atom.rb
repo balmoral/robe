@@ -209,8 +209,8 @@ module Robe; module State
     def initialize(**seed)
       # trace __FILE__, __LINE__, self, __method__, "(#{seed})"
       @state = self.class.state_class.new(seed)
-      @observer_id = 0
-      @observers = []
+      @subscriber_id = 0
+      @subscribers = []
     end
 
     def attrs
@@ -219,7 +219,7 @@ module Robe; module State
     end
 
     # Temporarily set the state to mutable for the purpose of initializing.
-    # WARNING - it is up to the caller to observe this convention.
+    # WARNING - it is up to the caller to subscribe this convention.
     #
     # `values`, if given, should be kwargs of attr=>value pairs
     # and state attributes will be set to these values.
@@ -286,7 +286,7 @@ module Robe; module State
     end
 
     # Copy state from other atom of same class
-    # and broadcast change of state to all observers
+    # and broadcast change of state to all subscribers
     # with prior state as argument.
     def copy!(other_atom)
       unless other_atom.class == self.class
@@ -314,7 +314,7 @@ module Robe; module State
     # and remains so if mutate! calls are nested.
     #
     # In the outer mutate! the state is duplicated and memoized
-    # to be later passed to observers as the prior state.
+    # to be later passed to subscribers as the prior state.
     #
     # `values`, if given, should be kwargs of attr=>value pairs
     # and state attributes will be set to these values.
@@ -323,8 +323,8 @@ module Robe; module State
     # which has mutable state while inside a mutate! call.
     #
     # At the conclusion of mutation the state is made immutable
-    # and all observers notified, with the atom in its prior state
-    # provided for diffing, i.e. broadcast to observers is done at
+    # and all subscribers notified, with the atom in its prior state
+    # provided for diffing, i.e. broadcast to subscribers is done at
     # conclusion of outer mutate! call.
     #
     # TODO: optimise clone so it doesn't clone any given values
@@ -349,43 +349,42 @@ module Robe; module State
       self
     end
 
-    # Register an observer block to be called after mutation.
-    # who: is a string or any identifier to help with debugging only.
+    # Register an subscriber block to be called after mutation.
+    # where: can be a string like "#{__FILE__}[#{__LINE__}]" for debugging.
     # The block should expect prior state as its argument.
-    # Returns a observer id for later unobserve if required.
-    def observe(attr: nil, attrs: nil, eval: nil, who: nil, &block)
+    # Returns a subscriber id for later unsubscribe if required.
+    def subscribe(attr: nil, attrs: nil, eval: nil, where: nil, &block)
       (attrs ||= []) << attr if attr
-      who ||= 'unknown observer'
-      # trace __FILE__, __LINE__, self, __method__, "(attrs: #{attrs}, eval: #{eval.class}, who: #{who}, block: #{block.class})"
-      @observer_id += 1
-      # trace __FILE__, __LINE__, self, __method__, " set @observer_id=#{@observer_id}"
-      @observers << { id: @observer_id, who: who, attrs: attrs, eval: eval, callback: block, terminated: false }
-      # trace __FILE__, __LINE__, self, __method__, " return @observer_id=#{@observer_id}"
-      @observer_id
+      where ||= 'unknown'
+      # trace __FILE__, __LINE__, self, __method__, "(attrs: #{attrs}, eval: #{eval.class}, where: #{where}, block: #{block.class})"
+      @subscriber_id += 1
+      # trace __FILE__, __LINE__, self, __method__, " set @subscriber_id=#{@subscriber_id}"
+      @subscribers << { id: @subscriber_id, where: where, attrs: attrs, eval: eval, callback: block, terminated: false }
+      # trace __FILE__, __LINE__, self, __method__, " return @subscriber_id=#{@subscriber_id}"
+      @subscriber_id
     end
 
-    def unobserve(id)
-      i = @observers.index { |e| e[:id] == id }
-      @observers.delete_at(i)[:terminated] = true if i
+    def unsubscribe(id)
+      i = @subscribers.index { |e| e[:id] == id }
+      @subscribers.delete_at(i)[:terminated] = true if i
     end
 
-    def observer?(id)
-      (observer = @observers.detect { |e| e[:id] == id }) && !observer[:terminated]
+    def subscriber?(id)
+      (subscriber = @subscribers.detect { |e| e[:id] == id }) && !subscriber[:terminated]
     end
 
     # use cautiously
-    def clear_observers
-      @observers = []
+    def clear_subscribers
+      @subscribers = []
     end
 
-    def observer_ids
-      @observers.map { |e| e[:id] }
+    def subscriber_ids
+      @subscribers.map { |e| e[:id] }
     end
 
-    # compatibility with Store
-    alias_method :subscribe, :observe
-    alias_method :unsubscribe, :unobserve
-    alias_method :subscriber?, :observer?
+    alias_method :observe, :subscribe
+    alias_method :unobserve, :unsubscribe
+    alias_method :observe?, :subscriber?
 
     # to mimic a store
     def state
@@ -451,31 +450,31 @@ module Robe; module State
     # Broadcast change of state to all subscribers.
     # The subscriber callbacks will be given the prior state
     # and store as arguments.
-    def broadcast(prior)
+    def broadcast(prior_state)
       # trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
       inc_mutation_count
-      # important that we dup observers before iterating as subscribers
+      # important that we dup subscribers before iterating as subscribers
       # may delete other subscribers (for instance through bindings)
-      @observers.dup.each do |observer|
-        # a observer can be terminated/unsubscribed by another earlier interested subscriber
-        unless observer[:terminated]
-          attrs = observer[:attrs]
-          eval = observer[:eval]
+      @subscribers.dup.each do |subscriber|
+        # a subscriber can be terminated/unsubscribed by another earlier interested subscriber
+        unless subscriber[:terminated]
+          attrs = subscriber[:attrs]
+          eval = subscriber[:eval]
           if attrs || eval
             changed = if eval
-              # trace __FILE__, __LINE__, self, __method__, " : calling eval for observer at #{observer[:who]}"
+              # trace __FILE__, __LINE__, self, __method__, " : calling eval for subscriber at #{subscriber[:where]}"
               eval.call(prior) != eval.call(self)
             else
               false
             end
             if !changed && attrs
-              changed = changed?(prior, attrs)
+              changed = changed?(prior_state, attrs)
             end
           else
             changed = true
           end
           if changed
-            observer[:callback].call(prior)
+            subscriber[:callback].call(prior_state)
           end
         end
       end

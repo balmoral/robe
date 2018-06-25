@@ -243,7 +243,6 @@ module Robe; module Client; module Browser
     end
 
     def set_content(element, content)
-      # Browser::DOM::Node handles enumerables but we have to handle bindings
       if content.robe_dom_type == ARRAY_TYPE
         content.each do |child|
           append_content(element, child)

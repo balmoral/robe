@@ -34,7 +34,7 @@ module Robe; module State
         raise ArgumentError, "#{self.class.name}##{__method__} expects a callback block"
       end
       # trace __FILE__, __LINE__, self, __method__, " : BIND : store=#{store.class} : where=#{where}"
-      @subscription_id = store.observe(who: where) do | prior |
+      @subscription_id = store.observe(where: where) do | prior |
         # trace __FILE__, __LINE__, self, :bind, " : where=#{where} store=#{store.class} changed?=#{changed?(prior)}"
         if changed?(prior)
           # trace __FILE__, __LINE__, self, __method__, " : where=#{where} store.class=#{store.class} changed?=true | calling #{bound_block.class}"

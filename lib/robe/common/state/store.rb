@@ -30,7 +30,7 @@ module Robe; module State
         end
       end
 
-      # Defines a reducer whose action is the method name.
+      # Defines a reducer where action is the method name.
       # Defines a method in the store which call dispatch for the method/action.
       # The reducer will create a duplicate of the state before calling the
       # method on the new state. Expects that the method called on the new
@@ -48,7 +48,7 @@ module Robe; module State
         end
       end
 
-      # Defines a reducer whose action is the method name.
+      # Defines a reducer where action is the method name.
       # Defines a method in the store which call dispatch for the method/action.
       # The reducer simply calls the method on the state and expects
       # the state to create a new state instance if necessary.
@@ -69,7 +69,8 @@ module Robe; module State
 
     end
 
-    attr_reader :state, :subscriptions
+    attr_reader :state
+    attr_reader :subscribers
 
     # initial_state
     #   - any object which represents state in the store
@@ -78,8 +79,8 @@ module Robe; module State
     def initialize(initial_state = nil, &block)
       # trace __FILE__, __LINE__, self, __method__, "(#{initial_state})"
       @state = initial_state
-      @subscription_id = 0
-      @subscriptions = {}
+      @next_subscriber_id = 0
+      @subscribers = {}
       block.call if block
     end
 
@@ -122,27 +123,35 @@ module Robe; module State
     # If action not given or action == nil then
     # the callback will be notified of all actions.
     #
-    # Returns a subscription id for later unsubscribe if required.
+    # where: can be a string like "#{__FILE__}[#{__LINE__}]"
+    # for debugging
+    #
+    # Returns a subscriber id for later unsubscribe if required.
 
-    def subscribe(who: 'unknown subscriber', &block)
-      # trace __FILE__, __LINE__, self, __method__, "(who: #{who}, block: #{block.class})"
-      @subscription_id += 1
-      # trace __FILE__, __LINE__, self, __method__, " set @subscription_id=#{@subscription_id}"
-      subscriptions[@subscription_id] = { who: who, callback: block, terminated: false }
-      # trace __FILE__, __LINE__, self, __method__, " return @subscription_id=#{@subscription_id}"
-      @subscription_id
+    def subscribe(where: 'unknown', &block)
+      # trace __FILE__, __LINE__, self, __method__, "(where: #{where}, block: #{block.class})"
+      @next_subscriber_id += 1
+      # trace __FILE__, __LINE__, self, __method__, " set @next_subscriber_id=#{@next_subscriber_id}"
+      subscribers[@next_subscriber_id] = { where: where, callback: block, terminated: false }
+      # trace __FILE__, __LINE__, self, __method__, " return @next_subscriber_id=#{@next_subscriber_id}"
+      @next_subscriber_id
     end
 
     def unsubscribe(id)
       # trace __FILE__, __LINE__, self, __method__, "(#{id})"
-      subscription = subscriptions[id]
-      subscription[:terminated] = true if subscription
+      subscriber = subscribers[id]
+      subscriber[:terminated] = true if subscriber
     end
 
     def subscribed?(id)
-      !!subscriptions[id]
+      !!subscribers[id]
     end
 
+    # use cautiously
+    def clear_subscribers
+      @subscribers = {}
+    end
+    
     alias_method :observe, :subscribe
     alias_method :observed?, :subscribe
     alias_method :unobserve, :unsubscribe
@@ -153,13 +162,13 @@ module Robe; module State
     # The subscriber callbacks will be given the prior state
     # and store as arguments.
     def broadcast(prior_state)
-      # important that we dup subscriptions before iterating
+      # important that we dup subscribers before iterating
       # as subscribers they may delete other subscribers
       # (for instance through bindings)
-      subscriptions.values.dup.each do |subscription|
-        # a subscription can be terminated/unsubscribed by another earlier interested subscriber
-        unless subscription[:terminated]
-          subscription[:callback].call(prior_state, self)
+      subscribers.values.dup.each do |subscriber|
+        # a subscriber can be terminated/unsubscribed by another earlier interested subscriber
+        unless subscriber[:terminated]
+          subscriber[:callback].call(prior_state, self)
         end
       end
     end
