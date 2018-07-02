@@ -390,7 +390,11 @@ module Robe; module DB
     end
 
     def to_db_hash
-      to_h
+      {}.tap { |result|
+        to_h.each do |attr, value|
+          result[attr] = __attr_write_value(attr, value)
+        end
+      }
     end
 
     def to_h_without_circulars

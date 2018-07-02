@@ -12,7 +12,7 @@ Highlights are:
 - a readable, concise, adaptable, re-usable, object-oriented DOM interface
 - bring-your-own CSS and JavaScript as required  
 - simple yet powerful **state** management
-- simple explicit fine-grained **binding** of DOM to state  
+- simple explicit fine-grained **hooks** between state and DOM   
 - **tasks** (api) defined and performed on the server, requests made from the client
 - built-in **Mongo** support - Sequel/ROM/AR to come
 - database models with built-in validation and associations 
@@ -62,7 +62,7 @@ This mini-app demonstrates Robe's
 - concise DOM DSL
 - reusable DOM components
 - atomic state management
-- explicit binding of state to DOM
+- explicit hook between state to DOM
 - performing server-side tasks 
 - minimum of server configuration
 
@@ -103,7 +103,7 @@ class App < Robe::Client::App
 
     def render
       # update DOM when clock state changes
-      bind(@clock) {
+      hook(@clock) {
         div[
           TimeDiv.new(:server, @clock),
           TimeDiv.new(:client, @clock),

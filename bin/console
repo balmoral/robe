@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# chmod u+x console.rb
+
+require "bundler/setup"
+require "irb"
+# require 'pry'
+
+$LOAD_PATH << File.join(Dir.pwd, 'lib')
+
+require 'robe/server/app'
+require 'robe/common/db/model/cache'
+require 'robe/common/util/ymd'
+
+$config = Robe::Server::Config
+$db = Robe::Server::DB
+
+# Pry.start
+IRB.start
+

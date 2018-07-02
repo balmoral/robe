@@ -8,13 +8,15 @@
 # default values, etc can be provided.
 #
 
-require 'time'
-require 'date'
 require 'json'
 require 'robe/common/errors'
+require 'robe/common/util/core_ext'
+require 'robe/common/util/ymd'
 
 module Robe
   class Model
+
+    CSV_COMMA_SUB = '~%~' # to substitute for commas in string values
 
     ATTR_SPEC_SINGLE_TYPE = 0
     ATTR_SPEC_MULTI_TYPE  = 1
@@ -131,11 +133,15 @@ module Robe
             arg_spec.each do |key, value|
               index = case key
                 when :type
-                  if value == :boolean
+                  type = value
+                  if type == :boolean
                     ATTR_SPEC_SINGLE_TYPE
-                  elsif  value.is_a?(Class)
+                  elsif type == :ymd || type == Ymd
+                    value = :ymd
                     ATTR_SPEC_SINGLE_TYPE
-                  elsif value.is_a?(Enumerable)
+                  elsif type.is_a?(Class)
+                    ATTR_SPEC_SINGLE_TYPE
+                  elsif type.is_a?(Enumerable)
                     value = value.to_a
                     value.each do |e|
                       unless e.is_a?(Class)
@@ -201,23 +207,50 @@ module Robe
             if (type = spec[ATTR_SPEC_SINGLE_TYPE])
               spec[ATTR_SPEC_READ] ||= case
                 when type == :boolean
-                  ->(value) { value.to_s[0].upcase == 'T' }
+                  ->(value) {
+                      if value.is_a?(Numeric)
+                        value != 0
+                      else
+                        c = value.to_s[0]
+                        c == 'T' || c == 't' || c == 'Y' || c == 'y'
+                      end
+                  }
+                when type == :ymd || type == Ymd
+                  ->(value) {
+                    value ? Ymd.try_convert(value) : nil
+                  }
                 when type == String
-                  ->(value) { value.to_s }
+                  ->(value) {
+                    value.to_s
+                  }
                 when type == Integer
-                  ->(value) { value.respond_to?(:to_i) ? value.to_i : value }
+                  ->(value) {
+                    value.respond_to?(:to_i) ? value.to_i : value
+                  }
                 when type == Float
-                  ->(value) { value.respond_to?(:to_f) ? value.to_f : value }
+                  ->(value) {
+                    value.respond_to?(:to_f) ? value.to_f : value
+                  }
                 when type == Time
-                  ->(value) { value.is_a?(String) ? Time.parse(value) : value }
+                  ->(value) {
+                    value.is_a?(String) ? Time.parse(value) : value
+                  }
                 when type == Date
-                  ->(value) { value.is_a?(String) ? Date.parse(value) : value }
+                  ->(value) {
+                    value.is_a?(String) ? Date.parse(value) : value
+                  }
                 else
                   nil
               end
               spec[ATTR_SPEC_WRITE] ||= case
                 when type == :boolean
-                  ->(value) { value.to_s[0].upcase }
+                  ->(value) {
+                    value.to_s[0].upcase # true becomes 'T, false becomes 'F'
+                  }
+                when type == :ymd || type == Ymd
+                  ->(value) {
+                    value ? Ymd.convert(value).ymd : ''
+                  }
                 else
                   nil
               end
@@ -227,7 +260,7 @@ module Robe
             # writer #attr
             if arg_spec
               define_method(:"#{attr}=") do |value|
-                @hash[attr] = __attr_write_value(attr, value)
+                @hash[attr] = __attr_read_value(attr, value)
               end
             else
               define_method(:"#{attr}=") do |value|
@@ -277,7 +310,7 @@ module Robe
     end
 
     def self.from_json(s)
-      new(**JSON.parse(s))
+      new(**JSON.parse(s).symbolize_keys)
     end
 
     def initialize(**args)
@@ -363,17 +396,25 @@ module Robe
       must_be_mutable!
       attr = attr.to_sym
       must_be_attr!(attr)
-      @hash[attr] = __attr_write_value(attr, value)
+      @hash[attr] = __attr_read_value(attr, value)
     end
 
     def values(*attr_names)
       attr_names.map { |n| self[n] }
     end
 
-    def to_csv
+    # Returns model attribute values as CSV string.
+    # If attrs is given it will determine which attributes and their order.
+    # Commas in values will be substituted with given comma_sub or Robe::Model::CSV_COMMA_SUB.
+    def to_csv(attrs: nil, comma_sub: nil)
+      attrs ||= self.attrs
+      comma_sub ||= CSV_COMMA_SUB
       [].tap { |result|
-        @hash.each do |attr, value|
-          result << __attr_write_value(attr, value)
+        attrs.each do |attr|
+          value = @hash[attr]
+          value = __attr_write_value(attr, value)
+          value = value.to_s.gsub(',', comma_sub)
+          result << value
         end
       }.join(',')
     end
@@ -421,7 +462,11 @@ module Robe
     alias_method :to_hash, :to_h
 
     def to_json
-      to_h_without_circulars.to_json
+      {}.tap { |h|
+        to_h_without_circulars.each do |attr, value|
+          h[attr] = __attr_write_value(attr, value)
+        end
+      }.to_json
     end
 
     # stub for subclasses to remove any circular reference for to_json
@@ -462,6 +507,9 @@ module Robe
 
     protected
 
+    # Coerce an attribute value to a value appropriate
+    # for csv, json or database.
+    # Returns the coerced value.
     def __attr_write_value(attr, value)
       attr_spec = self.class.attr_spec(attr)
       if attr_spec.empty?
@@ -469,21 +517,24 @@ module Robe
       end
       if (coerce = attr_spec[ATTR_SPEC_WRITE])
         # NB [] works for Hash and Proc
-        result = coerce[value]
-        trace __FILE__, __LINE__, self, __method__, " : >>>>>>>>>>>>>>>>>>>>>>>>>> coerce[#{value}]=#{result} "
-        result
+        coerce[value]
       else
         value
       end
     end
 
+    # Coerce a value to be assigned to an attribute
+    # into appropriate type and value. The value may
+    # come from csv, json, database or application.
+    # Returns the coerced value.
     def __attr_read_value(attr, value)
       attr_spec = self.class.attr_spec(attr)
       if attr_spec.empty?
         return value
       end
-      if value.nil? && (default = attr_spec[ATTR_SPEC_DEFAULT])
-        value = default
+      unless value
+        value = attr_spec[ATTR_SPEC_DEFAULT]
+        value = value.call if value.is_a?(Proc)
       end
       if (coerce = attr_spec[ATTR_SPEC_READ])
         # NB [] works for Hash and Proc
@@ -495,41 +546,45 @@ module Robe
         end
       end
       unless value.nil?
-        if (type = attr_spec[ATTR_SPEC_SINGLE_TYPE])
+        if type = attr_spec[ATTR_SPEC_SINGLE_TYPE]
           if type == :boolean
             unless value.is_a?(TrueClass) || value.is_a?(FalseClass)
               raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be TrueClass or FalseClass not #{value.class}"
+            end
+          elsif type == :ymd || type == Ymd
+            unless value.is_a?(Ymd)
+              raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be Ymd not #{value.class}"
             end
           else
             unless value.is_a?(type)
               raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be type #{type} not #{value.class}"
             end
           end
-        elsif (types = attr_spec[ATTR_SPEC_MULTI_TYPE])
+        elsif types = attr_spec[ATTR_SPEC_MULTI_TYPE]
           unless types.include?(value.class)
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be type #{types.join(' or ')} not #{value.class}"
           end
         end
-        if (length = attr_spec[ATTR_SPEC_FIX_LENGTH])
+        if length = attr_spec[ATTR_SPEC_FIX_LENGTH]
           unless value.length == length
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be fixed length of #{length} not #{value.length}"
           end
-        elsif (length = attr_spec[ATTR_SPEC_VAR_LENGTH])
+        elsif length = attr_spec[ATTR_SPEC_VAR_LENGTH]
           unless length.include?(value.length)
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be length in range #{length} not #{value.length}"
           end
         end
-        if (insist = attr_spec[ATTR_SPEC_INSIST])
+        if insist = attr_spec[ATTR_SPEC_INSIST]
           unless true == insist.call(value)
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} insist failure : #{result}"
           end
         end
-        if (regexp = attr_spec[ATTR_SPEC_REGEXP])
+        if regexp = attr_spec[ATTR_SPEC_REGEXP]
           unless value =~ regexp
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : String value '#{value}' does not match regexp #{regexp}"
           end
         end
-        if (enum = attr_spec[ATTR_SPEC_ENUM])
+        if enum = attr_spec[ATTR_SPEC_ENUM]
           unless enum.include?(value)
             raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value '#{value}' not included in #{enum}"
           end

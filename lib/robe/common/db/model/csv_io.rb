@@ -5,10 +5,11 @@ require 'robe/common/errors'
 
 module Robe; module DB;
   class Model
+
+    CSV_COMMA_SUB = Robe::Model::CSV_COMMA_SUB
+
     module CSV_IO_Methods
 
-      COMMA_SUB = '~%~'
-      
       # Loads all records in the given csv string to the
       # model class's collection/table.
       # Assumes first line in csv is field names.
@@ -38,10 +39,12 @@ module Robe; module DB;
             # separated field to be returned as empty strings
             # turn empty strings back to nil
             values = line.split(',', -1).map { |s|
-              s.present? ? s.gsub(COMMA_SUB, ',') : nil
+              s.present? ? s.gsub(CSV_COMMA_SUB, ',') : nil
             }
             unless values.size == csv_fields.size
-              raise Robe::DBError, "#{self.name}###{__method__} : values.size #{values.size} != field_names.size #{attrs.size} => '#{line}'"
+              msg = "#{self.name}###{__method__} : values.size #{values.size} != csv_fields.size #{csv_fields.size} => '#{line}'"
+              trace __FILE__, __LINE__, self, __method__, " : #{self.class} : error : #{msg}"
+              raise Robe::DBError, msg
             end
             hash = {}
             values.each_with_index do |value, index|
@@ -51,6 +54,7 @@ module Robe; module DB;
                 hash[attr] = proc ? proc.call(value) : value
               end
             end
+            trace __FILE__, __LINE__, self, __method__, " : #{self.class} : inserting #{hash}"
             instance = self.new(**hash)
             instance.insert(ignore_associations: ignore_associations).then do
               count += 1
@@ -68,10 +72,8 @@ module Robe; module DB;
           io = StringIO.new
           io << (attrs.join(',') + "\n")
           all.each do |model|
-            values = attrs.map{ |attr|
-              model.send(attr).to_s.gsub(',', COMMA_SUB)
-            }
-            io << (values.join(',') + "\n")
+            line = model.to_csv(attrs: attrs, comma_sub: CSV_COMMA_SUB)  # send(attr).to_s.gsub(',', COMMA_SUB)
+            io << (line + "\n")
           end
           io.string.to_promise
         end
