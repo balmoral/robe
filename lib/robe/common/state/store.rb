@@ -164,7 +164,7 @@ module Robe; module State
     def broadcast(prior_state)
       # important that we dup subscribers before iterating
       # as subscribers they may delete other subscribers
-      # (for instance through bindings)
+      # (for instance through hooks)
       subscribers.values.dup.each do |subscriber|
         # a subscriber can be terminated/unsubscribed by another earlier interested subscriber
         unless subscriber[:terminated]

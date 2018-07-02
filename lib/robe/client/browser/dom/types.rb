@@ -17,11 +17,11 @@ module Robe
       ARRAY_TYPE      = 3
       HASH_TYPE       = 4
       WRAP_TYPE       = 5 # Robe::Client::Browser::Wrap::Element
-      BINDING_TYPE    = 6
+      HOOK_TYPE    = 6
       TAG_TYPE        = 7
       COMPONENT_TYPE  = 8
 
-      BINDING_CLASS   = Robe::State::Binding
+      HOOK_CLASS      = Robe::State::Hook
       ELEMENT_CLASS   = Robe::Client::Browser::Wrap::Element
       TAG_CLASS       = Robe::Client::Browser::DOM::Tag
       LINK_CLASS      = Robe::Client::Browser::DOM::Link
@@ -94,9 +94,9 @@ module Robe; module Client; module Browser; module Wrap; class Element
   end
 end end end end end
 
-module Robe; module State; class Binding
+module Robe; module State; class Hook
   def robe_dom_type
-    Robe.dom::BINDING_TYPE
+    Robe.dom::HOOK_TYPE
   end
 end end end
 

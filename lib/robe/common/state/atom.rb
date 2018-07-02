@@ -26,7 +26,7 @@ class Hash
   end
 end
 
-require 'robe/common/state/binding'
+require 'robe/common/state/hook'
 
 # Atom implements an all in one store + state
 # with supporting methods for mutation and observation.
@@ -403,48 +403,6 @@ module Robe; module State
       @state.to_json
     end
 
-    # Returns a Binding.
-    #
-    # If a block is given, to resolve the binding
-    # the block will be called with the value of
-    # the attribute if attribute is specified, or the
-    # block will be called with the atom instance if no
-    # attribute is specified.
-    #
-    # If a block is not given, the binding will resolve
-    # to value of the attribute if attribute is specified,
-    # or the atom if no attribute is specified.
-    #
-    # Example of usage in Robe component:
-    #
-    # class Clock < Atom
-    #   attr :time
-    #   ...
-    # end
-    #
-    # @clock = Clock.new # Clock is subclass of Atom
-    # ...
-    #
-    # def render
-    #   div[
-    #     @clock.bind(:time)
-    #   ]
-    # end
-    #
-    #
-    def bind(attr = nil, &block)
-      if attr
-        Robe::State::Binding.new(self, attr) {
-          value = self.send(attr)
-          block ? block.call(value) : value
-        }
-      else
-        Robe::State::Binding.new(self) {
-          block ? block.call(self) : self
-        }
-      end
-    end
-
     protected
 
     # Broadcast change of state to all subscribers.
@@ -454,7 +412,7 @@ module Robe; module State
       # trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
       inc_mutation_count
       # important that we dup subscribers before iterating as subscribers
-      # may delete other subscribers (for instance through bindings)
+      # may delete other subscribers (for instance through hooks)
       @subscribers.dup.each do |subscriber|
         # a subscriber can be terminated/unsubscribed by another earlier interested subscriber
         unless subscriber[:terminated]
