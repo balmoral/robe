@@ -2,43 +2,38 @@
 
 #### Ruby on both ends.
 
-Robe is a full stack, single page application framework for server and client.  
+**Robe** is a full stack, single page application framework for server and client:  
 
-Highlights are:
-
-- **isomorphic** when you want it 
-- share Ruby code on server and client when it makes sense 
-- **no HTML** (almost) - do it all in Ruby
-- a readable, concise, adaptable, re-usable, object-oriented DOM interface
-- bring-your-own CSS and JavaScript as required  
+- share Ruby code on server and client
+- almost no HTML - do it all in Ruby
+- a readable, concise, adaptable, re-usable, object-oriented **DOM** interface
 - simple yet powerful **state** management
-- simple explicit fine-grained **hooks** between state and DOM   
-- **tasks** (api) defined and performed on the server, requests made from the client
-- built-in **Mongo** support - Sequel/ROM/AR to come
-- database models with built-in validation and associations 
-- easy write-through database caching on the client 
-- integrated **websocket** support with **Redis**  
+- fine-grained **hooks** between state and DOM   
+- easy to define server **api** and **tasks** 
+- built-in **Mongo** support (Sequel/AR to come)
+- database models with validation and associations 
+- write-through database caching on the client 
+- **websockets** and **Redis** built-in  
 - simple one-stop server configuration
-- a minimum of convention to master 
 - no mandated JavaScript libraries (except jquery), but...
 - inline JavaScript and access to any JavaScript library via **Opal** 
-- **source maps** to view and debug Ruby code on the client
-- small footprint on server and client
-- easily learned, easily deployed
-- an aversion to opaque magic
-- an embrace of **productive happiness**  
-
+- **source maps** to view and debug Ruby on the client
+- small footprint
+- fast to learn
+- fun to play with
+- surprisingly powerful
+- easy to deploy
+ 
 ## Acknowledgements
 
-**Robe** has been inspired by the work of many dedicated, enthusiastic and talented
-people who have already provided great client-side Ruby libraries and frameworks. 
+**Robe** has been inspired by a few great client-side Ruby libraries and frameworks. 
 
-Special appreciation and acknowledgement goes to these sources of inspiration and learning:
+Special appreciation and acknowledgement goes to:
 
-- the trailblazing now sadly inactive [*Volt*](https://github.com/voltrb/volt) 
-- the virtual and virtuous [*Clearwater*](https://github.com/clearwater-rb)
-- the re-active and remarkable [*Ruby-Hyperloop*](http://ruby-hyperloop.org)
-- the essential and enabling [*Opal*](http://opalrb.com/) 
+- the trailblazing (now inactive) [*Volt*](https://github.com/voltrb/volt) 
+- the virtual [*Clearwater*](https://github.com/clearwater-rb)
+- the reactive [*Ruby-Hyperloop*](http://ruby-hyperloop.org)
+- the enabling [*Opal*](http://opalrb.com/) 
 
 ## Installation
 
