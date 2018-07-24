@@ -63,7 +63,7 @@ module Robe; module Client; module Browser
     # after the # is treated as a the initial path and params for the
     # router.
     def initialize(url = '')
-      trace __FILE__, __LINE__, self, __method__, "url=#{url}"
+      # trace __FILE__, __LINE__, self, __method__, "url=#{url}"
       hash = url.split('#').last
       args = { path: '/', params: {}}
       if hash
@@ -73,7 +73,7 @@ module Robe; module Client; module Browser
         end
       end
       super(**args) 
-      trace __FILE__, __LINE__, self, __method__, " self=#{self.to_h}"
+      # trace __FILE__, __LINE__, self, __method__, " self=#{self.to_h}"
       navigate_to(path)
     end
 

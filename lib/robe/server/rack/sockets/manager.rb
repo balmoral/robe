@@ -137,8 +137,9 @@ module Robe
           end
 
           def handle_message(channel, event, client, content)
-            # trace __FILE__, __LINE__, self, __method__, " : client.id=#{client.id} channel=#{channel} event=#{event}"
+            # trace __FILE__, __LINE__, self, __method__, "(client=#{client}, event=#{event}, channel=#{channel}, content=#{content}"
             channel_handlers(channel, event).each do |handler|
+              # trace __FILE__, __LINE__, self, __method__, " : handler=#{handler}"
               handler.call(client: client, content: content)
             end
           end
@@ -163,7 +164,14 @@ module Robe
 
           # Returns any handlers found for a channel and event.
           def channel_handlers(channel, event)
-            (@handlers[channel.to_sym] || {})[event.to_sym] || []
+            # trace __FILE__, __LINE__, self, __method__, " : channel=#{channel} event=#{event}"
+            r = (@handlers[channel.to_sym] || {})[event.to_sym] || []
+            if r.empty?
+              msg = "#{self.class.name} : no channel handlers(s) for channel=#{channel} event=#{event}"
+              trace __FILE__, __LINE__, self, __method__, " : #{msg}"
+              raise RuntimeError, msg
+            end
+            r
           end
 
           # Subscribe to any messages sent via redis from our channels, and resend them over socket(s).

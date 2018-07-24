@@ -178,7 +178,7 @@ module Robe
         end
 
         def min_task_threads
-          @min_task_threads ||= 0
+          @min_task_threads ||= 1
         end
 
         def min_task_threads=(val)

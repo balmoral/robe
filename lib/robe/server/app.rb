@@ -5,8 +5,7 @@ require 'robe/common/trace'
 require 'robe/server/util/logger'
 require 'robe/server/config'
 require 'robe/server/rack'
-require 'robe/server/api'
-require 'robe/server/task/manager'
+require 'robe/server/task'
 require 'robe/server/thread'
 require 'robe/server/auth'
 require 'robe/common/model'
@@ -81,25 +80,24 @@ module Robe; module Server
     # Register a server task.
     #
     # @param [ Symbol ] name Symbol identifying the task.
-    # @param [ Boolean ] auth Whether to verify user signature in task metadata. Defaults to true.
-    # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
+    # @param [ Boolean ] auth Whether to verify user signature in task metadata. Defaults to true. Block should expect user_id: argument if auth is true.
     #
     # @yieldparam [ Hash ] Keyword args from client over socket.
-    def self.task(name, lambda = nil, auth: true, &block)
-      Robe::Server::Api.task(name, lambda, auth: auth, &block)
+    def self.task(name, auth: true, &block)
+      Robe::Server::Task.task(name, auth: auth, &block)
     end
 
     # #api is an alias for #task
-    def self.api(name, lambda = nil, auth: true, &block)
-      Robe::Server::Api.api(name, lambda, auth: auth, &block)
+    def self.api(name, auth: true, &block)
+      task(name, auth: auth, &block)
     end
 
-    task :sign_in, auth: false do |id:, password:|
+    task :sign_in, auth: false do |_id:, _password:|
       raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 
     # expects user signature
-    task :sign_out do |user:|
+    task :sign_out, auth: true do |_user:|
       raise Robe::TaskError, "sign_in task must be implemented in your subclass of #{self.name}"
     end
 

@@ -428,4 +428,5 @@ class String
   def to_ymd
     Ymd.parse(self)
   end
+
 end

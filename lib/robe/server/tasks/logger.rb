@@ -6,7 +6,7 @@ require 'robe/common/db/models/task_log'
 
 module Robe
   module Server
-    module Task
+    module Tasks
       module Logger
 
         module_function

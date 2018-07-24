@@ -27,14 +27,11 @@ module Robe
         #
         # @param [ Symbol ] name Symbol identifying the task.
         # @param [ Boolean ] auth Whether to verify user signature in task metadata. Defaults to true.
-        # @param [ Lambda ] lambda To perform the task. If nil a block must be given.
         #
         # @yieldparam [ Hash ] Keyword args from client over socket.
-        def register(name, lambda = nil, auth:, &block)
-          unless lambda || block
-            raise ArgumentError, 'task requires a lambda or block'
-          end
-          @tasks[name.to_sym] = { lambda: lambda || block, auth: auth }
+        def register(name, auth:, &block)
+          raise ArgumentError, 'task requires a block' unless block
+          @tasks[name.to_sym] = { block: block, auth: auth }
         end
 
       end

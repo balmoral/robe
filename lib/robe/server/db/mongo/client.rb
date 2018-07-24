@@ -14,6 +14,7 @@ module Robe; module DB
       def initialize(hosts:, database:, user:, password:, min_pool_size: 1, max_pool_size: 5, logger_level: nil)
         self.logger_level = logger_level if logger_level
         trace __FILE__, __LINE__, self, __method__, " @uri=#{@uri}"
+        ::Mongo::Logger.logger.level = ::Logger::INFO
         ::Mongo::Client.new(
           hosts,
           database: database,

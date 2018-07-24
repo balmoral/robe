@@ -4,24 +4,25 @@ module Robe; module Server
     # target should be one of [database, collection, index]
     # method should be a method appropriate to target
     # args should be an array in json format
-    task :dbop, ->(target:, method:, args: []) {
-      trace __FILE__, __LINE__, self, __method__, "(#{target}, #{method}, #{args})"
+    task :dbop, auth: true do |target:, method:, args:, user_id:|
+      # trace __FILE__, __LINE__, self, __method__, "(target: #{target}, method: #{method}, args: #{args}, user_id:#{user_id}"
       target = target.to_sym
       method = method.to_sym
-      args.compact!
-      trace __FILE__, __LINE__, self, __method__, "(#{target}, #{method}, #{args})" if method.to_sym == :insert_one
+      args = args ? args.compact : []
       Robe.db.op(target, method, *args).then do |result|
         {
           success: true,
           data: result
         }
       end.fail do |error|
+        msg = "Error performing dbop(target: #{target}, method: #{method}, args=#{args}) : #{error}"
+        trace __FILE__, __LINE__, self, __method__, " : #{msg}"
         {
           success: false,
-          error: "Error performing task(target: #{target}, method: #{method}, args=#{args}) => #{error}"
+          error: msg
         }
       end
-    }
+    end
 
   end
 end end

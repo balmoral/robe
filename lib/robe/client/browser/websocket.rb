@@ -32,7 +32,7 @@ module Robe; module Client; module Browser
           # Add wss? to the front
           url = "#{ws_proto}#{url}"
         end
-        trace __FILE__, __LINE__, self, __method__, " web socket url = #{url}"
+        # trace __FILE__, __LINE__, self, __method__, " web socket url = #{url}"
         @url = url
       end
       @url
@@ -116,7 +116,7 @@ module Robe; module Client; module Browser
 
     def connect!
       @native = `new WebSocket(#{@url})`
-      trace __FILE__, __LINE__, self, __method__, " : native => #{@native}"
+      # trace __FILE__, __LINE__, self, __method__, " : native => #{@native}"
       @timeout = Robe.browser.set_timeout(@timeout_interval) do
         # trace __FILE__, __LINE__, self, __method__, " : connection-timeout after #{@timeout_interval} seconds: #{@url}"
         @timed_out = true
@@ -173,13 +173,13 @@ module Robe; module Client; module Browser
     def init_handlers
       @handlers ||= Hash.new { |h, k| h[k] = [] }
       on(:open) do
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : opened "
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : opened "
         @connected = true
         @reconnect_attempt = 0
         $app.state.notify_websocket_open
       end
       on(:close) do |event|
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : closed => #{event}"
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : closed => #{event}"
         @connected = false
         if @auto_reconnect && !@forced_close
           reconnect!
@@ -190,7 +190,7 @@ module Robe; module Client; module Browser
       # a close event is always sent after an error, so no need to handle much here
       on(:error) do |error|
         $app.state.notify_websocket_error(error)
-        trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : error => #{error} "
+        # trace __FILE__, __LINE__, self, __method__, " websocket #{@url} : error => #{error} "
         @connected = false
       end
       on(:message) do |message|

@@ -8,9 +8,9 @@ module Robe
       module_function
 
       # Returns a promise
-      def perform_task(name, **kwargs)
-        # trace __FILE__, __LINE__, self, __method__, "(#{name}, #{kwargs})"
-        Robe.tasks.perform(name, **kwargs)
+      def perform_task(name, auth: nil, **args)
+        # trace __FILE__, __LINE__, self, __method__, "(#{name}, auth: #{auth}, args: #{args})"
+        Robe.tasks.perform(name, auth: auth, **args)
       end
 
     end

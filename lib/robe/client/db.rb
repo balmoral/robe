@@ -17,9 +17,10 @@ module Robe
 
       # Perform a database operation on the server.
       # Returns a Promise with result of op as value.
+      # TODO: auth or not to auth?
       def self.op(target, method, *args)
         # trace __FILE__, __LINE__, self, __method__, "(target=#{target}, method=#{method}, args=#{args})"
-        promise = server.perform_task(:dbop, target: target, method: method, args: args)
+        promise = server.perform_task(:dbop, auth: true, target: target, method: method, args: args)
         promise.then do |response|
           response = response.symbolize_keys
           if response[:success]

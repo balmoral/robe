@@ -328,7 +328,7 @@ module Robe; module DB
         Robe.logger.error(msg)
         raise DBError, msg
       end
-      self.id = uuid unless id
+      self.id = uuid unless id && !id.empty?
       if cache && cache.includes?(self.class, id)
         msg = "#{__FILE__}[#{__LINE__}] : #{self.class} : with id #{id} already in cache - cannot insert"
         Robe.logger.error(msg)

@@ -121,7 +121,7 @@ module Robe
           # limit threads to mongo connection pool size
           @op_thread_pool = if Robe.config.db_op_max_threads > 0
             Concurrent::CachedThreadPool.new(
-              min_threads: Robe.config.db_op_min_threads,
+              min_threads: [Robe.config.db_op_min_threads, 1].max,
               max_threads: Robe.config.db_op_max_threads
             )
           end

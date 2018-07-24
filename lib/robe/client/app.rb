@@ -45,9 +45,9 @@ module Robe
         @watching_url = false
         @render_on_visibility_change = true
         document.on_visibility_change do
-          trace __FILE__, __LINE__, self, __method__, " : document.hidden?=#{document.hidden?} @render_on_visibility_change=#{@render_on_visibility_change}"
+          # trace __FILE__, __LINE__, self, __method__, " : document.hidden?=#{document.hidden?} @render_on_visibility_change=#{@render_on_visibility_change}"
           if !document.hidden? && @render_on_visibility_change
-            trace __FILE__, __LINE__, self, __method__
+            # trace __FILE__, __LINE__, self, __method__
             @render_on_visibility_change = false
             render
           end
@@ -93,7 +93,6 @@ module Robe
       # returns false then no user is signed in.
       # An error will be raised if user is not signed out.
       def sign_in(id, password)
-        trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
         Robe::Client::App::User.sign_in(id, password)
       end
 
@@ -112,13 +111,14 @@ module Robe
         @server ||= Robe.server
       end
 
-      def perform_task(name, **kwargs)
-        server.perform_task(name, **kwargs)
+      def perform_task(name, auth: nil, **args)
+        # trace __FILE__, __LINE__, self, __method__, "(name, auth: #{auth}, args: #{args}"
+        server.perform_task(name, auth: auth, **args)
       end
 
-      # alias for #perform_tasl
-      def server_api(name, **kwargs)
-        server.perform_task(name, **kwargs)
+      # alias for #perform_task
+      def server_api(name, auth: nil, **args)
+        perform_task(name, auth: auth, **args)
       end
 
       def db
@@ -126,7 +126,7 @@ module Robe
       end
 
       def mount(&block)
-        trace __FILE__, __LINE__, self, __method__
+        # trace __FILE__, __LINE__, self, __method__
         self.class.instance = self
         render(&block)
         window.on(:resize) { when_resized }
@@ -142,11 +142,11 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__, " : @watching_url=#{@watching_url}"
         unless @watching_url
           window.on('popstate') do
-            trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
+            # trace __FILE__, __LINE__, self, __method__, ' : calling router.update'
             router.update
           end
           window.on_hash_change do |new_hash|
-            trace __FILE__, __LINE__, self, __method__, " : #{new_hash}"
+            # trace __FILE__, __LINE__, self, __method__, " : #{new_hash}"
           end
           @watching_url = true
         end
@@ -154,12 +154,12 @@ module Robe
 
       def render(&block)
         on_render << block if block
-        trace __FILE__, __LINE__, self, __method__, " : @will_render=#{@will_render}"
+        # trace __FILE__, __LINE__, self, __method__, " : @will_render=#{@will_render}"
         return if @will_render
 
         # If the app isn't being shown, wait to render until it is.
         # visibilitychanged event is observed in #intialize
-        trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name} document.hidden?=#{document.hidden?}"
+        # trace __FILE__, __LINE__, self, __method__, " : document=#{document.class.name} document.hidden?=#{document.hidden?}"
         if document.hidden?
           @render_on_visibility_change = true
           return
@@ -197,7 +197,7 @@ module Robe
       end
 
       def perform_render
-        trace __FILE__, __LINE__, self, __method__
+        # trace __FILE__, __LINE__, self, __method__
         if body.nil?
           raise TypeError, 'Cannot render to a non-existent document body. Make sure the document ready event has been triggered before invoking the application.'
         end
@@ -213,7 +213,7 @@ module Robe
       end
 
       def run_callbacks
-        trace __FILE__, __LINE__, self, __method__, ' : on_render=#{on_render}'
+        # trace __FILE__, __LINE__, self, __method__, ' : on_render=#{on_render}'
         @on_render.each(&:render)
         @on_render.clear
       end

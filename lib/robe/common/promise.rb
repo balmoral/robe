@@ -508,20 +508,24 @@ class Array
 end
 
 module Kernel
+  def promise_chain(enumerable, &block)
+    enumerable.promise_chain(&block)
+  end
+end
 
+module Enumerable
   # Enumerate enumerable calling block for each element.
   # Block should return a promise.
   # Wait for each promise to resolve before calling
   # block on next element.
   # Returns promise from last execution of block.
-  def promise_chain(enumerable, &block)
+  def promise_chain(&block)
     chain = NilClass.to_promise
-    enumerable.each do |e|
+    each do |e|
       chain = chain.then do
-        block.call(e)
+        block.call(e).to_promise
       end
     end
     chain
   end
 end
-

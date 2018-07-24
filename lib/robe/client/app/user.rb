@@ -11,7 +11,7 @@ module Robe; module Client;  class App
     end
 
     def sign_out
-      Robe.app.perform_task(:sign_out, user: signature)
+      Robe.app.perform_task(:sign_out, auth: true, user: signature)
       Robe.app.state.mutate!(user: nil)
     end
 
@@ -20,10 +20,11 @@ module Robe; module Client;  class App
     def self.sign_in(id, password)
       # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
       if Robe.app.user?
+        trace __FILE__, __LINE__, self, __method__, " : previous user must be signed out before sign in of new user"
         raise Robe::UserError, 'previous user must be signed out before sign in of new user'
       end
       # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
-      Robe.app.perform_task(:sign_in, id: id, password: password).then do |result|
+      Robe.app.perform_task(:sign_in, auth: false, id: id, password: password).then do |result|
         # trace __FILE__, __LINE__, self, __method__, " result=#{result}"
         result = result.symbolize_keys
         case result[:status]
@@ -39,16 +40,23 @@ module Robe; module Client;  class App
             }
             user.to_promise
           when 'server_error'
+            trace __FILE__, __LINE__, self, __method__, " error=#{result[:error]}"
             Robe.app.state.mutate!(user: nil) do
               Robe.app.state.server_errors << result[:error]
             end
             result[:error].to_promise_error
           when 'invalid user'
+            trace __FILE__, __LINE__, self, __method__, " invalid user"
             Robe.app.state.mutate!(user: nil, sign_in_invalid_user: true)
             'invalid user'.to_promise_error
           when 'invalid password'
+            trace __FILE__, __LINE__, self, __method__, " invalid password"
             Robe.app.state.mutate!(user: nil, sign_in_invalid_password: true)
             'invalid password'.to_promise_error
+          else
+            msg = "unknown results status #{result[:status]}"
+            trace __FILE__, __LINE__, self, __method__, " : runtime error : #{msg}"
+            raise Robe::RuntimeError, msg
         end
       end.fail do |error|
         trace __FILE__, __LINE__, self, __method__, " error=#{error}"

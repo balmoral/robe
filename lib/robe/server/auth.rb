@@ -46,7 +46,7 @@ module Robe
       end
       
       def sign_in_success_response(user_id, data: nil)
-        trace __FILE__, __LINE__, self, __method__
+        # trace __FILE__, __LINE__, self, __method__
         result = {
           status: 'success',
           user: {
@@ -55,7 +55,7 @@ module Robe
             data: data
           }
         }
-        trace __FILE__, __LINE__, self, __method__, " result=#{result}"
+        # trace __FILE__, __LINE__, self, __method__, " result=#{result}"
         result
       end
 
@@ -90,14 +90,14 @@ module Robe
       # which is suitable for use as a user id in session cookies
       # and socket requests.
       def user_signature(user_id)
-        trace __FILE__, __LINE__, self, __method__, "(#{user_id})"
+        # trace __FILE__, __LINE__, self, __method__, "(#{user_id})"
         unless Robe.config.app_secret
           trace __FILE__, __LINE__, self, __method__, 'app secret not configured for server'
           raise RuntimeError, 'app secret not configured for server'
         end
         token = tokenize_user_id(user_id)
         result = "#{user_id}#{SIGNATURE_HOOK}#{token}"
-        trace __FILE__, __LINE__, self, __method__, " result=#{result}"
+        # trace __FILE__, __LINE__, self, __method__, " result=#{result}"
         result
       end
 
