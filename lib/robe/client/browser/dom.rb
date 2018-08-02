@@ -167,6 +167,10 @@ module Robe; module Client; module Browser
         checked: ->(element, _attribute, value) {
           element.checked = value
         },
+        #
+        autocomplete: ->(element, _attribute, value) {
+          element.autocomplete = !!value
+        },
         # https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/disabled
         enabled: ->(element, _attribute, value) {
           if value

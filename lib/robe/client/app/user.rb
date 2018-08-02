@@ -1,3 +1,4 @@
+require 'robe/common/auth'
 require 'robe/common/model'
 require 'robe/common/promise'
 
@@ -18,17 +19,18 @@ module Robe; module Client;  class App
     # Returns a promise with current User if successful.
     # See Robe::Server::User for response structures.
     def self.sign_in(id, password)
-      # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
+      trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
       if Robe.app.user?
-        trace __FILE__, __LINE__, self, __method__, " : previous user must be signed out before sign in of new user"
-        raise Robe::UserError, 'previous user must be signed out before sign in of new user'
+        msg = 'previous user must be signed out before sign in of new user'
+        trace __FILE__, __LINE__, self, __method__, " : #{msg}"
+        raise Robe::UserError, msg
       end
       # trace __FILE__, __LINE__, self, __method__, "(#{id}, #{password})"
       Robe.app.perform_task(:sign_in, auth: false, id: id, password: password).then do |result|
         # trace __FILE__, __LINE__, self, __method__, " result=#{result}"
         result = result.symbolize_keys
         case result[:status]
-          when 'success'
+          when Robe::Auth::SIGN_IN_SUCCESS
             # construct new instance with response from task
             # (expects :id, :name, :signature and optional :data)
             user = new(**result[:user])
@@ -38,21 +40,15 @@ module Robe; module Client;  class App
               expires: user.expiry,
               secure: true
             }
-            user.to_promise
-          when 'server_error'
-            trace __FILE__, __LINE__, self, __method__, " error=#{result[:error]}"
-            Robe.app.state.mutate!(user: nil) do
-              Robe.app.state.server_errors << result[:error]
-            end
-            result[:error].to_promise_error
-          when 'invalid user'
+            user
+          when Robe::Auth::SIGN_IN_INVALID_USER
             trace __FILE__, __LINE__, self, __method__, " invalid user"
             Robe.app.state.mutate!(user: nil, sign_in_invalid_user: true)
-            'invalid user'.to_promise_error
-          when 'invalid password'
+            result[:status].to_promise_error
+          when Robe::Auth::SIGN_IN_INVALID_PASSWORD
             trace __FILE__, __LINE__, self, __method__, " invalid password"
             Robe.app.state.mutate!(user: nil, sign_in_invalid_password: true)
-            'invalid password'.to_promise_error
+            result[:status].to_promise_error
           else
             msg = "unknown results status #{result[:status]}"
             trace __FILE__, __LINE__, self, __method__, " : runtime error : #{msg}"
@@ -61,7 +57,11 @@ module Robe; module Client;  class App
       end.fail do |error|
         trace __FILE__, __LINE__, self, __method__, " error=#{error}"
         Robe.app.state.mutate!(user: nil) do
-          Robe.app.state.server_errors << error
+          if error.is_a?(Hash)
+            Robe.app.state.add_server_error(error[:code], error[:message])
+          else
+            Robe.app.state.add_server_error(-1, error.to_s)
+          end
         end
         Robe.app.cookies.delete(:user_id)
         error.to_promise_error

@@ -12,7 +12,9 @@ require 'robe/server/rack/sockets/rack_server'
 Robe::RackServer.load
 
 module Robe
-  module_function
+  # module_function privatises methods
+  # when modules/classes include/extend
+  extend self
 
   def server?
     true

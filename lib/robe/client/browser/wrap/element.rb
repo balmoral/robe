@@ -267,6 +267,14 @@ module Robe; module Client; module Browser; module Wrap
       `#@native.select()`
     end
 
+    # https://developer.mozilla.org/en-US/docs/Web/Security/Securing_your_site/Turning_off_form_autocompletion
+    def autocomplete=(bool)
+      unless bool
+        # won't work on firefox
+        `#@native.autocomplete = "new-password"`
+      end
+    end
+
     # added for select option
     def selected=(bool)
       `#@native.selected = bool`

@@ -77,14 +77,14 @@ module Robe
       end
 
       def user_id
-        user? ? user.id : nil
+        user && user.id
       end
 
       %i(signed_in? signed_out?).each do |method|
         define_method(method) { state.send(method) }
       end
 
-      # Signs in via User##sign_out.
+      # Signs in via User##sign_in.
       # Async operation - return value is meaningless.
       # App state.user is set when sign_in completed
       # or state.sign_in_error is set if error in sign_in.

@@ -2,35 +2,48 @@
 # current thread data, especially user_id and other meta data
 # from client requests. Derived from Volt.
 
-# For use by Robe::Server::User.
+# For use mainly by Robe::Server::Auth.
+# TODO: lots
 
 module Robe
   module Server
     module Thread
 
-      module_function
+      # module_function privatises methods
+      # when modules/classes include/extend
+      extend self
 
       def current
         ::Thread.current
       end
 
+      def user
+        current['robe_user'] ||= {}
+      end
+
+      def data
+        current['robe_data']
+      end
+
+      def data=(data)
+        current['robe_data'] = data
+      end
+
       def user_id
-        current['user_id']
+        user['id']
       end
 
       def user_id=(id)
-        current['user_id'] = id
+        user['id'] = id
       end
 
-      # Returns current thread meta data as a hash or nil.
-      def meta
-        current['meta']
+      def user_signature
+        user['signature']
       end
 
-      def meta=(hash)
-        current['meta'] = hash
+      def user_signature=(signature)
+        user['signature'] = signature
       end
-
     end
   end
 

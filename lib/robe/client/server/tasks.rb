@@ -14,29 +14,28 @@ module Robe
           # We pass meta_data[:user] as hash with user id and user tokenised signature if available.
           send_request(
             task_name,
-            meta_data(auth: auth),
+            user_data(auth: auth),
             args
           )
         end
 
-        def self.meta_data(auth: nil)
-          meta_data = {}
+        def self.user_data(auth: nil)
+          user_data = {}
           if auth
             user = Robe.app.user
             raise RuntimeError, "no user available for auth" unless user
-            meta_data[:user] = {}
             %i(id signature).each do |attr|
-              meta_data[:user][attr] = user.send(attr) if user.respond_to?(attr)
+              user_data[attr] = user.send(attr)
             end
           end
-          meta_data
+          user_data
         end
 
         # private
 
         # Send request for the named task to be performed on the server
         # # with given meta data and keyword args.
-        def self.send_request(task_name, meta_data, args)
+        def self.send_request(task_name, user_data, args)
           # trace __FILE__, __LINE__, self, __method__, "(task: #{task_name}, meta: #{meta_data}, args: #{args})"
           @promises ||= {}
           @task_id ||= 0
@@ -51,7 +50,7 @@ module Robe
               task: task_name,
               args: args,
               id: @task_id,
-              meta_data: meta_data
+              user: user_data
             }
           )
           promise

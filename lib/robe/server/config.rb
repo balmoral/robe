@@ -53,8 +53,7 @@ module Robe
         
         def app_secret
           @app_secret ||= (
-            ENV['APP_SECRET'] ||
-            SecureRandom.hex(64)
+            ENV['APP_SECRET'] || SecureRandom.hex(64)
           )
         end
 

@@ -16,7 +16,10 @@ require 'robe/common/util/ymd'
 module Robe
   class Model
 
-    CSV_COMMA_SUB = '~%~' # to substitute for commas in string values
+    CSV_COMMA_SUB = '~COMMA~' # to substitute for commas in string values
+    CSV_TAB_SUB = '~TAB~' # to substitute for tabs in string values
+    CSV_NL_SUB = '~NL~' # to substitute for new lines in string values
+    CSV_CR_SUB = '~CR~' # to substitute for carriage returns in string values
 
     ATTR_SPEC_SINGLE_TYPE = 0
     ATTR_SPEC_MULTI_TYPE  = 1
@@ -405,15 +408,22 @@ module Robe
 
     # Returns model attribute values as CSV string.
     # If attrs is given it will determine which attributes and their order.
-    # Commas in values will be substituted with given comma_sub or Robe::Model::CSV_COMMA_SUB.
-    def to_csv(attrs: nil, comma_sub: nil)
+    # Commas, newlines, carriage returns and tabs in values will be substituted
+    # with given substitutes or Robe::Model defaults.
+    def to_csv(attrs: nil, comma_sub: nil, cr_sub: nil, nl_sub: nil, tab_sub: nil)
       attrs ||= self.attrs
       comma_sub ||= CSV_COMMA_SUB
+      nl_sub ||= CSV_NL_SUB
+      cr_sub ||= CSV_CR_SUB
+      # tab_sub ||= CSV_TAB_SUB
       [].tap { |result|
         attrs.each do |attr|
           value = @hash[attr]
           value = __attr_write_value(attr, value)
           value = value.to_s.gsub(',', comma_sub)
+          value = value.gsub('\n', nl_sub)
+          value = value.gsub('\r', cr_sub)
+          value = value.gsub('\t', tab_sub) if tab_sub
           result << value
         end
       }.join(',')

@@ -9,7 +9,9 @@ module Robe
     module Tasks
       module Logger
 
-        module_function
+        # module_function privatises methods
+        # when modules/classes include/extend
+        extend self
 
         IGNORE = %w(ping)
 

@@ -335,13 +335,13 @@ module Robe; module DB
         raise DBError, msg
       else
         # TODO: unwind associations if insert fails
-        result = (ignore_associations ? nil : save_associations).to_promise_on_client
+        result = (ignore_associations ? nil : save_associations).to_promise
         result.to_promise_then do
           self.class.db.insert_one(self.class.collection_name, to_db_hash)
         end.to_promise_then do
           @from_db = true
           cache.insert(self) if cache # no filter
-          self.to_promise_on_client
+          self.to_promise
         end
       end
     end
@@ -362,7 +362,7 @@ module Robe; module DB
             self.class.db.update_document_by_id(self.class.collection_name, to_db_hash)
           end.to_promise_then do
             cache.update(self) if cache
-            self.to_promise_on_client
+            self.to_promise
           end
         else
           msg = "#{__FILE__}[#{__LINE__}] : #{model.class} : expected model from db to have id set - cannot update"
@@ -385,7 +385,7 @@ module Robe; module DB
         end
       end
       results.to_promise_when_on_client.to_promise_then do
-        self.to_promise_on_client
+        self.to_promise
       end
     end
 

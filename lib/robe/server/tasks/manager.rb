@@ -26,7 +26,7 @@ module Robe
         def initialize
           @logger = Robe::Server::Tasks::Logger
           @registry = Robe.task_registry
-          init_sockets
+          init_sockets_channel
           init_threads
         end
 
@@ -48,7 +48,7 @@ module Robe
           Robe.sockets
         end
 
-        def init_sockets
+        def init_sockets_channel
           # trace __FILE__, __LINE__, self, __method__
           sockets.on_channel(task_channel, :request) do |client:, content:|
             # trace __FILE__, __LINE__, self, __method__, " : client:#{client}, content: #{content}"
@@ -80,27 +80,32 @@ module Robe
               name: request[:task],
               args: request[:args],
               id: request[:id],
-              meta_data: request[:meta_data],
+              user: request[:user],
               # session: session
             )
           }
           if @thread_pool
-            @thread_pool.post(&task)
+            @thread_pool.post do
+              ::Thread.abort_on_exception = true # may have no effect
+              task.call
+            end
           else
             task.call
           end
-        rescue Exception => e
-          msg = "#{__FILE__}[#{__LINE__}] : #{e}"
-          Robe.logger.error(msg)
-          raise e
+        # rescue Exception => e
+        #   msg = "#{__FILE__}[#{__LINE__}] : #{e}"
+        #   Robe.logger.error(msg)
+        #   raise e
         end
 
         # Perform the task, running inside of a worker thread.
-        def perform_task(client:, name:, args:, id:, meta_data:)
-          # trace __FILE__, __LINE__, self, __method__, "(client: #{client}, name: #{name}, args: #{args}, id: #{id}, meta_data: #{meta_data})"
+        # user should be a hash with :id and :signature where
+        # signature is a signed user user id
+        def perform_task(client:, name:, args:, id:, user:)
+          # trace __FILE__, __LINE__, self, __method__, "(client: #{client}, name: #{name}, args: #{args}, id: #{id}, user: #{user})"
           logger.performing(name, args) if Robe.config.log_tasks?
           start_time = Time.now.to_f
-          resolve_task(name, args, meta_data).then do |result, meta_data|
+          resolve_task(name, args, user).then do |result, meta_data|
             send_response(client: client, task: name, id: id, result: result, error: nil, meta_data: meta_data)
             run_time = ((Time.now.to_f - start_time) * 1000).round(3)
             logger.performed(name, run_time, args) if Robe.config.log_tasks?
@@ -119,38 +124,36 @@ module Robe
         end
 
         # Returns a promise.
-        def resolve_task(task_name, args, meta_data)
+        def resolve_task(task_name, args, user)
           # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} args=#{args} meta_data=#{meta_data}"
           task = registry[task_name.to_sym]
           # trace __FILE__, __LINE__, self, __method__, " : #{task_name} => #{task}"
           if task
             args = args.dup.symbolize_keys
             block = task[:block]
-            meta_data = meta_data.to_h
-            user = meta_data['user'].to_h
-            user_id = user['id']
             if task[:auth]
               error_stub = "Unauthorized #{task_name} request"
-              return "#{error_stub}: missing user data.".to_promise_error if user.empty?
-              return "#{error_stub}: missing user id.".to_promise_error unless user_id
-              user_signature = user['signature']
-              return "#{error_stub}: missing user signature.".to_promise_error unless user_signature
-              return "#{error_stub}: invalid user signature.".to_promise_error unless Robe.auth.valid_user_signature?(user_id, user_signature)
-              args[:user_id] = user_id
+              return "#{error_stub}: missing user data.".to_promise_error if user.nil? || user.empty?
+              user = user.symbolize_keys
+              user_id = user[:id]
+              return "#{error_stub}: missing user id.".to_promise_error if user_id.nil? || user_id.empty?
+              user_signature = user[:signature]
+              return "#{error_stub}: missing user signature.".to_promise_error if user_signature.nil? || user_signature.empty?
+              is_valid = Robe.auth.valid_user_signature?(user_id, user_signature)
+              return "#{error_stub}: invalid user signature.".to_promise_error unless is_valid
             end
             # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
             Timeout.timeout(@timeout, Robe::TimeoutError) do
-              Robe.thread.user_id = user_id
-              Robe.thread.meta = meta_data
+              trace __FILE__, __LINE__, self, __method__, " : user_signature=#{user_signature}"
+              Robe.auth.thread_user_signature = user_signature if user_signature # this also sets thread's user_id
+              trace __FILE__, __LINE__, self, __method__, " : Robe.auth.thread_user_id=#{Robe.auth.thread_user_id}"
               begin
                 # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{block} with #{args}"
                 result = args.empty? ? block.call : block.call(**args)
                 # trace __FILE__, __LINE__, self, __method__, " : result.class=#{result.class} result=#{result.inspect}"
                 result.to_promise.then do |value|
-                  if task_name.to_sym == :import_xero_customers
-                    trace __FILE__, __LINE__, self, __method__, " : #{task_name} : value.class=#{value.class} value=#{value.inspect}"
-                  end
-                  [value, Robe.thread.meta].to_promise
+                  # trace __FILE__, __LINE__, self, __method__, " : value = #{value}"
+                  value
                 end.fail do |result|
                   trace __FILE__, __LINE__, self, __method__, " : #{task_name} failed : result.class=#{value.class} result=#{result}"
                   result
@@ -158,9 +161,6 @@ module Robe
               rescue Robe::TimeoutError => e
                 msg = "#{__FILE__}[#{__LINE__}] : task `#{task_name}` timed out after #{@timeout} seconds"
                 msg.to_promise_error
-              ensure
-                Robe.thread.user_id = nil
-                Robe.thread.meta = nil
               end
             end
           else

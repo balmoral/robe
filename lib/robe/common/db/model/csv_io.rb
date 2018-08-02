@@ -6,7 +6,10 @@ require 'robe/common/errors'
 module Robe; module DB;
   class Model
 
-    CSV_COMMA_SUB = Robe::Model::CSV_COMMA_SUB
+    CSV_COMMA_SUB = '~%~' # Robe::Model::CSV_COMMA_SUB
+    CSV_NL_SUB = Robe::Model::CSV_NL_SUB
+    CSV_CR_SUB = Robe::Model::CSV_CR_SUB
+    CSV_TAB_SUB = Robe::Model::CSV_TAB_SUB
 
     module CSV_IO_Methods
 
@@ -72,7 +75,7 @@ module Robe; module DB;
           io = StringIO.new
           io << (attrs.join(',') + "\n")
           all.each do |model|
-            line = model.to_csv(attrs: attrs, comma_sub: CSV_COMMA_SUB)  # send(attr).to_s.gsub(',', COMMA_SUB)
+            line = model.to_csv(attrs: attrs, tab_sub: CSV_TAB_SUB, cr_sub: CSV_CR_SUB, nl_sub: CSV_NL_SUB, comma_sub: CSV_COMMA_SUB)  # send(attr).to_s.gsub(',', COMMA_SUB)
             io << (line + "\n")
           end
           io.string.to_promise

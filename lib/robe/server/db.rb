@@ -35,8 +35,7 @@ module Robe
           end
         end
 
-        # Returns result of mongo operation as a hash
-        # in a promise:
+        # Returns result of mongo operation as a hash in a promise:
         # {
         #   success: true or false
         #   data: the result of the operation if success true
@@ -87,6 +86,14 @@ module Robe
           end
         end
 
+        def min_threads
+          [1, config.db_op_min_threads].max
+        end
+
+        def max_threads
+          [1, config.db_op_max_threads].max
+        end
+
         def init_mongo_client
           # trace __FILE__, __LINE__, self, __method__, " : creating mongo client for hosts=#{config.mongo_hosts} database=#{config.mongo_database}"
           @mongo_client = Robe::DB::Mongo::Client.new(
@@ -94,8 +101,8 @@ module Robe
             database: config.mongo_database,
             user: config.mongo_user,
             password: config.mongo_password,
-            min_pool_size: [1, config.db_op_min_threads].max,
-            max_pool_size: [1, config.db_op_max_threads].max
+            min_pool_size: min_threads,
+            max_pool_size: max_threads
           )
           if @mongo_client
             # trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
@@ -121,8 +128,8 @@ module Robe
           # limit threads to mongo connection pool size
           @op_thread_pool = if Robe.config.db_op_max_threads > 0
             Concurrent::CachedThreadPool.new(
-              min_threads: [Robe.config.db_op_min_threads, 1].max,
-              max_threads: Robe.config.db_op_max_threads
+              min_threads: min_threads,
+              max_threads: max_threads
             )
           end
         end

@@ -17,7 +17,7 @@ module Robe
       ARRAY_TYPE      = 3
       HASH_TYPE       = 4
       WRAP_TYPE       = 5 # Robe::Client::Browser::Wrap::Element
-      HOOK_TYPE    = 6
+      HOOK_TYPE       = 6
       TAG_TYPE        = 7
       COMPONENT_TYPE  = 8
 

@@ -474,17 +474,27 @@ class Object
   def to_promise_when
     [self].to_promise_when
   end
-  
-  def to_promise_on_client
-    Robe.client? ? to_promise : self
+
+  if RUBY_PLATFORM == 'opal'
+    def to_promise_on_client
+      to_promise
+    end
+
+    def to_promise_error_on_client
+      to_promise_error
+    end
+  else
+    def to_promise_on_client
+      self
+    end
+
+    def to_promise_error_on_client
+      Robe.client? ? to_promise_error : self
+    end
   end
 
   def to_promise_error
     Robe::Promise.error(self)
-  end
-
-  def to_promise_error_on_client
-    Robe.client? ? to_promise_error : self
   end
 
   def promise_or_not(&block)
