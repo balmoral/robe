@@ -471,7 +471,7 @@ module Robe
 
     alias_method :to_hash, :to_h
 
-    def to_json
+    def to_json(*_args) # ignore any args
       {}.tap { |h|
         to_h_without_circulars.each do |attr, value|
           h[attr] = __attr_write_value(attr, value)

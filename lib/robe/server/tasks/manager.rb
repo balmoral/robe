@@ -110,7 +110,7 @@ module Robe
             run_time = ((Time.now.to_f - start_time) * 1000).round(3)
             logger.performed(name, run_time, args) if Robe.config.log_tasks?
           end.fail do |error|
-            logger.failed(name, args, metadata)
+            logger.failed(name, args, error)
             begin
               # trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, id: #{id}, error: #{error})"
               send_response(client: client, task: name, id: id, error: error)
@@ -144,9 +144,9 @@ module Robe
             end
             # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
             Timeout.timeout(@timeout, Robe::TimeoutError) do
-              trace __FILE__, __LINE__, self, __method__, " : user_signature=#{user_signature}"
+              # trace __FILE__, __LINE__, self, __method__, " : user_signature=#{user_signature}"
               Robe.auth.thread_user_signature = user_signature if user_signature # this also sets thread's user_id
-              trace __FILE__, __LINE__, self, __method__, " : Robe.auth.thread_user_id=#{Robe.auth.thread_user_id}"
+              # trace __FILE__, __LINE__, self, __method__, " : Robe.auth.thread_user_id=#{Robe.auth.thread_user_id}"
               begin
                 # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{block} with #{args}"
                 result = args.empty? ? block.call : block.call(**args)
@@ -155,7 +155,7 @@ module Robe
                   # trace __FILE__, __LINE__, self, __method__, " : value = #{value}"
                   value
                 end.fail do |result|
-                  trace __FILE__, __LINE__, self, __method__, " : #{task_name} failed : result.class=#{value.class} result=#{result}"
+                  trace __FILE__, __LINE__, self, __method__, " : #{task_name} failed : result.class=#{result.class} result=#{result}"
                   result
                 end
               rescue Robe::TimeoutError => e
