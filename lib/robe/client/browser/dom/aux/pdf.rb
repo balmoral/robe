@@ -3,6 +3,7 @@
   =========================
 
   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications#Example_Using_object_URLs_to_display_images
+  https://developer.mozilla.org/en-US/docs/Web/Guide/Printing
 
   EXAMPLE: Using object URLs to display PDF
   -----------------------------------------
@@ -69,6 +70,34 @@ module Robe; module Client; module Browser; module DOM
         `window.URL.revokeObjectURL(#{@url})`
         @url = nil
       end
+    end
+
+    # ref: https://developer.mozilla.org/en-US/docs/Web/Guide/Printing
+    def print
+      url = self.url
+      %x{
+      
+        function closePrint () {
+          document.body.remove_child(tihs.__container__)
+        }
+
+        function setPrint () {
+          this.contentWindow.__container__ = this;
+          this.contentWindow.onbeforeunload = closePrint;
+          this.contentWindow.onafterprint = closePrint;
+          this.contentWindow.focus(); // Required for IE
+          this.contentWindow.print();
+        }
+
+        var oHiddFrame = document.createElement("iframe");
+        oHiddFrame.onload = setPrint;
+        oHiddFrame.style.visibility = "hidden";
+        oHiddFrame.style.position = "fixed";
+        oHiddFrame.style.right = "0";
+        oHiddFrame.style.bottom = "0";
+        oHiddFrame.src = url;
+        document.body.appendChild(oHiddFrame);
+      }
     end
 
     module Tag
