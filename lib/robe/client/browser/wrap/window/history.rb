@@ -1,80 +1,85 @@
-module Robe; module Client; module Browser; module Wrap
-  module Window
-    # {History} allows manipulation of the session history.
-    #
-    # @see https://developer.mozilla.org/en-US/docs/Web/API/History
-    class History
-      # Check if HTML5 history is supported.
-      def self.supported?
-        Browser.supports? 'History'
-      end
+# {History} allows manipulation of the session history.
+# @see https://developer.mozilla.org/en-US/docs/Web/API/History
+module Robe
+  module Client
+    module Browser
+      module Wrap
+        module Window
+          class History
 
-      include Native
+            # Check if HTML5 history is supported.
+            def self.supported?
+              Browser.supports? 'History'
+            end
 
-      # @!attribute [r] length
-      # @return [Integer] how many items are in the history
-      alias_native :length
+            include Native
 
-      # Go back in the history.
-      #
-      # @param number [Integer] how many items to go back
-      def back(number = 1)
-        `#@native.go(-number)`
-      end
+            # @!attribute [r] length
+            # @return [Integer] how many items are in the history
+            alias_native :length
 
-      # Go forward in the history.
-      #
-      # @param number [Integer] how many items to go forward
-      def forward(number = 1)
-        `#@native.go(number)`
-      end
+            # Go back in the history.
+            #
+            # @param number [Integer] how many items to go back
+            def back(number = 1)
+              `#@native.go(-number)`
+            end
 
-      # Push an item in the history.
-      #
-      # @param item [String] the item to push in the history
-      # @param data [Object] additional state to push
-      def push(item, data = nil)
-        data = `null` if data.nil?
-        `#@native.pushState(data, null, item)`
-      end
+            # Go forward in the history.
+            #
+            # @param number [Integer] how many items to go forward
+            def forward(number = 1)
+              `#@native.go(number)`
+            end
 
-      # Replace the current history item with another.
-      #
-      # @param item [String] the item to replace with
-      # @param data [Object] additional state to replace
-      def replace(item, data = nil)
-        data = `null` if data.nil?
+            # Push an item in the history.
+            #
+            # @param item [String] the item to push in the history
+            # @param data [Object] additional state to push
+            def push(item, data = nil)
+              data = `null` if data.nil?
+              `#@native.pushState(data, null, item)`
+            end
 
-        `#@native.replaceState(data, null, item)`
-      end
+            # Replace the current history item with another.
+            #
+            # @param item [String] the item to replace with
+            # @param data [Object] additional state to replace
+            def replace(item, data = nil)
+              data = `null` if data.nil?
+              `#@native.replaceState(data, null, item)`
+            end
 
-      # @!attribute [r] current
-      # @return [String] the current item
-      def current
-        $window.location.path
-      end
+            # @!attribute [r] current
+            # @return [String] the current item
+            def current
+              $window.location.path
+            end
 
-      # @!attribute [r] state
-      # @return [Object] the current state
-      if Browser.supports? 'History.state'
-        def state
-          %x{
-            var state = #@native.state;
+            # @!attribute [r] state
+            # @return [Object] the current state
+            if Browser.supports? 'History.state'
+              def state
+                %x{
+                  var state = #@native.state;
 
-            if (state == null) {
-              return nil;
-            }
-            else {
-              return state;
-            }
-          }
-        end
-      else
-        def state
-          raise NotImplementedError, 'history state unsupported'
+                  if (state == null) {
+                    return nil;
+                  }
+                  else {
+                    return state;
+                  }
+                }
+              end
+            else
+              def state
+                raise NotImplementedError, 'history state unsupported'
+              end
+            end
+
+          end
         end
       end
     end
-
   end
-end end end end
+end

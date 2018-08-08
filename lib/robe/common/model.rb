@@ -17,9 +17,9 @@ module Robe
   class Model
 
     CSV_COMMA_SUB = '~COMMA~' # to substitute for commas in string values
-    CSV_TAB_SUB = '~TAB~' # to substitute for tabs in string values
-    CSV_NL_SUB = '~NL~' # to substitute for new lines in string values
-    CSV_CR_SUB = '~CR~' # to substitute for carriage returns in string values
+    CSV_TAB_SUB   = '~TAB~' # to substitute for tabs in string values
+    CSV_NL_SUB    = '~NL~' # to substitute for new lines in string values
+    CSV_CR_SUB    = '~CR~' # to substitute for carriage returns in string values
 
     ATTR_SPEC_SINGLE_TYPE = 0
     ATTR_SPEC_MULTI_TYPE  = 1

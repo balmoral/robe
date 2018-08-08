@@ -1,11 +1,9 @@
 require 'robe/common/util/inflector'
 
 class Object
-
   def to_html
     to_s
   end
-
 end
 
 class Numeric

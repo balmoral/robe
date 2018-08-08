@@ -4,8 +4,8 @@ require 'robe/common/promise'
 # NB ******
 # to be included in either Robe::Client::DB or Robe::Server::DB
 # to support isomorphic DB interface
-module Robe; module Shared
-  class DB
+module Robe
+  module DB
     module Ops
 
       ID = '_id'
@@ -201,6 +201,7 @@ module Robe; module Shared
       def self.included(base)
          base.extend(ClassMethods)
       end
+
     end
   end
-end end
+end

@@ -9,7 +9,7 @@ require 'concurrent'
 module Robe
   module Server
     class DB
-      include Robe::Shared::DB::Ops
+      include Robe::DB::Ops
 
       class << self
 

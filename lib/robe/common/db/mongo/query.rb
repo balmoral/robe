@@ -69,113 +69,112 @@
 # _and( _eq(:name, 'Fred'), _eq(:dob, '19991231'))
 # => {"$and"=>[{"name"=>{"$eq"=>"Fred"}}, {"dob"=>{"$eq"=>"19991231"}}]}
 
-module Robe; module Mongo
-  module Query
-    module_function
+module Robe
+  module Mongo
+    module Query
+      module_function
 
-    OPS = {
-      comparison: {
-        unary: {
-          :_eq      => '$eq',
-          :_ne      => '$ne',
-          :_gt      => '$gt',
-          :_gte     => '$gte',
-          :_lt      => '$lt',
-          :_lte     => '$lte'
-        },
-        n_ary: {
-          :_in      => '$in',
-          :_nin     => '$nin'
-        }
-      },
-      logical: {
-        unary: {
-          :_not     => '$not',
-        },
-        n_ary: {
-          :_and     => '$and',
-          :_or      => '$or',
-          :_nor     => '$nor'
-        }
-      },
-      regex: {
-        :_regex => '$regex'
-      }
-    }
-
-    OPS[:comparison][:unary].each do |op, op_s|
-      define_method op do | **kwargs |
-        unless kwargs.size > 0
-          raise ArgumentError, "#{op} requires at least one keyword argument"
-        end
-        result = kwargs.map do |field, value|
-          unless value.respond_to?(:to_s)
-            raise ArgumentError, "#{op} requires operand which responds to #to_s"
-          end
-          { field.to_s => { [op_s] => value.to_s } }
-        end
-        result.size == 1 ? result.first : _and(*result)
-      end
-    end
-
-    OPS[:logical][:unary].each do |op, op_s|
-      define_method op do |*hashables|
-        unless args.size > 0
-          raise ArgumentError, "#{op} requires at least one argument"
-        end
-        hashables = args.map { |hashable|
-          unless hashable.respond_to?(:to_h)
-            raise ArgumentError, "#{op} requires operand which responds to #to_h"
-          end
-          { op_s => hashable.to_h }
-        }
-        hashables.size == 1 ? hashables.first : _and(*hashables)
-      end
-    end
-
-    OPS[:comparison][:n_ary].each do |op, op_s|
-      define_method op do |**kwargs|
-        unless kwargs.size > 0
-          raise ArgumentError, "#{op} requires at least one keyword argument"
-        end
-        result = kwargs.map do |field, values|
-          values = [values] unless values.is_a?(Array)
-          values = values.map { |value|
-            unless value.respond_to?(:to_s)
-              raise ArgumentError, "#{op} requires operands which responds to #to_s"
-            end
-            value.to_s
+      OPS = {
+        comparison: {
+          unary: {
+            :_eq      => '$eq',
+            :_ne      => '$ne',
+            :_gt      => '$gt',
+            :_gte     => '$gte',
+            :_lt      => '$lt',
+            :_lte     => '$lte'
+          },
+          n_ary: {
+            :_in      => '$in',
+            :_nin     => '$nin'
           }
-          { field.to_s => { [op_s] => values } }
-        end
-        result.size == 1 ? result.first : _and(*result)
-      end
-    end
-
-    OPS[:logical][:n_ary].each do |op, op_s|
-      define_method op do |*hashables|
-        unless args.size > 0
-          raise ArgumentError, "#{op} requires at least one argument"
-        end
-         hashables = hashables.map { |hashable|
-          unless hashable.respond_to?(:to_h)
-            raise ArgumentError, "#{op} requires operands which responds to #to_h"
-          end
-          hashable.to_h
+        },
+        logical: {
+          unary: {
+            :_not     => '$not',
+          },
+          n_ary: {
+            :_and     => '$and',
+            :_or      => '$or',
+            :_nor     => '$nor'
+          }
+        },
+        regex: {
+          :_regex => '$regex'
         }
-        { op_s => hashables }
+      }
+
+      OPS[:comparison][:unary].each do |op, op_s|
+        define_method op do | **kwargs |
+          unless kwargs.size > 0
+            raise ArgumentError, "#{op} requires at least one keyword argument"
+          end
+          result = kwargs.map do |field, value|
+            unless value.respond_to?(:to_s)
+              raise ArgumentError, "#{op} requires operand which responds to #to_s"
+            end
+            { field.to_s => { [op_s] => value.to_s } }
+          end
+          result.size == 1 ? result.first : _and(*result)
+        end
       end
-    end
 
-    # REGEX EXPRESSION
-    def _regex(field, pattern, options = nil)
-      r = { '$regex' => pattern.to_s }
-      r['$options'] = options.to_s if options
-      { field.to_s =>  r }
-    end
+      OPS[:logical][:unary].each do |op, op_s|
+        define_method op do |*hashables|
+          unless args.size > 0
+            raise ArgumentError, "#{op} requires at least one argument"
+          end
+          hashables = args.map { |hashable|
+            unless hashable.respond_to?(:to_h)
+              raise ArgumentError, "#{op} requires operand which responds to #to_h"
+            end
+            { op_s => hashable.to_h }
+          }
+          hashables.size == 1 ? hashables.first : _and(*hashables)
+        end
+      end
 
+      OPS[:comparison][:n_ary].each do |op, op_s|
+        define_method op do |**kwargs|
+          unless kwargs.size > 0
+            raise ArgumentError, "#{op} requires at least one keyword argument"
+          end
+          result = kwargs.map do |field, values|
+            values = [values] unless values.is_a?(Array)
+            values = values.map { |value|
+              unless value.respond_to?(:to_s)
+                raise ArgumentError, "#{op} requires operands which responds to #to_s"
+              end
+              value.to_s
+            }
+            { field.to_s => { [op_s] => values } }
+          end
+          result.size == 1 ? result.first : _and(*result)
+        end
+      end
+
+      OPS[:logical][:n_ary].each do |op, op_s|
+        define_method op do |*hashables|
+          unless args.size > 0
+            raise ArgumentError, "#{op} requires at least one argument"
+          end
+           hashables = hashables.map { |hashable|
+            unless hashable.respond_to?(:to_h)
+              raise ArgumentError, "#{op} requires operands which responds to #to_h"
+            end
+            hashable.to_h
+          }
+          { op_s => hashables }
+        end
+      end
+
+      # REGEX EXPRESSION
+      def _regex(field, pattern, options = nil)
+        r = { '$regex' => pattern.to_s }
+        r['$options'] = options.to_s if options
+        { field.to_s =>  r }
+      end
+
+    end
   end
-end end
-
-
-
+end

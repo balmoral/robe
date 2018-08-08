@@ -1,8 +1,3 @@
-
-# define stub for sake of Robe::Client::Browser::DOM::Link
-module Robe; module Client; module Browser; module DOM; class Component
-end end end end end
-
 require 'robe/common/trace'
 require 'robe/common/state'
 
@@ -79,83 +74,89 @@ require 'robe/common/state'
 #
 
 
-module Robe; module Client; module Browser; module DOM
-  class Component
-    include Robe::Client::Browser
-    include Robe::Client::Browser::DOM
-    include Robe::Client::Browser::DOM::HTML::Colors
-    
-    def initialize
-    end
+module Robe
+  module Client
+    module Browser
+      module DOM
+        class Component
+          include Robe::Client::Browser
+          include Robe::Client::Browser::DOM
+          include Robe::Client::Browser::DOM::HTML::Colors
 
-    # Returns the root Browser::DOM::Element
-    def root
-      unless @root
-        # trace __FILE__, __LINE__, self, __method__
-        @root = render
-        if @root.is_a?(Robe::State::Hook) || @root.is_a?(Enumerable)
-          @root = tag(:div, @root)
+          def initialize
+          end
+
+          # Returns the root Browser::DOM::Element
+          def root
+            unless @root
+              # trace __FILE__, __LINE__, self, __method__
+              @root = render
+              if @root.is_a?(Robe::State::Hook) || @root.is_a?(Enumerable)
+                @root = tag(:div, @root)
+              end
+              @root = sanitize_content(@root)
+            end
+            @root
+          end
+
+          def clear
+            @root = DOM.clear(@root)
+          end
+
+          # Returns a Browser::DOM::Element.
+          # Default render method for stubbing.
+          # Subclasses should override.
+          def render
+            div[]
+          end
+
+          # Appends rendered component to the document body
+          # when document is ready.
+          def append_to_body
+            document.ready do
+              document.body << root.to_n
+            end
+          end
+
+          def dom
+            Robe.dom
+          end
+
+          def document
+            Robe.document
+          end
+
+          def window
+            Robe.window
+          end
+
+          def body
+            document.body
+          end
+
+          # will be nil if DOM used without Client::App
+          def app
+            Robe.app
+          end
+
+          # may be nil if DOM used without Client::App
+          def router
+            app.router if app
+          end
+
+          # will be nil if DOM used without Client::App
+          def route
+            router.route if router
+          end
+
+          # will be nil if DOM used without Client::App
+          def params
+            route.params if route
+          end
+
         end
-        @root = sanitize_content(@root)
-      end
-      @root
-    end
-
-    def clear
-      @root = DOM.clear(@root)
-    end
-
-    # Returns a Browser::DOM::Element.
-    # Default render method for stubbing.
-    # Subclasses should override.
-    def render
-      div[]
-    end
-
-    # Appends rendered component to the document body
-    # when document is ready. 
-    def append_to_body
-      document.ready do
-        document.body << root.to_n
       end
     end
-
-    def dom
-      Robe.dom
-    end
-
-    def document
-      Robe.document
-    end
-
-    def window
-      Robe.window
-    end
-
-    def body
-      document.body
-    end
-
-    # will be nil if DOM used without Client::App
-    def app
-      Robe.app
-    end
-
-    # may be nil if DOM used without Client::App
-    def router
-      app.router if app
-    end
-
-    # will be nil if DOM used without Client::App
-    def route
-      router.route if router
-    end
-
-    # will be nil if DOM used without Client::App
-    def params
-      route.params if route
-    end
-
   end
-end end end end
+end
 

@@ -7,15 +7,6 @@ module Robe
     UUID_VERSION = 4
     UUID_VERSION_HEX = '%02x' % UUID_VERSION
 
-    def on_promise(promise, &block)
-      promise.then do |response|
-        block.call(response)
-      end.fail do |error|
-        trace __FILE__, __LINE__, self, __method__, "promise failed => #{error}"
-        # app.errors << error
-      end
-    end
-
     # Returns a v4 random UUID (Universally Unique Identifier)
     # which is purely random - no time, MAC address implied -
     # expect for the version.
@@ -25,8 +16,7 @@ module Robe
       "#{hex_id(4)}-#{hex_id(2)}-#{UUID_VERSION_HEX}#{hex_id(1)}-#{hex_id(2)}-#{hex_id(6)}"
     end
 
-    # Returns a (probably) unique element id
-    # composed of hexadecimal digits.
+    # Returns a (probably) unique element id composed of hexadecimal digits.
     # The argument `n` specifies the number of 2-character hex values,
     # so the length of the string returned is 2 * n.
     # If `n` is not specified it will default to 16.
@@ -61,14 +51,12 @@ module Robe
     def arrify(*args)
       result = []
       args.each do |arg|
-        if arg
-          if arg.is_a?(Enumerable) && !arg.is_a?(Hash)
-            arg.each do |e|
-              result << e unless arg.nil?
-            end
-          else
-            result << arg unless arg.nil?
+        if arg.is_a?(Enumerable) && !arg.is_a?(Hash)
+          arrify(arg).each do |e|
+            result << e
           end
+        else
+          result << arg unless arg.nil?
         end
       end
       result

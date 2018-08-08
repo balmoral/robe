@@ -44,74 +44,84 @@
 
 require 'robe/client/browser/dom/aux/tag'
 
-module Robe; module Client; module Browser; module DOM
-  class PDF
-
-    # bytes be either:
-    # - a string of space separated byte values
-    # - an array of integers
-    def initialize(bytes)
-      bytes = bytes.is_a?(String) ? bytes.split(' ').map(&:to_i) : bytes.to_a
-      @bytes = `new Uint8Array(bytes)` # don't use Uint8Array.from - fails in Safari
-    end
-
-    def blob
-      @blob ||= `new Blob([#{@bytes}], { type:'application/pdf' })`
-    end
-
-    def url
-      @url ||= `window.URL.createObjectURL(#{blob})`
-      trace __FILE__, __LINE__, self, __method__, " @url = #{@url}"
-      @url
-    end
-
-    def revoke_url
-      if @url
-        `window.URL.revokeObjectURL(#{@url})`
-        @url = nil
-      end
-    end
-
-    # ref: https://developer.mozilla.org/en-US/docs/Web/Guide/Printing
-    def print
-      url = self.url
-      %x{
+module Robe
+  module Client
+    module Browser
+      module DOM
+        class PDF
       
-        function closePrint () {
-          document.body.remove_child(tihs.__container__)
-        }
+          # bytes should be either:
+          # - a string of space separated byte values
+          # - an array of integers
+          def initialize(bytes)
+            bytes = bytes.is_a?(String) ? bytes.split(' ').map(&:to_i) : bytes.to_a
+            # don't use Uint8Array.from - fails in Safari
+            @bytes = `new Uint8Array(bytes)`
+          end
+      
+          def blob
+            @blob ||= `new Blob([#{@bytes}], { type:'application/pdf' })`
+          end
+      
+          def url
+            @url ||= `window.URL.createObjectURL(#{blob})`
+          end
+      
+          def revoke_url
+            if @url
+              `window.URL.revokeObjectURL(#{@url})`
+              @url = nil
+            end
+          end
 
-        function setPrint () {
-          this.contentWindow.__container__ = this;
-          this.contentWindow.onbeforeunload = closePrint;
-          this.contentWindow.onafterprint = closePrint;
-          this.contentWindow.focus(); // Required for IE
-          this.contentWindow.print();
-        }
+          def open(name: nil)
+            name ||= ''
+            `window.open(#{url}, name)`
+          end
 
-        var oHiddFrame = document.createElement("iframe");
-        oHiddFrame.onload = setPrint;
-        oHiddFrame.style.visibility = "hidden";
-        oHiddFrame.style.position = "fixed";
-        oHiddFrame.style.right = "0";
-        oHiddFrame.style.bottom = "0";
-        oHiddFrame.src = url;
-        document.body.appendChild(oHiddFrame);
-      }
-    end
+          # ref: https://developer.mozilla.org/en-US/docs/Web/Guide/Printing
+          def print
+            url = self.url
+            %x{
+            
+              function closePrint () {
+                document.body.remove_child(tihs.__container__)
+              }
+      
+              function setPrint () {
+                this.contentWindow.__container__ = this;
+                this.contentWindow.onbeforeunload = closePrint;
+                this.contentWindow.onafterprint = closePrint;
+                this.contentWindow.focus(); // Required for IE
+                this.contentWindow.print();
+              }
+      
+              var hFrame = document.createElement("iframe");
+              hFrame.onload = setPrint;
+              hFrame.style.visibility = "hidden";
+              hFrame.style.position = "fixed";
+              hFrame.style.right = "0";
+              hFrame.style.bottom = "0";
+              hFrame.src = url;
+              document.body.appendChild(hFrame);
+            }
+          end
+      
+          module Tag
+            module_function
+      
+            def pdf_anchor(pdf: nil, content: nil, **attributes)
+              tag(:a, **{content: content, href: pdf.url}.merge(attributes))
+            end
+      
+            def pdf_iframe(pdf, **attributes)
+              tag(:iframe, **{src: pdf.url}.merge(attributes))
+            end
 
-    module Tag
-      module_function
-
-      def pdf_anchor(pdf: nil, content: nil, **attributes)
-        tag(:a, **{content: content, href: pdf.url}.merge(attributes))
-      end
-
-      def pdf_iframe(pdf, **attributes)
-        tag(:iframe, **{src: pdf.url}.merge(attributes))
-      end
-
-    end
-  end
-
-end end end end
+          end
+        
+        end
+      end 
+    end 
+  end 
+end

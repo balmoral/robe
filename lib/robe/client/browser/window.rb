@@ -5,7 +5,6 @@ module Robe
   module Client
     module Browser
       module Window
-
         module_function
 
         def wrap

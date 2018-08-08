@@ -4,10 +4,10 @@ module Robe
     # when modules/classes include/extend
     extend self
 
-    SIGNATURE_HOOK = '|:|'
+    SIGNATURE_HOOK            = '|:|'
 
-    SIGN_IN_SUCCESS = 'success'
-    SIGN_IN_INVALID_USER = 'invalid user'
-    SIGN_IN_INVALID_PASSWORD = 'invalid password'
+    SIGN_IN_SUCCESS           = 'success'
+    SIGN_IN_INVALID_USER      = 'invalid user'
+    SIGN_IN_INVALID_PASSWORD  = 'invalid password'
   end
 end

@@ -2,9 +2,9 @@ require 'opal'
 # require 'opal-browser' # sets up paths/gems for Opal builder
 
 # setup Opal load paths for client
-%w(lib).each do |dir|
+%w[lib].each do |dir|
   path = File.expand_path(File.join('..', '..', '..', dir), __FILE__).untaint
-  puts "#{__FILE__}[#{__LINE__}] : Opal.append_path #{path}"
+  # puts "#{__FILE__}[#{__LINE__}] : Opal.append_path #{path}"
   Opal.append_path path
 end
 

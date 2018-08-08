@@ -1,29 +1,39 @@
-module Robe; module Client; module Browser; module Wrap
-  module HTTP
-    class Response
-      def initialize(xhr)
-        @xhr = xhr
-      end
+module Robe
+  module Client
+    module Browser
+      module Wrap
+        module HTTP
+          class Response
 
-      def code
-        `#@xhr.status`
-      end
+            def initialize(xhr)
+              @xhr = xhr
+            end
 
-      def body
-        `#@xhr.response`
-      end
+            def code
+              `#@xhr.status`
+            end
 
-      def json
-        @json ||= JSON.parse(body) if `#{body} !== undefined`
-      end
+            def body
+              `#@xhr.response`
+            end
 
-      def success?
-        (200...400).cover? code
-      end
+            def json
+              if `#{body} !== undefined`
+                @json ||= JSON.parse(body)
+              end
+            end
 
-      def fail?
-        !success?
+            def success?
+              (200...400).cover?(code)
+            end
+
+            def fail?
+              !success?
+            end
+
+          end
+        end
       end
     end
   end
-end end end end
+end

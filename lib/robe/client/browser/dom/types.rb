@@ -9,25 +9,27 @@ require 'robe/client/browser/dom/aux/link'
 require 'robe/client/browser/dom/aux/pdf'
 
 module Robe
-  module Client; module Browser
-    module DOM
-      DEFAULT_TYPE    = 0
-      NIL_TYPE        = 1
-      STRING_TYPE     = 2 # also for Symbol
-      ARRAY_TYPE      = 3
-      HASH_TYPE       = 4
-      WRAP_TYPE       = 5 # Robe::Client::Browser::Wrap::Element
-      HOOK_TYPE       = 6
-      TAG_TYPE        = 7
-      COMPONENT_TYPE  = 8
+  module Client
+    module Browser
+      module DOM
+        DEFAULT_TYPE    = 0
+        NIL_TYPE        = 1
+        STRING_TYPE     = 2 # also for Symbol
+        ARRAY_TYPE      = 3
+        HASH_TYPE       = 4
+        WRAP_TYPE       = 5 # Robe::Client::Browser::Wrap::Element
+        HOOK_TYPE       = 6
+        TAG_TYPE        = 7
+        COMPONENT_TYPE  = 8
 
-      HOOK_CLASS      = Robe::State::Hook
-      ELEMENT_CLASS   = Robe::Client::Browser::Wrap::Element
-      TAG_CLASS       = Robe::Client::Browser::DOM::Tag
-      LINK_CLASS      = Robe::Client::Browser::DOM::Link
-      HTML_TAGS       = Robe::Client::Browser::DOM::HTML::TAGS + ['link']
+        HOOK_CLASS      = Robe::State::Hook
+        ELEMENT_CLASS   = Robe::Client::Browser::Wrap::Element
+        TAG_CLASS       = Robe::Client::Browser::DOM::Tag
+        LINK_CLASS      = Robe::Client::Browser::DOM::Link
+        HTML_TAGS       = Robe::Client::Browser::DOM::HTML::TAGS + ['link']
+      end
     end
-  end end
+  end
 
   module_function
 
@@ -36,6 +38,7 @@ module Robe
   def dom
     @dom
   end
+
 end
 
 # Some kludgy but effective monkey patching
@@ -88,29 +91,44 @@ class Hash
   end
 end
 
-module Robe; module Client; module Browser; module Wrap; class Element
-  def robe_dom_type
-    Robe.dom::WRAP_TYPE
-  end
-end end end end end
+module Robe
 
-module Robe; module State; class Hook
-  def robe_dom_type
-    Robe.dom::HOOK_TYPE
+  module State
+    class Hook
+      def robe_dom_type
+        Robe.dom::HOOK_TYPE
+      end
+    end
   end
-end end end
 
-module Robe; module Client; module Browser; module DOM; class Tag
-  def robe_dom_type
-    Robe.dom::TAG_TYPE
-  end
-end end end end end
+  module Client
+    module Browser
 
-module Robe; module Client; module Browser; module DOM; class Component
-  def robe_dom_type
-    Robe.dom::COMPONENT_TYPE
+      module Wrap
+        class Element
+          def robe_dom_type
+            Robe.dom::WRAP_TYPE
+          end
+        end
+      end
+
+      module DOM
+        class Tag
+          def robe_dom_type
+            Robe.dom::TAG_TYPE
+          end
+        end
+
+        class Component
+          def robe_dom_type
+            Robe.dom::COMPONENT_TYPE
+          end
+        end
+      end
+
+    end
   end
-end end end end end
+end
 
 
 
