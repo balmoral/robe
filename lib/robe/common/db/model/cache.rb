@@ -30,13 +30,19 @@ module Robe
 
         def initialize(*classes_and_filters)
           # trace __FILE__, __LINE__, self, __method__, " : classes_and_filters=#{classes_and_filters}"
+          @loaded = false
           init_vars
           init_scope(*classes_and_filters)
           init_methods
         end
 
+        def loaded?
+          @loaded
+        end
+
         # Returns promise with self as value when all scoped classes loaded.
         def load
+          @loaded = false
           init_vars{}
           promises = {}
           # trace __FILE__, __LINE__, self, __method__
@@ -65,6 +71,7 @@ module Robe
               end
               model_class.cache = self # from now on we want the class to go through self
             end
+            @loaded = true
             self
           end.fail do |error|
             trace __FILE__, __LINE__, self, __method__, " : ERROR : #{error}"

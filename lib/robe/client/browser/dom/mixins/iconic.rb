@@ -42,23 +42,22 @@ module Robe
               image = image_tag(attributes)
             else
               css = iconify(icon_type)
-              if attributes[:style]
-                # arg style overrides any defaults
-                style = style.merge(attributes[:style])
+              if (arg_css = attributes.delete(:css) || attributes.delete(:class))
+                css = css + ' ' + arg_css
               end
-              if attributes[:class]
-                css = css + ' ' + attributes[:css]
+              if (arg_style = attributes[:style])
+                # arg style overrides any defaults
+                style = style.merge(arg_style)
               end
             end
             params = attributes.merge(
               css: css,
               style: style,
-              # data: { toggle: 'tooltip' },
               on: (attributes[:on] || {}).merge(callback ? { click: callback } : {}),
               content: image
             )
             # trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
-            icon = tag(:span, params)
+            icon = tag(:span, **params)
             if tooltip
               if tooltip.is_a?(String)
                 tooltip = {
@@ -236,8 +235,15 @@ module Robe
           # 3. menu_right: set true if right of menu should go under icon
           # 4. icon_attributes: any attributes for icon
           def drop_down_icon(icon: 'menu-hamburger', items: [], menu_right: false, icon_attributes: nil, menu_attributes: nil)
-            ul_params = { css: "dropdown-menu#{menu_right ? ' dropdown-menu-right' : ''}" }
-            ul_params = merge_attributes(ul_params, menu_attributes) if menu_attributes
+            ul_params = {
+              css: "dropdown-menu#{menu_right ? ' dropdown-menu-right' : ''}"
+            }
+            if menu_attributes
+              if (menu_css = menu_attributes.delete(:css) || menu_attributes.delete(:class))
+                ul_params[:css] = ul_params[:css] + ' ' + menu_css
+              end
+              ul_params = merge_attributes(ul_params, menu_attributes)
+            end
             ul_params[:content] = items.map { |item|
               content = item[:content]
               if content.to_s == 'divider' || content == 'separator'
@@ -386,13 +392,14 @@ module Robe
           #    e.g. { callback: ->{}, href: '#', content: 'list item'}
           # 3. content: of the div (apart from the icon)
           # 4. pull: which side of div to pull the icon, 'right' or 'left'
-          def div_with_dropdown_icon(icon: 'menu-hamburger', items: [], attributes: nil, content: nil, pull: 'right', menu_attributes: nil)
+          def div_with_dropdown_icon(icon: 'menu-hamburger', items: [], attributes: nil, content: nil, pull: 'right', icon_attributes: nil, menu_attributes: nil)
             content = arrify(
               span(
                 drop_down_icon(
                   icon: icon,
                   items: items,
                   menu_right: pull.to_s == 'right',
+                  icon_attributes: icon_attributes,
                   menu_attributes: menu_attributes
                 )
               )
