@@ -61,7 +61,7 @@ module Robe
               on: (attributes[:on] || {}).merge(callback ? { click: callback } : {}),
               content: image
             )
-            trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
+            # trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
             icon = tag(:span, **params)
             if tooltip
               if tooltip.is_a?(String)
