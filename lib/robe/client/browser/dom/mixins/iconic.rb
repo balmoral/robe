@@ -355,33 +355,44 @@ module Robe
             end
           end
 
-          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left')
-            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, pull: pull)
+          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_color: nil)
+            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_color: icon_color)
           end
 
-          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left')
-            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, pull: pull)
+          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_color: nil)
+            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_color: icon_color)
           end
 
           # which can be :collapse or :menu (or string equivalents)
-          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, pull: 'left')
+          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, pull: nil, tooltip: nil, icon_color: nil)
             up = up && !down
-            pull = pull.to_s
+            pull = pull ? pull.to_s : 'left'
             left = pull == 'left'
             icon_attributes = {
-              on: { click: callback},
               css: "glyphicon glyphicon-#{which}-#{up ? 'up' : 'down'} pull-#{pull}",
               style: {
+                color: icon_color ? icon_color.to_s : 'inherit',
+                background_color: 'inherit',
                 font_size: 'smaller',
                 margin_top: '0.2em',
                 margin_left: left ? '0.3em' : '0.5em',
                 margin_right: left ? '0.5em' : '0.3em',
                 vertical_align: 'middle',
-                color: 'inherit',
-                background_color: 'inherit',
+              },
+              on: {
+                click: callback
               }
             }
+            trace __FILE__, __LINE__, self, __method__, " : icon_attributes=#{icon_attributes}"
             icon = tag(:span, **icon_attributes)
+            if tooltip
+              if tooltip.is_a?(String)
+                tooltip = {
+                  animation: true, title: tooltip, placement: 'top', trigger: 'hover focus', delay: { hide: '200' }
+                }
+              end
+              icon.tooltip(tooltip)
+            end
             tag(:div, style: { cursor: 'pointer' }, content: arrify(icon, content))
           end
 
