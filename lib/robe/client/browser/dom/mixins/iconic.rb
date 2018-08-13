@@ -35,7 +35,12 @@ module Robe
           # otherwise attributes should be valid kwargs to tag
           def icon(icon_type, attributes: nil, callback: nil, tooltip: nil, popover: nil)
             attributes ||= {}
-            style = { text_align: 'center', color: 'inherit', background_color: 'inherit', cursor: 'pointer' }
+            style = {
+              text_align: 'center',
+              cursor: 'pointer',
+              # color: 'inherit',
+              # background_color: 'inherit',
+            }
             image, css = nil, ''
             if icon_type.to_s == '#image'
               css = attributes.delete(:css) || attributes.delete(:class) || ''
@@ -56,7 +61,7 @@ module Robe
               on: (attributes[:on] || {}).merge(callback ? { click: callback } : {}),
               content: image
             )
-            # trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
+            trace __FILE__, __LINE__, self, __method__, " : params = #{params}"
             icon = tag(:span, **params)
             if tooltip
               if tooltip.is_a?(String)
@@ -253,7 +258,9 @@ module Robe
               end
             }
             div.css(:dropdown)[
-              div.css('dropdown-toggle').data(toggle: 'dropdown') << icon(icon, attributes: icon_attributes),
+              div.css('dropdown-toggle').data(toggle: 'dropdown')[
+                icon(icon, attributes: icon_attributes)
+              ],
               tag(:ul, **ul_params)
             ]
           end
@@ -355,16 +362,16 @@ module Robe
             end
           end
 
-          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_color: nil)
-            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_color: icon_color)
+          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_size: nil, icon_color: nil)
+            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_size: icon_size, icon_color: icon_color)
           end
 
-          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_color: nil)
-            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_color: icon_color)
+          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_size: nil, icon_color: nil)
+            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_size: icon_size, icon_color: icon_color)
           end
 
           # which can be :collapse or :menu (or string equivalents)
-          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, pull: nil, tooltip: nil, icon_color: nil)
+          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, pull: nil, tooltip: nil, icon_size: nil, icon_color: nil)
             up = up && !down
             pull = pull ? pull.to_s : 'left'
             left = pull == 'left'
@@ -373,7 +380,7 @@ module Robe
               style: {
                 color: icon_color ? icon_color.to_s : 'inherit',
                 background_color: 'inherit',
-                font_size: 'smaller',
+                font_size: icon_size || 'smaller',
                 margin_top: '0.2em',
                 margin_left: left ? '0.3em' : '0.5em',
                 margin_right: left ? '0.5em' : '0.3em',
