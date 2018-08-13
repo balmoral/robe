@@ -383,7 +383,6 @@ module Robe
                 click: callback
               }
             }
-            trace __FILE__, __LINE__, self, __method__, " : icon_attributes=#{icon_attributes}"
             icon = tag(:span, **icon_attributes)
             if tooltip
               if tooltip.is_a?(String)
