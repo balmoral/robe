@@ -377,6 +377,10 @@ module Robe; module Client; module Browser; module Wrap
     end
 
     def check_bootstrap
+      # Bootstrap3
+      # if (typeof($.fn.Tooltip) === 'undefined') {
+      # Bootstrap4
+      # if (typeof(Tooltip) === 'undefined') {
       %x(
         if (typeof($.fn.tooltip) === 'undefined') {
           throw new Error('Bootstrap.js not loaded');

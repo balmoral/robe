@@ -1,6 +1,6 @@
 require 'opal'
-# see http://bootboxjs.com/documentation.html
 
+# see http://bootboxjs.com/documentation.html
 # NB: you need to bring your own `bootbox.js` or `bootbox.min.js` and bootstrap files
 
 module Robe
@@ -32,7 +32,7 @@ module Robe
           # Method executes asynchronously.
           # The result passed to given block is true or false.
           def confirm(*args, &block)
-            `console.log(#{"#{__FILE__}[#{__LINE__}]:#{self.class.name}##{__method__}"})`
+            # `console.log(#{"#{__FILE__}[#{__LINE__}]:#{self.class.name}##{__method__}"})`
             bootbox_call(__method__, *args, &block)
           end
 

@@ -25,7 +25,7 @@ module Opal::Sprockets::Processor
       processed_by_opal = -> asset { (path_extnames[asset.filename] & opal_extnames).any? }
 
       unless processed_by_opal[asset]
-        trace __FILE__, __LINE__, self, __method__, " : input[:name]=#{input[:name]}"
+        # trace __FILE__, __LINE__, self, __method__, " : input[:name]=#{input[:name]}"
         [
           input[:data],
           %{if (typeof(OpalLoaded) === 'undefined') OpalLoaded = []; OpalLoaded.push(#{input[:name].to_json});}
@@ -55,7 +55,7 @@ module Robe
 
         def call(env)
           path = env['PATH_INFO']
-          trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
+          # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
           if %w[/ /index.html].include?(path)
             [200, { 'Content-Type' => 'text/html' }, [index_html]]
           else
@@ -64,7 +64,7 @@ module Robe
           end
         end
 
-        private
+        # private
 
         # from https://github.com/josh/rack-ssl/blob/master/lib/rack/ssl.rb
         def scheme(env)
@@ -95,6 +95,10 @@ module Robe
           [status, headers, []]
         end
 
+        def assets_path
+          config.assets_path
+        end
+        
         def build_rack_app
           # use local variables because of instance_eval in Rack blocks
           _config = config
@@ -158,7 +162,7 @@ module Robe
         def redirect
           lambda do |env|
             path = env['PATH_INFO'][1..-1]
-            trace __FILE__, __LINE__, self, __method__, " : #{path}"
+            # trace __FILE__, __LINE__, self, __method__, " : #{path}"
             # [302, {'location' => "/#route=/#{path}" }, [] ]
             [302, {'location' => '/' }, [] ]
           end
@@ -238,7 +242,7 @@ module Robe
               ::Opal.paths.each { |path| sprockets.append_path(path) }
               sprockets.append_path(config.rb_path)
             end
-            sprockets.append_path(config.assets_path)
+            sprockets.append_path(assets_path)
             @http_sprockets = sprockets
           end
           @http_sprockets
@@ -255,7 +259,7 @@ module Robe
             end
             ::Opal.paths.each { |path| sprockets.append_path(path) }
             sprockets.append_path(config.rb_path)
-            sprockets.append_path(config.assets_path)
+            sprockets.append_path(assets_path)
             @compiler_sprockets = sprockets
           end
           @compiler_sprockets
@@ -296,7 +300,7 @@ module Robe
           if compiled
             public_assets_file_path(file_name)
           else
-            path = path.sub(config.assets_path, '')[1..-1] if production?
+            path = path.sub(assets_path, '')[1..-1] if production?
             File.join(path, file_name)
           end
         end
@@ -354,38 +358,44 @@ module Robe
         end
 
         def js_tags
-          ''.tap do |result|
-            js_file_names.each do |name|
-              result << js_tag(name) << "\n"
+          @js_tags ||= ''.tap do |result|
+            config.js_paths.each do |directory, file_names|
+              resolve_js_file_names(directory, file_names).each do |file_name|
+                result << js_tag(directory, file_name) << "\n"
+              end
             end
           end
         end
 
         def js_sprockets_paths(compiled: production?)
-          js_file_names.map { |name|
-            js_sprockets_path(name, compiled: compiled)
-          }
+          @js_sprockets_paths ||= [].tap do |result|
+            config.js_paths.each do |directory, file_names|
+              resolve_js_file_names(directory, file_names).each do |file_name|
+                result << js_sprockets_path(directory, file_name, compiled: compiled)
+              end
+            end
+          end
         end
 
-        def js_tag(file_name)
-          path = js_sprockets_path(file_name)
+        def js_tag(directory, file_name)
+          path = js_sprockets_path(directory, file_name)
           %{<script src="#{path}"></script>}
         end
 
-        def js_sprockets_path(file_name, compiled: production?)
-          sprockets_asset_path(file_name, js_path, js_suffixes_regexp, '.js', compiled: compiled)
+        def js_sprockets_path(directory, file_name, compiled: production?)
+          sprockets_asset_path(file_name, File.join(assets_path, directory), js_suffixes_regexp, '.js', compiled: compiled)
         end
 
-        def js_path
-          config.asset_paths[:js] || 'assets/js'
-        end
-
-        def js_file_names
-          path = js_path
-          unlisted = path && Dir.exists?(path) ? Dir.entries(path).reject{|e| e[0] == '.'} : []
-          names = (config.js_file_order || []) | unlisted
-          names = names.select { |name| name =~ js_suffixes_regexp }
-          names
+        def resolve_js_file_names(directory, file_names = nil)
+          if file_names.nil? || file_names == '*'
+            path = File.join(assets_path, directory)
+            file_names = Dir.exists?(path) ? Dir.entries(path).reject{|e| e[0] == '.'} : []
+            file_names = file_names.select { |e| e.end_with?('.js') }
+            # if we don't strip the '.js' then any map files lead to an error in browser ??
+            file_names = file_names.map { |e| e.sub('.js', '') }
+            trace __FILE__, __LINE__, self, __method__, " directory=#{directory} file_names=#{file_names}"
+          end
+          file_names.select { |name| name =~ js_suffixes_regexp }
         end
 
         def js_suffixes_regexp
@@ -427,7 +437,7 @@ module Robe
             tags << %{<script src="#{prefix_opal(rb_path.sub('.rb', ''))}.js"></script>}
           end
           tags << %{<script>#{::Opal::Sprockets.load_asset(rb_path)}</script>}
-          trace __FILE__, __LINE__, self, __method__, " tags = #{tags}"
+          # trace __FILE__, __LINE__, self, __method__, " tags = #{tags}"
           tags.join("\n")
         end
 

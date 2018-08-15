@@ -316,12 +316,20 @@ module Robe
           @css_file_order = ary
         end
 
-        def js_file_order
-           @js_file_order ||= []
+        def js_paths
+          @js_paths ||= { 'js' => '*' }
         end
 
-        def js_file_order=(ary)
-           @js_file_order = ary
+        # Set the js paths to a hash of {
+        #   'directory1' => [file1 file 2]
+        #   'directory2' => '*'
+        # }
+        # A value of '*' or nil means all files int he directory.
+        # The .order of directories and order of files determine order of load
+        # # '.js suffix assumed for files where none given'.
+        #
+        def js_paths=(hash)
+          @js_paths = hash
         end
 
         # for task logging
