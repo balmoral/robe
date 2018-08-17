@@ -197,6 +197,7 @@ module Robe
               #{config.html_literal_head}
               <title>#{config.title}</title>
               #{css_tags}
+              #{font_tags}
               #{js_tags}
             </head> 
             <body>
@@ -355,6 +356,42 @@ module Robe
             @css_suffixes << '.css' unless @css_suffixes.include?('.css')
           end
           @css_suffixes
+        end
+
+        def font_path
+          config.asset_paths[:font] || 'assets/fonts'
+        end
+
+        def font_tags
+          ''.tap do |result|
+            font_file_path_names.each do |path|
+              result << font_tag(path) << "\n"
+            end
+          end
+        end
+
+        def font_tag(path)
+          %{<link href="#{path}" type=#{'text/css'}" rel="stylesheet" />}
+        end
+
+        def font_file_path_names
+          recursive_file_path_names(font_path)
+        end
+
+        def recursive_file_path_names(root)
+          [].tap do |result|
+            recurse_file_paths(root) do |path|
+              result << path
+            end
+          end
+        end
+
+        def recurse_file_paths(root)
+          if Dir.exists?(root)
+            Dir[File.join(root, '**', '**')].each do |path|
+              yield path if File.file?(path)
+            end
+          end
         end
 
         def js_tags

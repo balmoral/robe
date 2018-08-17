@@ -1,9 +1,12 @@
+require 'robe/common/util/unicode'
+
 module Robe; module Client; module Browser; module Wrap
   class Element
     include Native
     include EventTarget
     include NativeFallback
-
+    include Robe::Unicode
+    
     SPECIAL_EVENTS = %i(removing)
 
     def initialize(native)
@@ -275,6 +278,10 @@ module Robe; module Client; module Browser; module Wrap
       end
     end
 
+    def scope=(s)
+      `#@native.scope = s`
+    end
+
     # added for select option
     def selected=(bool)
       `#@native.selected = bool`
@@ -316,8 +323,8 @@ module Robe; module Client; module Browser; module Wrap
     def replace_child(new_child, old_child)
       about_to_remove_child(old_child)
       parent = to_n
-      new_child = new_child.to_n
-      old_child = old_child.to_n
+      new_child = new_child.to_n unless native?(new_child)
+      old_child = old_child.to_n unless native?(old_child)
       `parent.replaceChild(new_child, old_child)`
       self
     end
@@ -377,10 +384,6 @@ module Robe; module Client; module Browser; module Wrap
     end
 
     def check_bootstrap
-      # Bootstrap3
-      # if (typeof($.fn.Tooltip) === 'undefined') {
-      # Bootstrap4
-      # if (typeof(Tooltip) === 'undefined') {
       %x(
         if (typeof($.fn.tooltip) === 'undefined') {
           throw new Error('Bootstrap.js not loaded');
@@ -398,18 +401,24 @@ module Robe; module Client; module Browser; module Wrap
     # 4. 'toggle'
     # 4. 'destroy'
     # see http://getbootstrap.com/javascript/#tooltips
-    def tooltip(arg=nil)
+    def tooltip(arg)
       if arg.is_a?(String)
         arg = {
           title: arg,
+          placement: 'auto',
           trigger: 'hover focus',
         }
       end
+      arg['title'] ||= '?'
+      arg['title'] = arg['title'].gsub(' ', unicode(:no_break_space)) # to stop wrapping on spaces
+      arg['title'] = arg['title'].gsub('\n', ' ') # to let caller force wrapping on newlines
+      arg['container'] = to_n
+      arg['template'] = '<div class="tooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'
       check_bootstrap
       `$(#@native).tooltip(#{arg.to_n})`
     end
 
-    def popover(arg=nil)
+    def popover(arg)
       if arg.is_a?(String)
         arg = {
           title: arg,

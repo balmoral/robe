@@ -4,6 +4,7 @@ module Robe
     module_function
 
     SYMBOLS = {
+      no_break_space:   "\u00A0",
       middle_dot:       "\u00B7",
       bullet:           "\u2022",
       ellipsis:         "\u2026",

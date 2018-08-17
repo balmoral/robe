@@ -197,6 +197,9 @@ module Robe
               value.each do |p, v|
                 element[p] = v
               end
+            },
+            scope: ->(element, _attribute, value) {
+              element.scope = value.to_s
             }
           }
         end
@@ -309,13 +312,13 @@ module Robe
 
         # the resolved hook will become a child of the element
         def resolve_hooked_content(element, hook)
-          # trace __FILE__, __LINE__, self, __method__, " hook=#{hook}"
+          trace __FILE__, __LINE__, self, __method__, " hook=#{hook}"
           element.hooks(init: true) << hook
-          current_content = sanitize_content(hook.value, element, coerce_to_element: true)
+          current_content = hook.value && sanitize_content(hook.value, element, coerce_to_element: true)
           hook.activate do |prior_state|
             old_content = current_content
             new_content = hook.value(prior_state)
-            new_content = sanitize_content(new_content, element, coerce_to_element: true)
+            new_content = sanitize_content(new_content, element, coerce_to_element: true) if new_content
             replace_hooked_content(element, new_content, old_content)
             current_content = new_content
           end
@@ -323,11 +326,13 @@ module Robe
         end
 
         def replace_hooked_content(element, new_content, old_content)
-          # trace __FILE__, __LINE__, self, __method__, "(element: #{element}, new_content: #{new_content}, old_content: #{old_content}"
+          trace __FILE__, __LINE__, self, __method__, "(element: #{element}, new_content: #{new_content.class}:#{new_content}, old_content: #{old_content.class}:#{old_content}"
           # trace __FILE__, __LINE__, self, __method__, ' ************** START WINDOW ANIMATION ON HOOK **************'
           window.animation_frame do
+            trace __FILE__, __LINE__, self, __method__, "(element: #{element.class}:#{element}, new_content: #{new_content.class}:#{new_content}, old_content: #{old_content.class}:#{old_content}"
             if old_content
               if new_content
+                trace __FILE__, __LINE__, self, __method__, "(element: #{element.class}:#{element}, new_content: #{new_content.class}:#{new_content}, old_content: #{old_content.class}:#{old_content}"
                 element.replace_child(new_content, old_content)
               else
                 element.remove_child(old_content)

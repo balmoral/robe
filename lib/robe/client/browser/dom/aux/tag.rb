@@ -48,7 +48,8 @@ module Robe
             data disabled enabled for
             height href id
             name on props properties
-            required src selected style
+            required
+            scope src selected style
             type value width
           ].each do |attr|
             if attr == :content

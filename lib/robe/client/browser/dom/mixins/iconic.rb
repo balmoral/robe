@@ -3,6 +3,7 @@
 require 'robe/common/util'
 require 'robe/common/trace'
 require 'robe/client/browser/dom/mixins/list_item_link'
+require 'robe/client/browser/dom/mixins/dropdown_item_link'
 
 # TODO: Iconic is a mess of a module, needs big refactor
 
@@ -15,6 +16,8 @@ module Robe
           include Robe::Util
           include Robe::Client::Browser::DOM::ListItemLink
           extend Robe::Client::Browser::DOM::ListItemLink
+          include Robe::Client::Browser::DOM::DropdownItemLink
+          extend Robe::Client::Browser::DOM::DropdownItemLink
 
           module_function
 
@@ -66,7 +69,12 @@ module Robe
             if tooltip
               if tooltip.is_a?(String)
                 tooltip = {
-                  animation: true, title: tooltip, placement: 'left', trigger: 'hover focus', delay: { hide: '200' }  }
+                  animation: true,
+                  title: tooltip,
+                  placement: 'auto',
+                  trigger: 'hover focus',
+                  # delay: { hide: '200' }
+                }
               end
               # trace __FILE__, __LINE__, self, __method__, " : icon.id = #{icon.id}"
               # tooltip[:container] = icon.id unless tooltip[:container]
@@ -240,28 +248,37 @@ module Robe
           # 3. menu_right: set true if right of menu should go under icon
           # 4. icon_attributes: any attributes for icon
           def drop_down_icon(icon: 'menu-hamburger', items: [], menu_right: false, icon_attributes: nil, menu_attributes: nil)
-            ul_params = {
-              css: "dropdown-menu#{menu_right ? ' dropdown-menu-right' : ''}"
+            ddm_params = {
+              css: "dropdown-menu #{menu_right && 'dropdown-menu-right'}"
             }
             if menu_attributes
               if (menu_css = menu_attributes.delete(:css) || menu_attributes.delete(:class))
-                ul_params[:css] = ul_params[:css] + ' ' + menu_css
+                ddm_params[:css] = ddm_params[:css] + ' ' + menu_css
               end
-              ul_params = merge_attributes(ul_params, menu_attributes)
+              ddm_params = merge_attributes(ddm_params, menu_attributes)
             end
-            ul_params[:content] = items.map { |item|
+            ddm_params[:content] = items.map { |item|
               content = item[:content]
               if content.to_s == 'divider' || content == 'separator'
-                li.css(:divider)
+                div.css(:dropdown_divider)
               else
-                list_item_link(content, item[:href], &item[:callback])
+                if (href = item[:href])
+                  dropdown_item_link(content, href, &item[:callback])
+                else
+                  tag(:button,
+                    type: :button,
+                    css: 'dropdown-item',
+                    on: { click: item[:callback] || ->{} },
+                    content: content
+                  )
+                end
               end
             }
             div.css(:dropdown)[
-              div.css('dropdown-toggle').data(toggle: 'dropdown')[
-                icon(icon, attributes: icon_attributes)
+              div.data(toggle: 'dropdown')[ # .css('dropdown-toggle')
+                icon(icon, attributes: icon_attributes),
               ],
-              tag(:ul, **ul_params)
+              tag(:div, **ddm_params)
             ]
           end
 
@@ -292,27 +309,26 @@ module Robe
             )
           end
 
-          def div_with_icon(callback: nil, icon: nil, pull: nil, content: nil, icon_style: nil, tooltip: nil, popover: nil, image_attributes: nil)
+          def div_with_icon(callback: nil, icon: nil, float: nil, content: nil, icon_style: nil, tooltip: nil, popover: nil, image_attributes: nil)
             icon ||= 'question-sign'
             icon_style ||= {}
             image_tag = nil
             if icon == '#image'
               image_tag = self.image_tag(image_attributes)
             end
-            pull ||= 'left'
-            pull = pull.to_s
+            float = (float || 'left').to_s
             final_icon_style = {
                font_size: 'smaller',
-               margin_left: '0.5em',
-               margin_right: '0.5em',
-               margin_top: image_tag ? '' : '0.3em',
-               margin_bottom: image_tag ? '0.5em' : '',
-               color: 'inherit',
-               background_color: 'inherit',
+               # margin_left: '0.5em',
+               # margin_right: '0.5em',
+               # margin_top: image_tag ? '' : '0.3em',
+               # margin_bottom: image_tag ? '0.5em' : '',
+               # color: 'inherit',
+               # background_color: 'inherit',
             }.merge(
               icon_style # argument style overrides default
             )
-            icon_class = "pull-#{pull}"
+            icon_class = "float-#{float} align-middle"
             icon_class = "glyphicon glyphicon-#{icon} " + icon_class unless image_tag
             icon_span = tag(
               :span,
@@ -321,11 +337,8 @@ module Robe
               style: final_icon_style,
               on: { click: callback}
             )
-            if tooltip
-              icon_span.tooltip(tooltip)
-            elsif popover
-              icon_span.popover(popover)
-            end
+            icon_span.tooltip(tooltip) if tooltip
+            icon_span.popover(popover) if popover
             attributes = {
               style: {cursor: 'pointer,'},
               content: arrify(icon_span, content) # image_tag ? arrify(icon_span, content) : arrify(content, icon_span)
@@ -362,30 +375,28 @@ module Robe
             end
           end
 
-          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_size: nil, icon_color: nil)
-            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_size: icon_size, icon_color: icon_color)
+          def div_with_menu_up_down(callback: nil, up: true, down: false, content: nil, float: 'left', tooltip: nil, icon_style: nil)
+            div_with_up_down_icon(callback: callback, which: :menu, up: up, down: down, content: content, float: float, tooltip: tooltip, icon_style: icon_style)
           end
 
-          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, pull: 'left', tooltip: nil, icon_size: nil, icon_color: nil)
-            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, pull: pull, tooltip: tooltip, icon_size: icon_size, icon_color: icon_color)
+          def div_with_collapse_up_down(callback: nil, up: true, down: false, content: nil, float: 'left', tooltip: nil, icon_style: nil)
+            div_with_up_down_icon(callback: callback, which: :collapse, up: up, down: down, content: content, float: float, tooltip: tooltip, icon_style: icon_style)
           end
 
           # which can be :collapse or :menu (or string equivalents)
-          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, pull: nil, tooltip: nil, icon_size: nil, icon_color: nil)
+          def div_with_up_down_icon(callback: nil, which: :menu, up: true, down: false, content: nil, float: nil, tooltip: nil, icon_style: nil)
             up = up && !down
-            pull = pull ? pull.to_s : 'left'
-            left = pull == 'left'
+            float = float ? float.to_s : 'left'
+            left = float == 'left'
             icon_attributes = {
-              css: "glyphicon glyphicon-#{which}-#{up ? 'up' : 'down'} pull-#{pull}",
+              css: "glyphicon glyphicon-#{which}-#{up ? 'up' : 'down'} float-#{float} align-middle",
               style: {
-                color: icon_color ? icon_color.to_s : 'inherit',
+                color: 'inherit',
                 background_color: 'inherit',
-                font_size: icon_size || 'smaller',
-                margin_top: '0.2em',
-                margin_left: left ? '0.3em' : '0.5em',
-                margin_right: left ? '0.5em' : '0.3em',
-                vertical_align: 'middle',
-              },
+                font_size: 'smaller',
+                margin_left: left ? '0.3rem' : '0.5rem',
+                margin_right: left ? '0.5rem' : '0.3rem',
+              }.merge((icon_style || {}).symbolize_keys),
               on: {
                 click: callback
               }
@@ -408,20 +419,18 @@ module Robe
           # 2. items: should be hashes containing menu items
           #    e.g. { callback: ->{}, href: '#', content: 'list item'}
           # 3. content: of the div (apart from the icon)
-          # 4. pull: which side of div to pull the icon, 'right' or 'left'
-          def div_with_dropdown_icon(icon: 'menu-hamburger', items: [], attributes: nil, content: nil, pull: 'right', icon_attributes: nil, menu_attributes: nil)
+          # 4. float: which side of div to float the icon, 'right' or 'left'
+          def div_with_dropdown_icon(icon: 'menu-hamburger', items: [], attributes: nil, content: nil, float: 'right', icon_attributes: nil, menu_attributes: nil)
             content = arrify(
-              span(
+              span.css("float-#{float}").style(margin_left: '0.5rem', margin_right: '0.5rem')[
                 drop_down_icon(
                   icon: icon,
                   items: items,
-                  menu_right: pull.to_s == 'right',
+                  menu_right: float.to_s == 'right',
                   icon_attributes: icon_attributes,
                   menu_attributes: menu_attributes
                 )
-              )
-              .css("pull-#{pull}")
-              .style(margin_left: '0.5em', margin_right: '0.5em'),
+              ],
               content
             )
             params = (attributes || {}).merge(content: content)
