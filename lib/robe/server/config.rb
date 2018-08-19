@@ -290,7 +290,7 @@ module Robe
 
         def asset_paths
           @asset_paths ||= {}.tap { |hash|
-            %i[css js images fonts keys].each { |type|
+            %i[css js img images fonts].each { |type|
               hash[type] = File.join(assets_path, type.to_s)
             }
           }

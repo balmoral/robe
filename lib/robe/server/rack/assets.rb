@@ -1,4 +1,5 @@
 require 'singleton'
+require 'fileutils'
 require 'yaml'
 require 'opal'
 require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
@@ -249,23 +250,6 @@ module Robe
           @http_sprockets
         end
 
-        # ref: https://github.com/rails/sprockets/blob/master/guides/how_sprockets_works.md
-        def compiler_sprockets
-          unless @compiler_sprockets
-            register_opal_unaware_gems # do first so Opal::paths set
-            sprockets = ::Sprockets::Environment.new
-            sprockets.logger.level = config.sprockets_logger_level
-            if config.sprockets_memory_cache_size
-              sprockets.cache = Sprockets::Cache::MemoryStore.new(config.sprockets_memory_cache_size)
-            end
-            ::Opal.paths.each { |path| sprockets.append_path(path) }
-            sprockets.append_path(config.rb_path)
-            sprockets.append_path(assets_path)
-            @compiler_sprockets = sprockets
-          end
-          @compiler_sprockets
-        end
-
         def prefix_opal(path)
           File.join(OPAL_PREFIX_PATH, path)
         end
@@ -500,28 +484,56 @@ module Robe
         end
 
         def precompile
-          paths = []
-          paths += css_sprockets_paths(compiled: false)
-          paths += js_sprockets_paths(compiled: false)
-          paths += rb_file_names # we don't compile Ruby via sprockets
+          compiler_sprockets # set up all sprockets paths, including opal/ruby paths
+          reset_public_assets_dir
+          link_uncompiled_files
+          compile_files
+          @compiler_sprockets = nil
+        end
+
+        def reset_public_assets_dir
           FileUtils.remove_dir(public_assets_path, true)
           FileUtils.mkdir_p(public_assets_path)
-          paths.each do |path|
+        end
+
+        def compile_files
+          paths_to_compile.each do |path|
             trace __FILE__, __LINE__, self, __method__, " path=#{path}"
             puts "Compiling #{path}..."
             asset_name = File.split(path).last.sub('.rb', '.js')
             compile_file(path, asset_name)
             puts '...done'
           end
-          @compiler_sprockets = nil
+        end
+
+        def link_uncompiled_files
+          root = http_sprockets.root
+          public_assets_path = File.join(root, self.public_assets_path)
+          uncompiled_asset_paths.each do |target_path|
+            target_path = File.join(root, target_path)
+            FileUtils.ln_s(target_path, public_assets_path)
+          end
+        end
+
+        def uncompiled_asset_paths
+          [].tap do |paths|
+            config.asset_paths.values.each do |asset_path|
+              paths << asset_path unless asset_path.end_with?('js') || asset_path.end_with?('css')
+            end
+          end
+        end
+
+        def paths_to_compile
+          [].tap do |result|
+            result.concat css_sprockets_paths(compiled: false)
+            result.concat js_sprockets_paths(compiled: false)
+            result.concat rb_file_names
+          end
         end
 
         def public_assets_file_path(file_name, create_dir: false)
           dir = File.join(public_assets_path, file_name.split('.').last)
-          if create_dir
-            trace __FILE__, __LINE__, self, __method__, " : FileUtils.mkdir_p(#{dir})"
-            FileUtils.mkdir_p(dir)
-          end
+          FileUtils.mkdir_p(dir) if create_dir
           File.join(dir, file_name)
         end
 
@@ -537,19 +549,36 @@ module Robe
             raise "could not find #{path} in sprockets" unless result
             result
           end
-          trace __FILE__, __LINE__, self, __method__, " : asset_name=#{asset_name}"
+          # trace __FILE__, __LINE__, self, __method__, " : asset_name=#{asset_name}"
           compiled_contents = compiled_contents.to_s
           output_path = public_assets_file_path(asset_name, create_dir: true)
           # trace __FILE__, __LINE__, self, __method__, " : #{compiled_file_name} => writing #{compiled_contents.size} bytes to #{output_path}"
           if asset_name.end_with?('.js')
             trace __FILE__, __LINE__, self, __method__, " : BEFORE UGLIFIER : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
-            compiled_contents = ::Uglifier.compile(compiled_contents, compress: {passes: 1})
+            compiled_contents = ::Uglifier.compile(compiled_contents, compress: {passes: 3})
             trace __FILE__, __LINE__, self, __method__, " : AFTER UGLIFIER : #{output_path} : compiled_contents.size=#{compiled_contents.size}"
             # compiled_contents = Compile::TreeShake.compile(compiled_contents)
             # trace __FILE__, __LINE__, self, __method__, " : TREE SHAKE : #{path} : compiled_contents.size=#{compiled_contents.size}"
           end
           File.write(output_path, compiled_contents)
           nil
+        end
+
+        # ref: https://github.com/rails/sprockets/blob/master/guides/how_sprockets_works.md
+        def compiler_sprockets
+          unless @compiler_sprockets
+            register_opal_unaware_gems # do first so Opal::paths set
+            sprockets = ::Sprockets::Environment.new
+            sprockets.logger.level = config.sprockets_logger_level
+            if config.sprockets_memory_cache_size
+              sprockets.cache = Sprockets::Cache::MemoryStore.new(config.sprockets_memory_cache_size)
+            end
+            ::Opal.paths.each { |path| sprockets.append_path(path) }
+            sprockets.append_path(config.rb_path)
+            sprockets.append_path(assets_path)
+            @compiler_sprockets = sprockets
+          end
+          @compiler_sprockets
         end
 
         def compile_with_builder(sprockets_path)
