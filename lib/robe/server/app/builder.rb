@@ -14,7 +14,7 @@ module Robe
           trace __FILE__, __LINE__, self, __method__, " build?=#{build?}"
           begin
             reset_public_assets_dir
-            link_uncompiled_files
+            copy_uncompiled_files
             compile_files
           ensure
             self.build = false
