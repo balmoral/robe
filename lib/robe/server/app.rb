@@ -20,6 +20,7 @@ module Robe
     class App
 
       def self.build
+        configure
         Robe::Server::App::Builder.build
       end
 
