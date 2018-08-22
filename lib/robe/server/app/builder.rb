@@ -79,6 +79,7 @@ module Robe
           public_assets_full_path = File.join(root, self.public_assets_full_path)
           uncompiled_asset_paths.each do |target_path|
             target_path = File.join(root, target_path)
+            FileUtils.mkdir_p(File.dirname(target_path))
             FileUtils.cp(target_path, public_assets_full_path)
           end
         end
