@@ -47,10 +47,6 @@ module Robe
           rack_env == 'development'
         end
 
-        def precompile?
-          production? && local_host?
-        end
-        
         def app_secret
           @app_secret ||= (
             ENV['APP_SECRET'] || SecureRandom.hex(64)

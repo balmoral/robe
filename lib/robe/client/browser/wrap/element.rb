@@ -378,15 +378,16 @@ module Robe; module Client; module Browser; module Wrap
     def check_jquery
       %x(
         if (typeof jQuery === 'undefined') {
-          throw new Error('Bootstrap\'s JavaScript requires jQuery');
+          throw new Error('jQuery js not loaded');
         }
       )
     end
 
     def check_bootstrap
+      check_jquery
       %x(
-        if (typeof($.fn.tooltip) === 'undefined') {
-          throw new Error('Bootstrap.js not loaded');
+        if (typeof(jQuery.fn.tooltip) === 'undefined') {
+          throw new Error('Bootstrap js not loaded');
         }
       )
     end

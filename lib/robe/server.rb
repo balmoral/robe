@@ -1,5 +1,4 @@
 require 'opal'
-# require 'opal-browser' # sets up paths/gems for Opal builder
 
 # setup Opal load paths for client
 %w[lib].each do |dir|
@@ -8,8 +7,8 @@ require 'opal'
   Opal.append_path path
 end
 
-require 'robe/server/rack/sockets/rack_server'
-Robe::RackServer.load
+require 'robe/server/rack/server'
+Robe::Server::Rack::Server.load
 
 module Robe
   # module_function privatises methods
