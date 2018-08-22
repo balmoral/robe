@@ -74,12 +74,12 @@ module Robe
           nil
         end
 
-        def self.link_uncompiled_files
+        def self.copy_uncompiled_files
           root = sprockets.env.root
           public_assets_full_path = File.join(root, self.public_assets_full_path)
           uncompiled_asset_paths.each do |target_path|
             target_path = File.join(root, target_path)
-            FileUtils.ln_s(target_path, public_assets_full_path)
+            FileUtils.cp(target_path, public_assets_full_path)
           end
         end
 
