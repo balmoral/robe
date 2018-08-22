@@ -80,7 +80,7 @@ module Robe
           uncompiled_asset_paths.each do |target_path|
             target_path = File.join(root, target_path)
             target_dir = File.dirname(target_path)
-            target_file = File.filename(target_path)
+            target_file = File.basename(target_path)
             FileUtils.mkdir_p(target_dir)
             FileUtils.cp(target_path, File.join(public_assets_full_path, target_file))
           end
