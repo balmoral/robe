@@ -14,7 +14,7 @@ module Robe
           trace __FILE__, __LINE__, self, __method__, " build?=#{build?}"
           begin
             reset_public_assets_dir
-            copy_uncompiled_files
+            link_raw_files # copy_raw_files
             compile_files
           ensure
             self.build = false
@@ -74,19 +74,23 @@ module Robe
           nil
         end
 
-        def self.copy_uncompiled_files
-          root = sprockets.env.root
-          public_assets_full_path = File.join(root, self.public_assets_full_path)
-          uncompiled_asset_paths.each do |target_path|
-            target_path = File.join(root, target_path)
-            target_dir = File.dirname(target_path)
-            target_file = File.basename(target_path)
-            FileUtils.mkdir_p(target_dir)
-            FileUtils.cp(target_path, File.join(public_assets_full_path, target_file))
+        def self.copy_raw_files
+          dest_path = File.join(sprockets.env.root, self.public_assets_full_path)
+          raw_asset_paths.each do |src_path|
+            FileUtils.cp_r(src_path, dest_path)
           end
         end
 
-        def self.uncompiled_asset_paths
+        def self.link_raw_files
+          root = sprockets.env.root
+          dest_path = File.join(root, self.public_assets_full_path)
+          raw_asset_paths.each do |src_path|
+            src_path = File.join(root, src_path)
+            FileUtils.ln_s(src_path, dest_path)
+          end
+        end
+
+        def self.raw_asset_paths
            [].tap do |paths|
              asset_paths.values.each do |asset_path|
                paths << asset_path unless asset_path.end_with?('js') || asset_path.end_with?('css')
