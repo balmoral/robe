@@ -31,17 +31,18 @@ module Robe
         end
 
         def self.reset_public_assets_dir
-          FileUtils.remove_dir(public_assets_full_path, true)
-          FileUtils.mkdir_p(public_assets_full_path)
+          begin
+            FileUtils.remove_dir(public_assets_full_path, true)
+            FileUtils.mkdir_p(public_assets_full_path)
+          rescue Exception => x
+            trace __FILE__, __LINE__, self, __method__, " : unable to reset public assets dir : #{x}"
+          end
         end
 
         def self.compile_files
           paths_to_compile.each do |path|
-            trace __FILE__, __LINE__, self, __method__, " path=#{path}"
-            puts "Compiling #{path}..."
             asset_name = File.split(path).last.sub('.rb', '.js')
             compile_file(path, asset_name)
-            puts '...done'
           end
         end
 
@@ -86,7 +87,12 @@ module Robe
           dest_path = File.join(root, self.public_assets_full_path)
           raw_asset_paths.each do |src_path|
             src_path = File.join(root, src_path)
-            FileUtils.ln_s(src_path, dest_path)
+            begin
+              trace __FILE__, __LINE__, self, __method__, " : linking '#{src_path}' to '#{dest_path}'"
+              FileUtils.ln_s(src_path, dest_path)
+            rescue Exception => x
+              trace __FILE__, __LINE__, self, __method__, " : unable to link #{src_path} to #{dest_path} : #{x}"
+            end
           end
         end
 
