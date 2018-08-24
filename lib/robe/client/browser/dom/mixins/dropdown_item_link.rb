@@ -12,11 +12,10 @@ module Robe
             args[:href] = href
             args[:on] = { click: block } if block
             tag(
-              :a,
-              {
-                css: 'dropdown-item',
-                content: tag(:link, args)
-              }
+              :link,
+              css: 'dropdown-item',
+              href: href,
+              on: { click: block || ->{} }
             )
           end
 

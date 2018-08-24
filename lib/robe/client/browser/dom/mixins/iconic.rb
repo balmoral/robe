@@ -266,7 +266,7 @@ module Robe
                   dropdown_item_link(content, href, &item[:callback])
                 else
                   tag(:button,
-                    type: :button,
+                    type: 'button',
                     css: 'dropdown-item',
                     on: { click: item[:callback] || ->{} },
                     content: content
