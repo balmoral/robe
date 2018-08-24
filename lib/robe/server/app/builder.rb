@@ -78,7 +78,12 @@ module Robe
         def self.copy_raw_files
           dest_path = File.join(sprockets.env.root, self.public_assets_full_path)
           raw_asset_paths.each do |src_path|
-            FileUtils.cp_r(src_path, dest_path)
+            begin
+              trace __FILE__, __LINE__, self, __method__, " : copying '#{src_path}' to '#{dest_path}'"
+              FileUtils.cp_r(src_path, dest_path)
+            rescue Exception => x
+              trace __FILE__, __LINE__, self, __method__, " : unable to copy #{src_path} to #{dest_path} : #{x}"
+            end
           end
         end
 
