@@ -328,13 +328,19 @@ module Robe
         def replace_hooked_content(element, new_content, old_content)
           window.animation_frame do |_timestamp|
             if old_content # && element.contains?(old_content)
-              `try {`
+              # maybe we lost our parent up the hierarchy - no worries
+              %x(
+                try {
+              )
                 if new_content
                   element.replace_child(new_content, old_content)
                 else
                   element.remove_child(old_content)
                 end
-              `} catch (e) { }` # sometimes we may have lost our parent?
+              %x(
+                } catch (e) {
+                }
+              )
             else
               element << new_content if new_content
             end
