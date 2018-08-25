@@ -92,6 +92,12 @@ module Robe; module Client; module Browser; module Wrap
       }
     end
 
+    # Returns true if given element is a descendant of this element.
+    def contains?(node)
+      n = native?(node) ? node : node.to_n
+      `#@native.contains(n)`
+    end
+    
     # from opal-browser Browser::DOM::Element:Attributes
     if Wrap::Browser.supports?('Element.className') || Wrap::Browser.supports?('Element.htmlFor')
       def [](name, options = {})
@@ -318,6 +324,7 @@ module Robe; module Client; module Browser; module Wrap
     def remove_child(child)
       about_to_remove_child(child)
       `#@native.removeChild(#{native?(child) ? child : child.to_n})`
+      self
     end
 
     def replace_child(new_child, old_child)
