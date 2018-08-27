@@ -5,7 +5,7 @@ require 'robe/common/state/atom'
 # handling promise resolution through
 # state changes.
 #
-# Especially useful in DOM to 'hook'
+# Especially useful in DOM to 'bind'
 # elements to the state of the promise.
 #
 

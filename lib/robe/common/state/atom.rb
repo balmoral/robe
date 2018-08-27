@@ -2,7 +2,7 @@
 
 require 'robe/common/state/atom/core_extensions'
 require 'robe/common/state/atom/state'
-require 'robe/common/state/hook'
+require 'robe/common/state/binding'
 
 # Atom implements an all in one store + state
 # with supporting methods for mutation and observation.
@@ -256,7 +256,7 @@ module Robe
         # trace __FILE__, __LINE__, self, __method__, " broadcasting change from #{prior} to #{self}"
         inc_mutation_count
         # important that we dup subscribers before iterating as subscribers
-        # may delete other subscribers (for instance through hooks)
+        # may delete other subscribers (for instance through bindings)
         @subscribers.dup.each do |subscriber|
           # a subscriber can be terminated/unsubscribed by another earlier interested subscriber
           unless subscriber[:terminated]

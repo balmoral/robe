@@ -91,7 +91,7 @@ module Robe
             unless @root
               # trace __FILE__, __LINE__, self, __method__
               @root = render
-              if @root.is_a?(Robe::State::Hook) || @root.is_a?(Enumerable)
+              if @root.is_a?(Robe::State::Binding) || @root.is_a?(Enumerable)
                 @root = tag(:div, @root)
               end
               @root = sanitize_content(@root)

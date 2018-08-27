@@ -13,11 +13,11 @@ require 'robe/client/browser/window'
 #     router.params
 #   end
 #
-# or more sensibly hook to the router so that
+# or more sensibly bind to the router so that
 # when the route changes the page is automatically
 # updated:
 #
-#   hook(router) {
+#   bind(router) {
 #     case router.path
 #       when '/page/user'
 #         Page::User.new(router.params('user'))

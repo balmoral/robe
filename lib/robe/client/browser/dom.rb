@@ -112,14 +112,14 @@ module Robe
           end
         end
 
-        def hook(store, state_method = nil, *state_method_arg, where: nil, &hooked_block)
-          HOOK_CLASS.new(store, state_method, *state_method_arg, where: where, &hooked_block)
+        def bind(store, state_method = nil, *state_method_arg, where: nil, &bound_block)
+          BINDING_CLASS.new(store, state_method, *state_method_arg, where: where, &bound_block)
         end
 
         # private api follows
 
         def set_attribute(element, attribute, value)
-          # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.robe_dom_type == HOOK_TYPE
+          # trace __FILE__, __LINE__, self, __method__, " value=#{value}" if value.robe_dom_type == BINDING_TYPE
           value = resolve_attribute(element, attribute, value)
           attribute_handler(attribute).call(element, attribute, value)
         end
@@ -223,29 +223,25 @@ module Robe
         end
 
         def resolve_attribute(element, attr, value)
-          if value.robe_dom_type == HOOK_TYPE
-            # trace __FILE__, __LINE__, self, __method__, " : hook=#{value}"
-            resolve_attribute_hook(element, attr, value)
+          if value.robe_dom_type == BINDING_TYPE
+            resolve_attribute_binding(element, attr, value)
           else
             value
           end
         end
 
-        # the resolved hook will become an attribute of the element
-        def resolve_attribute_hook(element, attr, hook)
-          # trace __FILE__, __LINE__, self, __method__, " hook=#{hook}"
-          element.hooks(element, init: true) << hook
-          hook.activate do |prior_state|
-            update_element_attribute(hook, prior_state, element, attr)
+        # the resolved binding will become an attribute of the element
+        def resolve_attribute_binding(element, attr, binding)
+          element.bindings(element, init: true) << binding
+          binding.activate do |prior_state|
+            update_element_attribute(binding, prior_state, element, attr)
           end
-          hook.value # initial value from the hooked store's state
+          binding.value # initial value from the bound store's state
         end
 
-        def update_element_attribute(hook, prior_state, element, attr)
-          # trace __FILE__, __LINE__, self, __method__, " :action=#{action} store=#{hook.store.class.name} state=#{hook.store.state} element=#{element}"
+        def update_element_attribute(binding, prior_state, element, attr)
           window.animation_frame do
-            value = hook.value(prior_state)
-            # trace __FILE__, __LINE__, self, __method__, " :value=#{value} "
+            value = binding.value(prior_state)
             set_attribute(element, attr, value)
           end
         end
@@ -292,12 +288,12 @@ module Robe
             @sanitize_content_handlers[WRAP_TYPE] = ->(node, _parent_element, _coerce_to_element) {
               node
             }
-            @sanitize_content_handlers[HOOK_TYPE] = ->(hook, parent_element, _coerce_to_element) {
+            @sanitize_content_handlers[BINDING_TYPE] = ->(binding, parent_element, _coerce_to_element) {
               if parent_element
                 # trace __FILE__, __LINE__, self, __method__, " : content=#{content.class} element=#{element.class}"
-                resolve_hooked_content(parent_element, hook)
+                resolve_bound_content(parent_element, binding)
               else
-                fail "hook #{hook.where} must belong to parent element : cannot be root"
+                fail "binding #{binding.where} must belong to parent element : cannot be root"
               end
             }
             @sanitize_content_handlers[TAG_TYPE] = ->(tag, _parent_element, _coerce_to_element) {
@@ -310,37 +306,28 @@ module Robe
           @sanitize_content_handlers
         end
 
-        # the resolved hook will become a child of the element
-        def resolve_hooked_content(element, hook)
-          # trace __FILE__, __LINE__, self, __method__, " hook=#{hook}"
-          element.hooks(init: true) << hook
-          current_content = hook.value && sanitize_content(hook.value, element, coerce_to_element: true)
-          hook.activate do |prior_state|
+        # the resolved binding will become a child of the element
+        def resolve_bound_content(element, binding)
+          element.bindings(init: true) << binding
+          current_content = binding.value && sanitize_content(binding.value, element, coerce_to_element: true)
+          binding.activate do |prior_state|
             old_content = current_content
-            new_content = hook.value(prior_state)
+            new_content = binding.value(prior_state)
             new_content = sanitize_content(new_content, element, coerce_to_element: true) if new_content
-            replace_hooked_content(element, new_content, old_content)
+            replace_bound_content(element, new_content, old_content)
             current_content = new_content
           end
           current_content
         end
 
-        def replace_hooked_content(element, new_content, old_content)
+        def replace_bound_content(element, new_content, old_content)
           window.animation_frame do |_timestamp|
             if old_content # && element.contains?(old_content)
-              # maybe we lost our parent up the hierarchy - no worries
-              %x(
-                try {
-              )
-                if new_content
-                  element.replace_child(new_content, old_content)
-                else
-                  element.remove_child(old_content)
-                end
-              %x(
-                } catch (e) {
-                }
-              )
+              if new_content
+                element.replace_child(new_content, old_content)
+              else
+                element.remove_child(old_content)
+              end
             else
               element << new_content if new_content
             end

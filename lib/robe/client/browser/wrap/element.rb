@@ -24,10 +24,10 @@ module Robe; module Client; module Browser; module Wrap
     end
 
 
-    # get the hooks for an element
-    # if init is true then initialize hooks to empty array none yet
-    def hooks(init: false)
-      private_hooks(init: init)
+    # get the bindings for an element
+    # if init is true then initialize bindings to empty array none yet
+    def bindings(init: false)
+      private_bindings(init: init)
     end
 
     # @!attribute id
@@ -450,7 +450,7 @@ module Robe; module Client; module Browser; module Wrap
 
     def about_to_remove_child(child)
       descend(child) do |native_descendant|
-        clear_hooks(native_descendant)
+        clear_bindings(native_descendant)
         notify_special_event(:removing, native_descendant)
         clear_special_event_observers(native_descendant)
       end
@@ -474,29 +474,27 @@ module Robe; module Client; module Browser; module Wrap
       set_data(OBSERVERS_DATA_KEY, nil, native_target)
     end
 
-    HOOKS_DATA_KEY = 'robe::hooks'
+    BINDINGS_DATA_KEY = 'robe::bindings'
 
-    # get the hooks for an element
-    # if init is true then initialize hooks to empty array none yet
-    def private_hooks(native_target: nil, init: false)
+    # get the bindings for an element
+    # if init is true then initialize bindings to empty array none yet
+    def private_bindings(native_target: nil, init: false)
       native_target ||= @native
-      hooks = get_data(HOOKS_DATA_KEY, native_target)
-      if init && hooks.nil?
-        set_data(HOOKS_DATA_KEY, hooks = [], native_target)
+      bindings = get_data(BINDINGS_DATA_KEY, native_target)
+      if init && bindings.nil?
+        set_data(BINDINGS_DATA_KEY, bindings = [], native_target)
       end
-      hooks
+      bindings
     end
 
-    def clear_hooks(native_target = nil)
-      hooks = private_hooks(native_target: native_target)
-      # trace __FILE__, __LINE__, self, __method__, " : element=#{element} hooks=#{hooks}"
-      if hooks
-        hooks.each do |hook|
-          # trace __FILE__, __LINE__, self, __method__, " : element=#{element} hook=#{hook || 'NIL'}"
-          hook.deactivate
+    def clear_bindings(native_target = nil)
+      bindings = private_bindings(native_target: native_target)
+      if bindings
+        bindings.each do |binding|
+          binding.deactivate
         end
       end
-      set_data(HOOKS_DATA_KEY, [], native_target)
+      set_data(BINDINGS_DATA_KEY, [], native_target)
     end
 
     # might be slow

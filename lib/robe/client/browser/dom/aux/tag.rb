@@ -1,6 +1,6 @@
 
 require 'robe/common/util'
-require 'robe/common/state/hook'
+require 'robe/common/state/binding'
 
 module Robe
   module Client
@@ -79,12 +79,12 @@ module Robe
             TagArray.new(self) * n
           end
 
-          # Create a hook to the given store.
+          # Create a binding to the given store.
           # When the state of store is mutated the given block will be called
           # and expected to provide a dom element.
-          def hook(store, state_method = nil, *state_method_args, where: nil, &block)
-            hook = Robe::State::Hook.new(store, state_method, *state_method_args, where: where, &block)
-            self << hook
+          def bind(store, state_method = nil, *state_method_args, where: nil, &block)
+            binding = Robe::State::Binding.new(store, state_method, *state_method_args, where: where, &block)
+            self << binding
           end
 
           alias_method :[], :content
