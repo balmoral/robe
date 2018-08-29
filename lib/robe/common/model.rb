@@ -542,7 +542,7 @@ module Robe
       if attr_spec.empty?
         return value
       end
-      unless value
+      if value.nil?
         value = attr_spec[ATTR_SPEC_DEFAULT]
         value = value.call if value.is_a?(Proc)
       end
