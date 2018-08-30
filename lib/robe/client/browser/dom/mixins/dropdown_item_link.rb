@@ -8,15 +8,13 @@ module Robe
           # Returns a dropdown item (li) wrapping a link
           # Compatible with bootstrap4
           def dropdown_item_link(label, href = nil, &block)
-            args = { content: label }
-            args[:href] = href
-            args[:on] = { click: block } if block
-            tag(
-              :link,
+            args = {
               css: 'dropdown-item',
-              href: href,
-              on: { click: block || ->{} }
-            )
+              content: label
+            }
+            args[:href] = href if href
+            args[:on] = { click: block } if block
+            tag(:link, **args)
           end
 
         end
