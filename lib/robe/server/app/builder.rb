@@ -12,8 +12,8 @@ module Robe
           save_rack_env = ENV['RACK_ENV']
           ENV['RACK_ENV'] = 'development'
           self.build = true # in Robe:Server::Rack::Config
-          Opal::Config.method_missing_enabled = false
-          Opal::Config.arity_check_enabled = false
+          # Opal::Config.method_missing_enabled = false
+          # Opal::Config.arity_check_enabled = false
           trace __FILE__, __LINE__, self, __method__, " build?=#{build?}"
           begin
             reset_public_assets_dir
