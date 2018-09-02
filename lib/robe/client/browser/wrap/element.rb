@@ -298,6 +298,15 @@ module Robe; module Client; module Browser; module Wrap
       `#@native.checked = bool`
     end
 
+    def disabled=(bool)
+      `#@native.disabled = bool`
+      self[:disabled] = bool
+    end
+
+    def enabled=(bool)
+      self.disabled=(!bool)
+    end
+
     def offset_width
       `#@native.offsetWidth`
     end

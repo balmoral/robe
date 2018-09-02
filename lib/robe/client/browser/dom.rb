@@ -179,6 +179,7 @@ module Robe
               else
                 element[:disabled] = 'disabled'
               end
+              element.enabled = value
             },
             # https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/disabled
             disabled: ->(element, _attribute, value) {
@@ -187,6 +188,7 @@ module Robe
               else
                 element.remove_attr(:disabled)
               end
+              element.disabled = value
             },
             props: ->(element, _attribute, value) {
               value.each do |p, v|
