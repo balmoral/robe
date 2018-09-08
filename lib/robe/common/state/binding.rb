@@ -52,7 +52,7 @@ module Robe
         #
         # For example:
         #
-        #  Binding.new(store, ->{ |prior| prior.name != store.state.name || prior.date != store.state.date } ) do |prior|
+        #  Binding.new(store, ->(prior){ prior.name != store.state.name || prior.date != store.state.date } ) do |prior|
         #    # return
         #  end
         #

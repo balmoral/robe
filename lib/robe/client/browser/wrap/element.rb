@@ -150,8 +150,28 @@ module Robe; module Client; module Browser; module Wrap
     alias set []=
     alias set_attribute []=
 
-    def remove_attr(name)
-      `#@native.getAttribute(#{name.to_s})`
+    if Wrap::Browser.supports?('Element.className') || Wrap::Browser.supports?('Element.htmlFor')
+      def remove_attr(name, options = {})
+        if name == :class && Browser.supports?('Element.className')
+          name = :className
+        elsif name == :for && Browser.supports?('Element.htmlFor')
+          name = :htmlFor
+        end
+
+        if namespace = options[:namespace] || @namespace
+          `#@native.removeAttributeNS(#{namespace.to_s}, #{name.to_s})`
+        else
+          `#@native.removeAttribute(#{name.to_s})`
+        end
+      end
+    else
+      def remove_attr(name, options = {})
+        if namespace = options[:namespace] || @namespace
+          `#@native.removeAttributeNS(#{namespace.to_s}, #{name.to_s})`
+        else
+          `#@native.removeAttribute(#{name.to_s})`
+        end
+      end
     end
 
     alias remove_attribute remove_attr
@@ -298,13 +318,19 @@ module Robe; module Client; module Browser; module Wrap
       `#@native.checked = bool`
     end
 
-    def disabled=(bool)
-      `#@native.disabled = bool`
-      self[:disabled] = bool
+    def disabled=(truthy)
+      truthy = !!truthy
+      # trace __FILE__, __LINE__, self, __method__, "(#{truthy})"
+      `#@native.disabled = truthy`
+      if truthy
+        self[:disabled] = 'disabled'
+      else
+        remove_attr(:disabled)
+      end
     end
 
     def enabled=(bool)
-      self.disabled=(!bool)
+      self.disabled = !bool
     end
 
     def offset_width

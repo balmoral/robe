@@ -174,20 +174,9 @@ module Robe
             },
             # https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/disabled
             enabled: ->(element, _attribute, value) {
-              if value
-                element.remove_attr(:disabled)
-              else
-                element[:disabled] = 'disabled'
-              end
               element.enabled = value
             },
-            # https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/disabled
             disabled: ->(element, _attribute, value) {
-              if value
-                element[:disabled] = 'disabled'
-              else
-                element.remove_attr(:disabled)
-              end
               element.disabled = value
             },
             props: ->(element, _attribute, value) {
