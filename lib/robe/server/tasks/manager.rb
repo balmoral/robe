@@ -72,7 +72,6 @@ module Robe
         def process_request(client, request) # , session)
           # trace __FILE__, __LINE__, self, __method__, "(#{client}, #{request})"
           request = request.symbolize_keys
-          # trace __FILE__, __LINE__, self, __method__
           # dispatch the task in the thread pool, along with meta data.
           task = -> {
             perform_task(
@@ -115,9 +114,10 @@ module Robe
               # trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, id: #{id}, error: #{error})"
               send_response(client: client, task: name, id: id, error: error)
             rescue JSON::GeneratorError => e
-              trace __FILE__, __LINE__, self, __method__, "  #{e}"
+              # trace __FILE__, __LINE__, self, __method__, "  #{e}"
               # Convert the error into a string so it can be serialized to something.
               error = "#{error.class.to_s}: #{error.to_s}"
+              logger.failed(name, args, error)
               send_response(client: client, task: name, id: id, error: error)
             end
           end
@@ -125,7 +125,7 @@ module Robe
 
         # Returns a promise.
         def resolve_task(task_name, args, user)
-          # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} args=#{args} meta_data=#{meta_data}"
+          # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} args=#{args} user=#{user}"
           task = registry[task_name.to_sym]
           # trace __FILE__, __LINE__, self, __method__, " : #{task_name} => #{task}"
           if task
@@ -133,29 +133,38 @@ module Robe
             block = task[:block]
             if task[:auth]
               error_stub = "Unauthorized #{task_name} request"
-              return "#{error_stub}: missing user data.".to_promise_error if user.nil? || user.empty?
+              if user.nil? || user.empty?
+                msg = "#{error_stub}: missing user data."
+                logger.failed(task_name, args, msg)
+                return msg.to_promise_error
+              end
               user = user.symbolize_keys
               user_id = user[:id]
-              return "#{error_stub}: missing user id.".to_promise_error if user_id.nil? || user_id.empty?
+              if user_id.nil? || user_id.empty?
+                msg = "#{error_stub}: missing user id."
+                logger.failed(task_name, args, msg)
+                return msg.to_promise_error
+              end
               user_signature = user[:signature]
-              return "#{error_stub}: missing user signature.".to_promise_error if user_signature.nil? || user_signature.empty?
+              if user_signature.nil? || user_signature.empty?
+                msg = "#{error_stub}: missing user signature."
+                logger.failed(task_name, args, msg)
+                return msg.to_promise_error
+              end
               is_valid = Robe.auth.valid_user_signature?(user_id, user_signature)
-              return "#{error_stub}: invalid user signature.".to_promise_error unless is_valid
+              unless is_valid
+                msg = "#{error_stub}: invalid user signature."
+                logger.failed(task_name, args, msg)
+                return msg.to_promise_error
+              end
             end
-            # trace __FILE__, __LINE__, self, __method__, " @timeout=#{@timeout}"
             Timeout.timeout(@timeout, Robe::TimeoutError) do
-              # trace __FILE__, __LINE__, self, __method__, " : user_signature=#{user_signature}"
               Robe.auth.thread_user_signature = user_signature if user_signature # this also sets thread's user_id
-              # trace __FILE__, __LINE__, self, __method__, " : Robe.auth.thread_user_id=#{Robe.auth.thread_user_id}"
               begin
-                # trace __FILE__, __LINE__, self, __method__, " calling #{task_name} ->#{block} with #{args}"
                 result = args.empty? ? block.call : block.call(**args)
-                # trace __FILE__, __LINE__, self, __method__, " : result.class=#{result.class} result=#{result.inspect}"
                 result.to_promise.then do |value|
-                  # trace __FILE__, __LINE__, self, __method__, " : value = #{value}"
                   value
                 end.fail do |result|
-                  trace __FILE__, __LINE__, self, __method__, " : #{task_name} failed : result.class=#{result.class} result=#{result}"
                   result
                 end
               rescue Robe::TimeoutError => e
@@ -165,7 +174,7 @@ module Robe
             end
           else
             msg = "#{__FILE__}[#{__LINE__}] : invalid server task: #{task_name}"
-            trace __FILE__, __LINE__, self, __method__, " : #{msg}"
+            logger.failed(task_name, args, msg)
             msg.to_promise_error
           end
         end

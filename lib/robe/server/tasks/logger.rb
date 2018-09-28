@@ -48,8 +48,8 @@ module Robe
           end
         end
 
-        def failed(name, kwargs, metadata, message)
-          text = "#{prefix} : #{colorize('error performing', :red)} : #{name_s(name)}(args: #{args_s(kwargs)}, metadata: #{metadata}) :: #{message}"
+        def failed(name, kwargs, message)
+          text = "#{prefix} : #{colorize('error performing', :red)} : #{name_s(name)}(args: #{args_s(kwargs)}) :: #{message}"
           Robe.logger.error(text)
         end
 

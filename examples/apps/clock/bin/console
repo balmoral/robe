@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "irb"
+
+$LOAD_PATH << File.join(Dir.pwd, 'lib')
+
+require 'clock-example/server/app'
+
+# require 'pry'
+# Pry.start
+
+IRB.start
+

@@ -93,7 +93,7 @@ module Robe
             @websocket.send_message(message)
           else
             if attempt == 20
-              trace __FILE__, __LINE__, self, __method__, ' : unable to connect to websocket'
+              # trace __FILE__, __LINE__, self, __method__, ' : unable to connect to websocket'
               # raise RuntimeError, "#{__FILE__}[#{__LINE__}] : unable to connect to websocket"
             end
             Robe.browser.delay((attempt ** 1.5).to_i) do

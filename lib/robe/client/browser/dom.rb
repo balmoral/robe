@@ -112,8 +112,8 @@ module Robe
           end
         end
 
-        def bind(store, state_method = nil, *state_method_arg, where: nil, &bound_block)
-          BINDING_CLASS.new(store, state_method, *state_method_arg, where: where, &bound_block)
+        def bind(store, *args, &bound_block)
+          BINDING_CLASS.new(store, *args, &bound_block)
         end
 
         # private api follows
@@ -227,12 +227,12 @@ module Robe
           binding.activate do |prior_state|
             update_element_attribute(binding, prior_state, element, attr)
           end
-          binding.value # initial value from the bound store's state
+          binding.resolve # initial value from the bound store's state
         end
 
         def update_element_attribute(binding, prior_state, element, attr)
           window.animation_frame do
-            value = binding.value(prior_state)
+            value = binding.resolve(prior_state)
             set_attribute(element, attr, value)
           end
         end
@@ -300,10 +300,11 @@ module Robe
         # the resolved binding will become a child of the element
         def resolve_bound_content(element, binding)
           element.bindings(init: true) << binding
-          current_content = binding.value && sanitize_content(binding.value, element, coerce_to_element: true)
+          current_content = binding.resolve
+          current_content &&= sanitize_content(current_content, element, coerce_to_element: true)
           binding.activate do |prior_state|
             old_content = current_content
-            new_content = binding.value(prior_state)
+            new_content = binding.resolve(prior_state)
             new_content = sanitize_content(new_content, element, coerce_to_element: true) if new_content
             replace_bound_content(element, new_content, old_content)
             current_content = new_content

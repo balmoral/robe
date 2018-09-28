@@ -1,4 +1,5 @@
 require 'robe/client/app'
+require 'robe/client/browser/dom/component'
 require 'robe/common/state/atom'
 
 class App < Robe::Client::App
@@ -8,7 +9,7 @@ class App < Robe::Client::App
     attr :server_time
   end
 
-  class TimeDiv < Robe::Client::Component
+  class TimeDiv < Robe::Client::Browser::DOM::Component
     def initialize(which, clock)
       @name = which.to_s.upcase
       @method = :"#{which}_time"
@@ -18,28 +19,30 @@ class App < Robe::Client::App
     def render
       p.style(color: :white, background_color: :darkgray, width: 27.em, padding: 0.5.em)[
         span[@name],
-        span[@clock.send(@method)].style(float: :right)
+        bind(@clock, @method) {
+          span.style(float: :right)[
+            @clock.send(@method)
+          ]
+        }
       ]
     end
   end
 
-  class ClockDiv < Robe::Client::Component
+  class ClockDiv < Robe::Client::Browser::DOM::Component
     def initialize(clock)
       @clock = clock
     end
 
     def render
       # update DOM when clock state changes
-      bind(@clock) {
-        div[
-          TimeDiv.new(:server, @clock),
-          TimeDiv.new(:client, @clock),
-        ]
-      }
+      div[
+        TimeDiv.new(:server, @clock),
+        TimeDiv.new(:client, @clock),
+      ]
     end
   end
 
-  class Page < Robe::Client::Component
+  class Page < Robe::Client::Browser::DOM::Component
     def initialize
       @clock = Clock.new
       every(1000) do
@@ -70,4 +73,6 @@ class App < Robe::Client::App
 
 end
 
-::App.new.mount
+# Robe.app is set by Robe::Client::App
+$app = ::App.new
+$app.mount

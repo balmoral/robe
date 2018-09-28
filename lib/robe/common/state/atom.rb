@@ -58,6 +58,14 @@ module Robe
         @subscribers = []
       end
 
+      def bind(*args, &block)
+        if args.size > 0 || block
+          Robe::State::Binding.new(self, *args, &block)
+        else
+          Robe::State::Binder.new(self)
+        end
+      end
+
       def attrs
         self.class.attrs
       end

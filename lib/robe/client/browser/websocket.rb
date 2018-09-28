@@ -25,16 +25,17 @@ module Robe
           unless @url
             # The websocket url can be overridden by config.public.websocket_url
             url = "#{`document.location.host`}/socket"
+            trace __FILE__, __LINE__, self, __method__, " : url = #{url}"
             if url !~ /^wss?[:]\/\//
               if url !~ /^[:]\/\//
                 # Add :// to the front
                 url = "://#{url}"
               end
               ws_proto = (`document.location.protocol` == 'https:') ? 'wss' : 'ws'
-              # Add wss? to the front
               url = "#{ws_proto}#{url}"
+              # url = "ws://0.0.0.0:9292/socket"
             end
-            # trace __FILE__, __LINE__, self, __method__, " web socket url = #{url}"
+            trace __FILE__, __LINE__, self, __method__, " : web socket url = #{url}"
             @url = url
           end
           @url
@@ -63,7 +64,7 @@ module Robe
           max_reconnect_interval: nil,
           reconnect_decay: nil
         )
-          # trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
+          trace __FILE__, __LINE__, self, __method__, " url='#{url}' auto_reconnect=#{auto_reconnect}"
           @url = url
 
           @auto_reconnect = auto_reconnect.nil? ? true : auto_reconnect

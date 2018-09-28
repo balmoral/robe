@@ -82,8 +82,8 @@ module Robe
           # Create a binding to the given store.
           # When the state of store is mutated the given block will be called
           # and expected to provide a dom element.
-          def bind(store, state_method = nil, *state_method_args, where: nil, &block)
-            binding = Robe::State::Binding.new(store, state_method, *state_method_args, where: where, &block)
+          def bind(store, *args, &block)
+            binding = Robe::State::Binding.new(store, *args, &block)
             self << binding
           end
 

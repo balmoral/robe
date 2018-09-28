@@ -36,14 +36,13 @@ module Robe
         # Send request for the named task to be performed on the server
         # # with given meta data and keyword args.
         def self.send_request(task_name, user_data, args)
-          # trace __FILE__, __LINE__, self, __method__, "(task: #{task_name}, meta: #{meta_data}, args: #{args})"
+          # trace __FILE__, __LINE__, self, __method__, "(task: #{task_name}, meta: #{user_data}, args: #{args})"
           @promises ||= {}
           @task_id ||= 0
           @task_id += 1
           promise = Robe::Promise.new
           @promises[@task_id] = promise
           # TODO: timeout on these callbacks
-          # trace __FILE__, __LINE__, self, __method__
           channel.send_message(
             event: :request,
             content: {

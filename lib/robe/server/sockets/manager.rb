@@ -167,7 +167,7 @@ module Robe
           r = (@handlers[channel.to_sym] || {})[event.to_sym] || []
           if r.empty?
             msg = "#{self.class.name} : no channel handlers(s) for channel=#{channel} event=#{event}"
-            trace __FILE__, __LINE__, self, __method__, " : #{msg}"
+            # trace __FILE__, __LINE__, self, __method__, " : #{msg}"
             raise RuntimeError, msg
           end
           r

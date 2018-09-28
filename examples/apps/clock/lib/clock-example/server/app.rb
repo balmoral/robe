@@ -2,7 +2,7 @@ require 'robe/server'
 
 class App < Robe::Server::App
 
-  task :time do
+  task :time, auth: false do
     Time.now.to_s
   end
   

@@ -85,6 +85,14 @@ module Robe
         block.call if block
       end
 
+      def bind(*args, &block)
+        if args.size > 0 || block
+          Robe::State::Binding.new(self, *args, &block)
+        else
+          Robe::State::Binder.new(self)
+        end
+      end
+      
       # Dispatches the given action with optional arguments:
       # - the current state of the store is held as old_state
       # - the registered reducer for the action is called
