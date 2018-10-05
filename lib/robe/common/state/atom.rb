@@ -52,7 +52,6 @@ module Robe
 
       # seed for store should kwargs to allow subclasses to use kwargs
       def initialize(**seed)
-        # trace __FILE__, __LINE__, self, __method__, "(#{seed})"
         @state = self.class.state_class.new(seed)
         @subscriber_id = 0
         @subscribers = []

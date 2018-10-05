@@ -13,7 +13,7 @@ module Robe
         # atom changes, with the prior state of the store or atom as
         # the argument to the bound block.
         #
-        # The bound block should provide an appropriate value if the creator of
+        # The result/resolve block should provide an appropriate value if the creator of
         # the binding is expecting a value - e.g. when binding DOM components
         # to state.
         #
@@ -33,14 +33,23 @@ module Robe
         #
         #  Binding.new(store, :invoice_total) { |prior| ... }
         #
+        # You can bind to one or more attributes or computed values in the store, for example:
+        #
+        #  Binding.new(store, :cost_total, :sales_total) { |prior| ... }
+        #
         # 3. To bind to a change in a value returned by a method of the store where the method
         # accepts arguments, then use:
         #
-        #   Binding.new(store, :method_name, *method_args) { |prior| ... }
+        #   Binding.new(store, method_name: method_args) { |prior| ... }
         #
         # For example, if store contains invoices, and computes total for days, you may use:
         #
-        #  Binding.new(store, :invoice_total, date)
+        #  Binding.new(store, invoice_total: date)
+        #
+        # You can bind to one or more attributes or computed values in the store which require arguments,
+        # for example:
+        #
+        #  Binding.new(store, cost_total: date, sales_total: date)
         #
         # 4. To bind to arbitrary change(s) in the state of the store you may provide a Proc
         # as the second argument. The proc should expect the prior state as its argument,
@@ -52,6 +61,12 @@ module Robe
         #  Binding.new(store, ->(prior){ prior.name != store.state.name || prior.date != store.state.date } ) do |prior|
         #    # return
         #  end
+        #
+        # 5. You can mix all of the above. Where methods in the store require arguments, put these in a hash.
+        #
+        # For example:
+        #
+        #  Binding.new(store, :count, { cost_total: date, sales_total: date}, ->(prior) { prior.ref != store.state.ref } )
         #
         # NB - if no result block is given then the value of the resolved binding will be the last given value based on a call to the store.
         def initialize(store, *values, &resolve_block)
@@ -127,13 +142,13 @@ module Robe
           end
           if @method_values
             @method_values.each do |method_name, args|
-              prior = prior ? prior.send(method_name, *args) : nil
               current = if store.is_a?(Robe::State::Atom)
                 store.send(method_name, *args)
               else
                 store.state ? store.state.send(method_name, *args) : nil
               end
-              return true unless prior == current
+              method_prior = prior ? prior.send(method_name, *args) : nil
+              return true unless method_prior == current
             end
             changed = false
           end
