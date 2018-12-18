@@ -57,7 +57,7 @@ This mini-app demonstrates Robe's
 - concise DOM DSL
 - reusable DOM components
 - atomic state management
-- explicit binding between state to DOM
+- explicit bindings between state and DOM
 - performing server-side tasks 
 - minimum of server configuration
 
