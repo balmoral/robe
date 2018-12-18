@@ -84,9 +84,13 @@ class App < Robe::Client::App
     end
 
     def render
-      p.style(color: :white, background_color: :darkgray, width: 27.em, padding: 0.5.em)[
-        span[@name],
-        span[@clock.send(@method)].style(float: :right)
+      P.style(color: :white, background_color: :darkgray, width: 27.em, padding: 0.5.em)[
+        SPAN[
+          @name
+        ],
+        SPAN.style(float: :right)[
+          @clock.send(@method)
+        ]
       ]
     end
   end
@@ -99,7 +103,7 @@ class App < Robe::Client::App
     def render
       # update DOM when clock state changes
       bind(@clock) {
-        div[
+        DIV[
           TimeDiv.new(:server, @clock),
           TimeDiv.new(:client, @clock),
         ]
@@ -113,18 +117,20 @@ class App < Robe::Client::App
       every(1000) do
         # get the time on the server using a task
         app.perform_task(:time).then do |server_time|
-          @clock.mutate!(server_time: server_time)
-          @clock.mutate!(client_time: Time.now.to_s)
+          @clock.mutate!(
+            server_time: server_time,
+            client_time: Time.now.to_s
+          )
         end
       end
     end
 
     def render
-      div.style(font_family: 'Helvetica')[
-        h1[
+      DIV.style(font_family: 'Helvetica')[
+        H1[
           'Robe => Ruby on Both Ends.'
         ],
-        h5.style(color: :orangered)[
+        H5.style(color: :orangered)[
           'the time has come for Ruby on the server and the client...'.upcase
         ],
         ClockDiv.new(@clock)
