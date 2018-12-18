@@ -94,7 +94,7 @@ module Robe
         
         def source_maps?
           if @source_maps.nil?
-            @source_maps = ENV['RACK_ENV'] == 'development'
+            @source_maps = development?
           end
           @source_maps
         end
@@ -352,7 +352,7 @@ module Robe
 
         # Defaults to 1000 files
         def sprockets_memory_cache_size
-          @sprockets_memory_cache_size ||= 1000
+          @sprockets_memory_cache_size ||= development? ? 5000 : 0
         end
 
         # Sprockets memory cache is much faster than file cache.

@@ -83,13 +83,15 @@ module Robe
               # session: session
             )
           }
+          ::Thread.abort_on_exception = true # may have no effect in concurrent thread
           if @thread_pool
             @thread_pool.post do
-              ::Thread.abort_on_exception = true # may have no effect
               task.call
             end
           else
-            task.call
+            Thread.new do
+              task.call
+            end
           end
         # rescue Exception => e
         #   msg = "#{__FILE__}[#{__LINE__}] : #{e}"
