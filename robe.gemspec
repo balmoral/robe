@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'json', '~> 2.1'
   s.add_dependency 'sass', '~> 3.5'
   s.add_dependency 'uglifier', '~> 4.1'
-  s.add_dependency 'logger', '~> 1.2'
+  s.add_dependency 'logger', '~> 1.3'
   s.add_dependency 'mongo', '~> 2.4'
   s.add_dependency 'bcrypt', '~> 3.1'
   s.add_dependency 'rack-protection', '~> 1.5'

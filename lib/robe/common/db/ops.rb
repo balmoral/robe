@@ -184,7 +184,7 @@ module Robe
         end
 
         # Returns a promise.
-        # e.g. delete_many(:customers, { 'date' => { '$lt' => '2070817'} })
+        # e.g. delete_many(:orders, { 'date' => { '$lt' => '2070817'} })
         # If filter is not given all documents in collection will be deleted!
         def delete_many(collection, filter = nil)
           op(collection, :delete_many, filter ? filter.stringify_keys : nil)

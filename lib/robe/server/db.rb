@@ -82,7 +82,7 @@ module Robe
               block.call
             end
           else
-            Thread.new do
+            ::Thread.new do
               block.call
             end
           end
