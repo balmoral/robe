@@ -1,4 +1,3 @@
-()
 module Robe; module DB
   module Mongo
     class Collection

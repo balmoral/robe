@@ -12,22 +12,22 @@ Gem::Specification.new do |s|
   s.description = 'Ruby on both ends - a complete Ruby framework for server and client.'
   s.homepage = 'https://github.com/balmoral/robe'
   s.license = 'MIT'
-  s.required_ruby_version = '>= 2.3.0'
+  s.required_ruby_version = '>= 2.6.3'
 
   s.files = %w'README.md MIT-LICENSE' + Dir[File.join('lib', '**', '*')]
   s.require_paths = ['lib']
 
   # s.add_dependency 'sprockets-sass' # , '2.0.0.beta1'
+  # s.add_dependency 'sass', '~> 3.5'
   s.add_dependency 'json', '~> 2.1'
-  s.add_dependency 'sass', '~> 3.5'
   s.add_dependency 'uglifier', '~> 4.1'
-  s.add_dependency 'logger', '~> 1.3'
-  s.add_dependency 'mongo', '~> 2.4'
+  s.add_dependency 'logger', '~> 1.4'
+  s.add_dependency 'mongo', '~> 2.11'
   s.add_dependency 'bcrypt', '~> 3.1'
-  s.add_dependency 'rack-protection', '~> 1.5'
-  s.add_dependency 'concurrent-ruby', '~> 1.0', '>= 1.0.5'
+  s.add_dependency 'rack-protection', '~> 2.0'
+  s.add_dependency 'concurrent-ruby', '~> 1.1'
   s.add_dependency 'faye-websocket', '~> 0.10.4'
-  s.add_dependency 'redis', '~> 4.0'
-  s.add_dependency 'opal', '~> 0.11.0'
-  s.add_dependency 'opal-sprockets', '~> 0.4.1.0.11.0'
+  s.add_dependency 'redis', '~> 4.1'
+  s.add_dependency 'opal', '~> 1.0' 
+  s.add_dependency 'opal-sprockets', '~> 0.4.8.1.0.3.7' 
 end
