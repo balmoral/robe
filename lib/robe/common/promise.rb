@@ -526,7 +526,7 @@ end
 module Enumerable
   # Enumerate enumerable calling block for each element.
   # Block should return a promise.
-  # Wait for each promise to resolve before calling
+  # Waits for each promise to resolve before calling
   # block on next element.
   # Returns promise from last execution of block.
   def promise_chain(&block)

@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   # s.add_dependency 'sprockets-sass' # , '2.0.0.beta1'
-  # s.add_dependency 'sass', '~> 3.5'
   s.add_dependency 'json', '~> 2.1'
   s.add_dependency 'uglifier', '~> 4.1'
   s.add_dependency 'logger', '~> 1.4'
@@ -28,6 +27,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'concurrent-ruby', '~> 1.1'
   s.add_dependency 'faye-websocket', '~> 0.10.4'
   s.add_dependency 'redis', '~> 4.1'
-  s.add_dependency 'opal', '~> 1.0' 
+  s.add_dependency 'sass', '~> 3.7'  # sass is deprecated, wait for sprockets 4.0 in opal-sprockets to move to sassc
+  # s.add_dependency 'sassc', '~> 2.2'
+  s.add_dependency 'opal', '~> 1.0'
   s.add_dependency 'opal-sprockets', '~> 0.4.8.1.0.3.7' 
 end
