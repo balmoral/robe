@@ -12,7 +12,8 @@ module Robe
               Browser.supports? 'History'
             end
 
-            include Native::Wrapper
+            # include Native::Wrapper
+            include Native
 
             # @!attribute [r] length
             # @return [Integer] how many items are in the history

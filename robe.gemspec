@@ -29,6 +29,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'redis', '~> 4.1'
   s.add_dependency 'sass', '~> 3.7'  # sass is deprecated, wait for sprockets 4.0 in opal-sprockets to move to sassc
   # s.add_dependency 'sassc', '~> 2.2'
-  s.add_dependency 'opal', '~> 1.0'
-  s.add_dependency 'opal-sprockets', '~> 0.4.8.1.0.3.7' 
+  s.add_dependency 'opal', '0.11.0' # ~> 1.0'
+  s.add_dependency 'opal-sprockets', '0.4.1.0.11.0.3.1' # '~> 0.4.8.1.0.3.7'
 end

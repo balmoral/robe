@@ -7,7 +7,8 @@ module Robe
       module Wrap
         module Window
           class Location
-            include Native::Wrapper
+            # include Native::Wrapper
+            include Native
 
             # Change the location.
             #

@@ -79,21 +79,16 @@ module Robe
           end
         end
 
-        def self.check_source_map_enabled
-          source_map_enabled
-        end
-        
         def self.source_map_enabled
           if @source_map_enabled.nil?
             check_version
             @source_map_enabled = config.source_maps? && development?
             ::Opal::Config.source_map_enabled = @source_map_enabled
-            puts "::Opal::Config.source_map_enabled = #{::Opal::Config.source_map_enabled}"
           end
           @source_map_enabled
         end
 
-        def self.source_map_server__
+        def self.source_map_server
           if source_map_enabled
             unless @source_map_server
               source_map_server  = ::Opal::SourceMapServer.new(sprockets.env, source_maps_prefix_path)

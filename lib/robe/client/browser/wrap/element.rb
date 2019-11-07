@@ -2,7 +2,8 @@ require 'robe/common/util/unicode'
 
 module Robe; module Client; module Browser; module Wrap
   class Element
-    include Native::Wrapper
+    # include Native::Wrapper
+    include Native
     include EventTarget
     include NativeFallback
     include Robe::Unicode
