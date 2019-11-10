@@ -21,7 +21,8 @@ module Robe; module DB
           user: user,
           password: password,
           min_pool_size: min_pool_size,
-          max_pool_size: max_pool_size
+          max_pool_size: max_pool_size,
+          retry_writes: false
         ) do |native|
           @native = native
           @database ||= Robe::DB::Mongo::Database.new(self, native.database)
