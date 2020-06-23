@@ -1,0 +1,3 @@
+sh git/commit
+# gem build robe.gemspec
+# gem install robe-0.1.6.gem

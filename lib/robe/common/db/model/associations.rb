@@ -210,9 +210,9 @@ module Robe
           #     embed_one: :recipe
           #   end
           # embeds_many creates a method on the Robe::DB::Model that returns the embedded models (no promise).
-          def embed_one(what)
+          def embed_one(_what)
             fail 'embedding not implemented yet'
-            what = what.to_s
+            what = _what.to_s
             if what.plural?
               raise NameError, "embed_one takes a singular association name (not '#{what}')"
             end

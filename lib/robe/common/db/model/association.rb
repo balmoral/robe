@@ -1,7 +1,7 @@
 require 'robe/common/trace'
 
 module Robe
-  module DB;
+  module DB
     class Model
       class Association < Robe::Model
 
