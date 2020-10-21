@@ -59,7 +59,8 @@ module Robe
 
         def self.build_instance
           # local vars to overcome ::Rack::Builder.app instance_eval
-          _source_map_server = development? ? Robe::Server::Rack::Opal.source_map_server : nil
+          # _source_map_server = development? ? Robe::Server::Rack::Opal.source_map_server : nil
+          Robe::Server::Rack::Opal.source_map_enabled # force Opal source maps setup
           _self = self
           _sprockets = sprockets
           @instance = ::Rack::Builder.app do
@@ -92,7 +93,7 @@ module Robe
                 run _sprockets.handle
               end
               # SOURCE MAPS
-              if _source_map_server
+              if false # _source_map_server
                 map(_self.source_maps_prefix_path) do
                   use ::Rack::ConditionalGet
                   use ::Rack::ETag

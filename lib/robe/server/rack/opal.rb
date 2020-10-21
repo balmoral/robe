@@ -4,6 +4,7 @@ require 'opal-sprockets' # for Opal >= 0.11, included in Opal 0.10
 require 'uglifier'
 require 'robe/server/rack/paths'
 
+=begin
 module Opal::Sprockets::Processor
   module PlainJavaScriptLoader
     def self.call(input)
@@ -29,6 +30,7 @@ module Opal::Sprockets::Processor
     end
   end
 end
+=end
 
 module Robe
   module Server
@@ -46,6 +48,7 @@ module Robe
         # On first call configures Robe::Server::Rack::Sprockets.env for Opal.
         def self.sprockets
           unless @sprockets
+            source_map_enabled # forece setting of Opal source maps
             @sprockets = Robe::Server::Rack::Sprockets
             check_version
             register_opal_unaware_gems # do first so Opal::paths set
@@ -84,6 +87,7 @@ module Robe
             check_version
             @source_map_enabled = config.source_maps? && development?
             ::Opal::Config.source_map_enabled = @source_map_enabled
+            trace __FILE__, __LINE__, self, __method__, " : ::Opal::Config.source_map_enabled=#{::Opal::Config.source_map_enabled}"
           end
           @source_map_enabled
         end

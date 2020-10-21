@@ -107,7 +107,7 @@ module Robe
             max_pool_size: max_threads
           )
           if @mongo_client
-            # trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
+            trace __FILE__, __LINE__, self, __method__, " : created mongo client for host=#{config.mongo_hosts} database=#{config.mongo_database}"
           else
             raise Robe::DBError, "#{__FILE__}[#{__LINE__}] : could not create mongo client for host=#{config.mongo_hosts} database='#{config.mongo_database}'"
           end
