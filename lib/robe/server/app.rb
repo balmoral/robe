@@ -27,8 +27,8 @@ module Robe
       # Returns self.
       # Initializes rack, assets, sockets, task manager and database.
       def self.instance
+        # ::Thread.abort_on_exception = true
         unless @started
-          ::Thread.abort_on_exception = true
           configure
           # trace __FILE__, __LINE__, self, __method__, ' : calling rack_app'
           rack_app

@@ -58,6 +58,7 @@ module Robe
         end
 
         def self.build_instance
+          trace __FILE__, __LINE__, self, __method__, " RACK BUILD INSTANCE - ShowExceptions removed"
           # local vars to overcome ::Rack::Builder.app instance_eval
           # _source_map_server = development? ? Robe::Server::Rack::Opal.source_map_server : nil
           Robe::Server::Rack::Opal.source_map_enabled # force Opal source maps setup
@@ -66,7 +67,7 @@ module Robe
           @instance = ::Rack::Builder.app do
             use Robe::Server::Rack::KeepAlive # TODO: check this is useful
             use ::Rack::Deflater
-            use ::Rack::ShowExceptions
+            use ::Rack::ShowExceptions # !!! THIS SWALLOWS EXCPETIONS !!!
 
             use ::Rack::Session::Cookie,
               key: 'rack.session',

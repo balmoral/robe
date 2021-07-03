@@ -572,21 +572,21 @@ module Robe
           end
         elsif types = attr_spec[ATTR_SPEC_MULTI_TYPE]
           unless types.include?(value.class)
-            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be type #{types.join(' or ')} not #{value.class}"
+            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value \"#{value}\" must be type #{types.join(' or ')} not #{value.class}"
           end
         end
         if length = attr_spec[ATTR_SPEC_FIX_LENGTH]
           unless value.length == length
-            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be fixed length of #{length} not #{value.length}"
+            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value \"#{value}\" must be fixed length of #{length} not #{value.length}"
           end
         elsif length = attr_spec[ATTR_SPEC_VAR_LENGTH]
           unless length.include?(value.length)
-            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} must be length in range #{length} not #{value.length}"
+            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : length must be in range #{length} not #{value.length}"
           end
         end
         if insist = attr_spec[ATTR_SPEC_INSIST]
           unless true == insist.call(value)
-            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value #{value} insist failure : #{result}"
+            raise ModelError, "#{self.class.name}##{attr}=(#{value}) : value \"#{value}\" insist failure : #{result}"
           end
         end
         if regexp = attr_spec[ATTR_SPEC_REGEXP]

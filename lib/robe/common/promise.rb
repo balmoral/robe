@@ -208,15 +208,11 @@ module Robe
       end
 
       # ROBE mod - remove catching all Exceptions - too hard to debug!
-      # begin
-        if block = @action[:success] || @action[:always]
-          value = block.call(value)
-        end
+      if block = @action[:success] || @action[:always]
+        value = block.call(value)
+      end
 
-        resolve!(value)
-      # rescue Exception => e
-      #   exception!(e)
-      # end
+      resolve!(value)
 
       self
     end
@@ -242,19 +238,15 @@ module Robe
         return (value << @prev) ^ self
       end
 
-      # begin
-        if block = @action[:failure] || @action[:always]
-          value = block.call(value)
-        end
+      if block = @action[:failure] || @action[:always]
+        value = block.call(value)
+      end
 
-        if @action.has_key?(:always)
-          resolve!(value)
-        else
-          reject!(value)
-        end
-      # rescue Exception => e
-      #   exception!(e)
-      # end
+      if @action.has_key?(:always)
+        resolve!(value)
+      else
+        reject!(value)
+      end
 
       self
     end

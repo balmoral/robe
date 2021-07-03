@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'mongo', '~> 2.11.0'
   s.add_dependency 'bcrypt', '~> 3.1'
   s.add_dependency 'rack-protection', '~> 2.0'
-  s.add_dependency 'concurrent-ruby', '~> 1.1'
+  # s.add_dependency 'concurrent-ruby', '~> 1.1'
   s.add_dependency 'faye-websocket', '~> 0.10.4'
   s.add_dependency 'redis', '~> 4.1'
   s.add_dependency 'sass', '~> 3.7'  # sass is deprecated, wait for sprockets 4.0 in opal-sprockets to move to sassc
