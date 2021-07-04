@@ -16,7 +16,7 @@ module Robe
           @clients = {}     # client id => a Client
           @sockets = {}     # socket object id => a Client
           @subscribers = {} # channel name => a Hash of client_id => Client
-          ::Thread.new { monitor_redis }
+          ::Thread.new { monitor_redis } if Robe.config.use_redis?
         end
 
         def redis
@@ -45,6 +45,16 @@ module Robe
           socket.rack_response
         end
 
+        def publish(channel:, event:, client: nil, content: nil)
+          if Robe.config.use_redis?
+            redis_publish(channel: channel, event: event, client: client, content: content)
+          else
+            client_id = client && client.id
+            json = send_packet_json(channel: channel, event: event, content: content )
+            send_json_message(client_id: client_id, channel: channel, json: json)            
+          end  
+        end
+
         # Publish a message event and optional contents on redis
         # to one or all clients on the given channel.
         #
@@ -60,11 +70,10 @@ module Robe
         # If the client is given then only that client will be sent the message.
         #
         def redis_publish(channel:, event:, client: nil, content: nil)
-          # trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
-          json = { channel: channel, event: event, content: content }.compact
+          trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
           channel_tag = channel.to_s.ljust(REDIS_HEAD_FIELD_LENGTH)
           client_tag = (client ? client.id : '').ljust(REDIS_HEAD_FIELD_LENGTH)
-          json = JSON.generate(json)
+          json = send_packet_json(channel: channel, event: event, content: content )
           message = channel_tag + client_tag + json
           # trace __FILE__, __LINE__, self, __method__, " : #{message[0,80]}"
           redis.publish(REDIS_CHANNEL, message)
@@ -147,14 +156,14 @@ module Robe
           # trace __FILE__, __LINE__, self, __method__, " : subscribe client.id=#{client.id} channel=#{channel}"
           channel_subscribers(channel)[client.id] = client
           client.channels << channel
-          client.redis_publish(channel: channel, event: :subscribed)
+          client.publish(channel: channel, event: :subscribed)
         end
 
         def unsubscribe_client(client, channel)
           # trace __FILE__, __LINE__, self, __method__, " : unsubscribe client.id=#{client.id} channel=#{channel}"
           channel_subscribers(channel).delete(client.id)
           client.channels.delete(channel)
-          client.redis_publish(channel: channel, event: :unsubscribed)
+          client.publish(channel: channel, event: :unsubscribed)
         end
 
         def channel_subscribers(channel)
@@ -189,23 +198,32 @@ module Robe
               channel = message[0, l].strip
               client_id = message[l, l].strip
               json = message[(l * 2)..-1]
-              # trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
-              if channel.empty?
-                raise RuntimeError, 'missing channel name in redis socket packet'
-              end
-              if client_id.empty?
-                channel_subscribers(channel).values.each do |client|
-                  client.socket_send(json)
-                end
-              else
-                client = @clients[client_id]
-                if client
-                  # trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
-                  client.socket_send(json)
-                else
-                  Robe.logger.error("#{__FILE__}[##{__LINE__}] : #{self.class}##{__method__} : unregistered client id #{client_id}")
-                end
-              end
+              send_json_message(client_id: client_id, channel: channel, json: json)
+            end
+          end
+        end
+
+        def send_packet_json(channel:, event:, content:)
+          packet = { channel: channel, event: event, content: content }.compact
+          JSON.generate(packet)
+        end
+
+        def send_json_message(client_id:, channel:, json:)
+          trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
+          if !channel || channel.empty?
+            raise RuntimeError, "no channel name given to #{self}###{__method__}"
+          end
+          if client_id.empty?
+            channel_subscribers(channel).values.each do |client|
+              client.socket_send(json)
+            end
+          else
+            client = @clients[client_id]
+            if client
+              trace __FILE__, __LINE__, self, __method__, " : client_id=#{client_id} channel=#{channel} json=#{json[0,64]}"
+              client.socket_send(json)
+            else
+              Robe.logger.error("#{__FILE__}[##{__LINE__}] : #{self.class}##{__method__} : unregistered client id #{client_id}")
             end
           end
         end

@@ -103,6 +103,10 @@ module Robe
           @source_maps = bool
         end
 
+        def use_redis?
+          Robe::Server::USE_REDIS
+        end
+
         def use_mongo?
           !!@use_mongo
         end
@@ -157,18 +161,32 @@ module Robe
         end
 
         def db_op_min_threads
-          @db_op_min_threads ||= 1
+          # mongo needs at least one thread
+          @db_op_min_threads ||= MULTI_THREAD ? 1 : 1
         end
         
         def db_op_max_threads
-          @db_op_max_threads ||= 4
+          # mongo needs at least one thread
+          @db_op_max_threads ||= MULTI_THREAD ? 4 : 1
         end
         
         def db_op_min_threads=(int)
+          if int == 0
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : mongo needs at least 1 thread pool"
+          end  
+          if int > 1 && !Robe::Server::MULTI_THREAD
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
+          end  
           @db_op_min_threads = int
         end
         
         def db_op_max_threads=(int)
+          if int == 0
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : mongo needs at least 1 thread pool"
+          end  
+          if int > 1 && !Robe::Server::MULTI_THREAD
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
+          end  
           @db_op_max_threads = int
         end
 
@@ -177,6 +195,9 @@ module Robe
         end
 
         def min_task_threads=(val)
+          if int > 0 && !Robe::Server::MULTI_THREAD
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
+          end  
           @min_task_threads = val
         end
 
@@ -184,8 +205,11 @@ module Robe
           @max_task_threads ||= 4
         end
 
-        def max_task_threads=(val)
-          @max_task_threads = val
+        def max_task_threads=(int)
+          if int > 0 && !Robe::Server::MULTI_THREAD
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
+          end  
+          @max_task_threads = int
         end
 
         # Directory structure is conventionally:

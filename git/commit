@@ -1,2 +1,2 @@
 git add -A
-git commit -m "work in progress"
+git commit -m "option for server in single thread"

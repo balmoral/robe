@@ -59,6 +59,9 @@ module Robe
         def init_threads
           @timeout = Robe.config.task_timeout
           @thread_pool = if Robe.config.max_task_threads > 0
+            unless Robe::Server::App.MULTI_THREAD
+              raise Robe::RuntimeError, "Robe.config.max_task_threads = #{Robe.config.max_task_threads} but Robe::Server::App.MULTI_THREAD must be set true to allow multiple task threads"
+            end  
             Concurrent::CachedThreadPool.new(
               min_threads: [Robe.config.min_task_threads, 1].max,
               max_threads: Robe.config.max_task_threads
@@ -83,14 +86,11 @@ module Robe
               # session: session
             )
           }
-          if false && @thread_pool
+          if @thread_pool
             @thread_pool.post do
               task.call
             end
           else
-            puts '$$$$$$$$$$$$$$$$$$$$'
-            trace __FILE__, __LINE__, self, __method__, " calling task #{request[:task]} with NO threading"
-            puts '$$$$$$$$$$$$$$$$$$$$'
             task.call
           end
         end
@@ -186,7 +186,7 @@ module Robe
 
         def send_response(client:, task:, id:, result: nil, error: nil, meta_data: nil)
           # trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
-          client.redis_publish(
+          client.publish(
             channel: task_channel,
             event: :response,
             content: {

@@ -4,7 +4,11 @@ module Robe
   module_function
 
   def redis
-    @redis ||= ::Redis.new
+    if Robe.config.use_redis?
+      @redis ||= ::Redis.new
+    else
+      nil
+    end  
   end
 
 end

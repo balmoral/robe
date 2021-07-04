@@ -27,8 +27,8 @@ module Robe
         manager.on_channel(channel, event, &block)
       end
 
-      def redis_publish(channel:, event:, client: nil, content: nil)
-        manager.redis_publish(channel: channel, event: event, client: client, content: content)
+      def publish(channel:, event:, client: nil, content: nil)
+        manager.publish(channel: channel, event: event, client: client, content: content)
       end
 
       private

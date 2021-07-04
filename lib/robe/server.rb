@@ -23,6 +23,11 @@ module Robe
     false
   end
 
+  module Server
+    MULTI_THREAD = false
+    USE_CONCURRENT = MULTI_THREAD
+    USE_REDIS = MULTI_THREAD
+  end
 end
 
 # require server app
