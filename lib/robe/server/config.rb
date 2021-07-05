@@ -167,7 +167,7 @@ module Robe
         
         def db_op_max_threads
           # mongo needs at least one thread
-          @db_op_max_threads ||= MULTI_THREAD ? 1 : 1
+          @db_op_max_threads ||= MULTI_THREAD ? 3 : 1
         end
         
         def db_op_min_threads=(int)
@@ -205,7 +205,7 @@ module Robe
         end
 
         def max_task_threads
-          @max_task_threads ||= 4
+          @max_task_threads ||= 3
         end
 
         def max_task_threads=(int)
