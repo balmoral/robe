@@ -70,7 +70,7 @@ module Robe
         # If the client is given then only that client will be sent the message.
         #
         def redis_publish(channel:, event:, client: nil, content: nil)
-          trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
+          # trace __FILE__, __LINE__, self, __method__, " channel=#{channel} event=#{event} client.id=#{client ? client.id : ''} content=#{content.class}"
           channel_tag = channel.to_s.ljust(REDIS_HEAD_FIELD_LENGTH)
           client_tag = (client ? client.id : '').ljust(REDIS_HEAD_FIELD_LENGTH)
           json = send_packet_json(channel: channel, event: event, content: content )

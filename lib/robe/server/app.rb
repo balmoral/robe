@@ -19,8 +19,6 @@ module Robe
   module Server
     class App
 
-      USE_REDIS = true
-
       def self.build
         configure
         Robe::Server::App::Builder.build
