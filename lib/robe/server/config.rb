@@ -167,7 +167,7 @@ module Robe
         
         def db_op_max_threads
           # mongo needs at least one thread
-          @db_op_max_threads ||= MULTI_THREAD ? 4 : 1
+          @db_op_max_threads ||= MULTI_THREAD ? 1 : 1
         end
         
         def db_op_min_threads=(int)
@@ -195,7 +195,10 @@ module Robe
         end
 
         def min_task_threads=(val)
-          if int > 0 && !Robe::Server::MULTI_THREAD
+          if int == 0
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : tasks need at least 1 thread pool"
+          end  
+          if int > 1 && !Robe::Server::MULTI_THREAD
             raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
           end  
           @min_task_threads = val
@@ -206,7 +209,10 @@ module Robe
         end
 
         def max_task_threads=(int)
-          if int > 0 && !Robe::Server::MULTI_THREAD
+          if int == 0
+            raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : tasks need at least 1 thread pool"
+          end  
+          if int > 1 && !Robe::Server::MULTI_THREAD
             raise Robe::RuntimeError, "#{self}###{__method__}(#{int}) not permitted : Robe::Server::MULTI_THREAD is false"
           end  
           @max_task_threads = int

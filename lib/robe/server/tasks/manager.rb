@@ -59,9 +59,6 @@ module Robe
         def init_threads
           @timeout = Robe.config.task_timeout
           @thread_pool = if Robe.config.max_task_threads > 0
-            unless Robe::Server::App.MULTI_THREAD
-              raise Robe::RuntimeError, "Robe.config.max_task_threads = #{Robe.config.max_task_threads} but Robe::Server::App.MULTI_THREAD must be set true to allow multiple task threads"
-            end  
             Concurrent::CachedThreadPool.new(
               min_threads: [Robe.config.min_task_threads, 1].max,
               max_threads: Robe.config.max_task_threads
