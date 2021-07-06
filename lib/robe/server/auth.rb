@@ -106,14 +106,14 @@ module Robe
       # Returns the user_id extracted from a user signature.
       # Will throw a Robe::UserError if signature is not correctly constructed or signed
       def extract_user_id(signature)
-        trace __FILE__, __LINE__, self, __method__, "(#{signature})"
+        # trace __FILE__, __LINE__, self, __method__, "(#{signature})"
         index = signature.index(SIGNATURE_HOOK)
         # if no index, the signature is invalid
         result = if index
           user_id = signature[0...index]
           token = signature[(index + SIGNATURE_HOOK.length)..-1]
           check = tokenize_user_id(user_id)
-          trace __FILE__, __LINE__, self, __method__, " user_id=#{user_id} token=#{token}, check=#{check} eq=#{token == check}"
+          # trace __FILE__, __LINE__, self, __method__, " user_id=#{user_id} token=#{token}, check=#{check} eq=#{token == check}"
           token == check ? user_id : nil
         end
         unless result
