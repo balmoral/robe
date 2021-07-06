@@ -192,7 +192,8 @@ module Robe
         # NB: the JSON message should also include the channel name for the actual client's use.
         # It is up to the socket handlers to determine how they are broadcasting.
         def monitor_redis
-          redis.dup.subscribe(REDIS_CHANNEL) do |on|
+          # redis.dup.subscribe(REDIS_CHANNEL) do |on|
+          redis.subscribe(REDIS_CHANNEL) do |on|
             on.message do |_, message|
               l = REDIS_HEAD_FIELD_LENGTH
               channel = message[0, l].strip

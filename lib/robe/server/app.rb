@@ -2,6 +2,7 @@ require 'robe/common/globals'
 require 'robe/common/errors'
 require 'robe/common/trace'
 require 'robe/server/util/logger'
+require 'robe/server/memory'
 require 'robe/server/config'
 require 'robe/server/rack'
 require 'robe/server/sockets'
@@ -45,13 +46,15 @@ module Robe
       end
 
       def self.call(env)
-        # req = Rack::Request.new(env)
-        # trace __FILE__, __LINE__, self, __method__, " : req.cookies=#{req.cookies}"
-        if Faye::WebSocket.websocket?(env)
+        trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
+        result = if Faye::WebSocket.websocket?(env)
           sockets.call(env)
         else
           rack_app.call(env)
         end
+        Robe::Server::Memory.compact
+        puts Robe::Server::Memory.stats
+        result
       end
 
       def self.config

@@ -15,11 +15,12 @@ module Robe
         
         def self.call(env)
           path = env['PATH_INFO']
-          # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
+          trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
           if %w[/ /index.html].include?(path)
+            trace __FILE__, __LINE__, self, __method__
             [200, { 'Content-Type' => 'text/html' }, [html.index]]
           else
-            # trace __FILE__, __LINE__, self, __method__
+            trace __FILE__, __LINE__, self, __method__
             instance.call(env)
           end
         end
@@ -106,8 +107,14 @@ module Robe
             # so assume it's a browser request for a page.
             # As we're expecting only a single page app
             # (for now) we redirect the browser to the
+            map('/get') do
+              trace __FILE__, __LINE__, self, __method__, "map('/get') do"
+              handler = -> (env) { [200, { "Content-Type" => "text/plain" }, [" test get ok"]] }
+              run handler
+            end
             # root page and provide 'route' parameters.
             map('/') do
+              trace __FILE__, __LINE__, self, __method__, "map('/') do"
               run _self.redirect
             end
           end

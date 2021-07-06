@@ -3,7 +3,10 @@
 require 'singleton'
 require 'json'
 require 'timeout'     # ruby stdlib
-require 'concurrent'  # concurrent-ruby gem
+
+if Robe::Server::USE_CONCURRENT  
+  require 'concurrent'  # concurrent-ruby gem
+end
 
 require 'robe/common/sockets'
 require 'robe/common/promise'
@@ -56,13 +59,19 @@ module Robe
           end
         end
 
+        def use_basic_threading?
+          Robe.config.max_task_threads > 0 && !Robe::Server::USE_CONCURRENT
+        end
+
         def init_threads
           @timeout = Robe.config.task_timeout
-          @thread_pool = if Robe.config.max_task_threads > 0
-            Concurrent::CachedThreadPool.new(
-              min_threads: [Robe.config.min_task_threads, 1].max,
-              max_threads: Robe.config.max_task_threads
-            )
+          @concurrent_thread_pool = if Robe.config.max_task_threads > 0
+            if Robe::Server::USE_CONCURRENT
+              Concurrent::CachedThreadPool.new(
+                min_threads: [Robe.config.min_task_threads, 1].max,
+                max_threads: Robe.config.max_task_threads
+              )
+            end
           end
         end
 
@@ -83,10 +92,14 @@ module Robe
               # session: session
             )
           }
-          if @thread_pool
-            @thread_pool.post do
+          if @concurrent_thread_pool
+            @concurrent_thread_pool.post do
               task.call
             end
+          elsif use_basic_threading?
+            ::Thread.new do
+              task.call
+            end    
           else
             task.call
           end

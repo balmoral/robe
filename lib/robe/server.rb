@@ -25,7 +25,7 @@ module Robe
 
   module Server
     MULTI_THREAD = true
-    USE_CONCURRENT = MULTI_THREAD
+    USE_CONCURRENT = false # MULTI_THREAD
     USE_REDIS = false # MULTI_THREAD
   end
 end
