@@ -30,7 +30,7 @@ module Robe
         end
 
         def publish(channel:, event:, content: nil)
-          trace __FILE__, __LINE__, self, __method__, "(channel: #{channel}, event: #{event}, content: #{content.class})"
+          # trace __FILE__, __LINE__, self, __method__, "(channel: #{channel}, event: #{event}, content: #{content.class})"
           unless channels.include?(channel)
             trace __FILE__, __LINE__, self, __method__, " client not subscribed to channel #{channel}"
             raise RuntimeError, "#{self.class.name}##{__method__} : client not subscribed to channel #{channel}"

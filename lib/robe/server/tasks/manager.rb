@@ -109,7 +109,7 @@ module Robe
         # user should be a hash with :id and :signature where
         # signature is a signed user user id
         def perform_task(client:, name:, args:, id:, user:)
-          trace __FILE__, __LINE__, self, __method__, "(client: #{client}, name: #{name}, args: #{args}, id: #{id}, user: #{user})"
+          # trace __FILE__, __LINE__, self, __method__, "(client: #{client}, name: #{name}, args: #{args}, id: #{id}, user: #{user})"
           logger.performing(name, args) if Robe.config.log_tasks?
           start_time = Time.now.to_f
           resolve_task(name, args, user).then do |result, meta_data|
@@ -119,7 +119,7 @@ module Robe
           end.fail do |error|
             logger.failed(name, args, error)
             begin
-              trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, id: #{id}, error: #{error})"
+              # trace __FILE__, __LINE__, self, __method__, "  send_response(task: #{name}, id: #{id}, error: #{error})"
               send_response(client: client, task: name, id: id, error: error)
             rescue JSON::GeneratorError => e
               # trace __FILE__, __LINE__, self, __method__, "  #{e}"
@@ -169,7 +169,7 @@ module Robe
             Timeout.timeout(@timeout, Robe::TimeoutError) do
               Robe.auth.thread_user_signature = user_signature if user_signature # this also sets thread's user_id
               begin
-                trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} args=#{args} user=#{user} : calling block :"
+                # trace __FILE__, __LINE__, self, __method__, " task_name=#{task_name} args=#{args} user=#{user} : calling block :"
                 result = nil
                 begin
                   result = args.empty? ? block.call : block.call(**args)
