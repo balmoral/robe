@@ -116,6 +116,7 @@ module Robe
             send_response(client: client, task: name, id: id, result: result, error: nil, meta_data: meta_data)
             run_time = ((Time.now.to_f - start_time) * 1000).round(3)
             logger.performed(name, run_time, args) if Robe.config.log_tasks?
+            Robe::Server::Memory.compact
           end.fail do |error|
             logger.failed(name, args, error)
             begin
