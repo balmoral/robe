@@ -46,7 +46,7 @@ module Robe
       end
 
       def self.call(env)
-        trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
+        # trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
         result = if Faye::WebSocket.websocket?(env)
           sockets.call(env)
         else
