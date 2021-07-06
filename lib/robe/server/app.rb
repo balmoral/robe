@@ -47,14 +47,11 @@ module Robe
 
       def self.call(env)
         # trace __FILE__, __LINE__, self, __method__, " : env=#{env}"
-        result = if Faye::WebSocket.websocket?(env)
+        if Faye::WebSocket.websocket?(env)
           sockets.call(env)
         else
           rack_app.call(env)
         end
-        Robe::Server::Memory.compact
-        puts Robe::Server::Memory.stats
-        result
       end
 
       def self.config

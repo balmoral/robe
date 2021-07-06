@@ -15,12 +15,12 @@ module Robe
         
         def self.call(env)
           path = env['PATH_INFO']
-          trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
+          # trace __FILE__, __LINE__, self, __method__, " : path=#{path}"
           if %w[/ /index.html].include?(path)
-            trace __FILE__, __LINE__, self, __method__
+            # trace __FILE__, __LINE__, self, __method__
             [200, { 'Content-Type' => 'text/html' }, [html.index]]
           else
-            trace __FILE__, __LINE__, self, __method__
+            # trace __FILE__, __LINE__, self, __method__
             instance.call(env)
           end
         end
