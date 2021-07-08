@@ -23,10 +23,4 @@ module Robe
 
     end
   end
-
-  module_function
-
-  def thread
-    @thread ||= Robe::Server::Thread
-  end
 end

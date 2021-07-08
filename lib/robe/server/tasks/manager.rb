@@ -79,7 +79,7 @@ module Robe
         # it on the server, returning the result to the client.
         # Tasks returning a promise will wait to return.
         def process_request(client, request) # , session)
-          # trace __FILE__, __LINE__, self, __method__, "(#{client}, #{request})"
+          trace __FILE__, __LINE__, self, __method__, "(#{client}, #{request})"
           request = request.symbolize_keys
           # dispatch the task in the thread pool, along with meta data.
           task = -> {
@@ -97,9 +97,8 @@ module Robe
               task.call
             end
           elsif use_basic_threading?
-            ::Thread.new do
-              task.call
-            end    
+            task.call
+            # ::Thread.new { task.call }
           else
             task.call
           end
@@ -196,7 +195,7 @@ module Robe
         end
 
         def send_response(client:, task:, id:, result: nil, error: nil, meta_data: nil)
-          # trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
+          trace __FILE__, __LINE__, self, __method__, " client.id=#{client.id} task=#{task}"
           client.publish(
             channel: task_channel,
             event: :response,

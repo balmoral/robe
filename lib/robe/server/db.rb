@@ -81,10 +81,11 @@ module Robe
             @op_thread_pool.post do
               block.call
             end
-          else
-            ::Thread.new do
-              block.call
-            end
+          elsif Robe::Server::MULTI_THREAD
+            block.call
+            # ::Thread.new { @op_mutex.synchronize { block.call } }
+          else  
+            block.call
           end
         end
 
@@ -97,7 +98,7 @@ module Robe
         end
 
         def init_mongo_client
-          # trace __FILE__, __LINE__, self, __method__, " : creating mongo client for hosts=#{config.mongo_hosts} database=#{config.mongo_database}"
+          trace __FILE__, __LINE__, self, __method__, " : creating mongo client for hosts=#{config.mongo_hosts} database=#{config.mongo_database} min_threads=#{min_threads} max_threads=#{max_threads} @op_thread_pool=#{@op_thread_pool}"
           @mongo_client = Robe::DB::Mongo::Client.new(
             hosts: config.mongo_hosts,
             database: config.mongo_database,
@@ -128,7 +129,7 @@ module Robe
         def init_ops
           @op_mutex = Mutex.new
           # limit threads to mongo connection pool size
-          @op_thread_pool = if Robe.config.db_op_max_threads > 0
+          @op_thread_pool = if Robe::Server::USE_CONCURRENT && Robe.config.db_op_max_threads > 0
             Concurrent::CachedThreadPool.new(
               min_threads: min_threads,
               max_threads: max_threads
